@@ -1,17 +1,12 @@
 import React from 'react';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import Papa from 'papaparse';
 import { MonthlyResult, SimulationTotals } from '../types';
 
 interface ExportButtonsProps {
     monthlyData: MonthlyResult[];
     totals: SimulationTotals;
-}
-
-// Extend the jsPDF type to include the autoTable method
-interface jsPDFWithAutoTable extends jsPDF {
-    autoTable: (options: any) => jsPDF;
 }
 
 const formatCurrency = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -94,12 +89,12 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({ monthlyData, totals }) =>
     const handleExportPDF = () => {
         const doc = new jsPDF({
             orientation: 'landscape',
-        }) as jsPDFWithAutoTable;
+        });
 
         const { data, totalsRow } = getExportData();
 
         doc.text("Relatório da Simulação Financeira", 14, 16);
-        doc.autoTable({
+        autoTable(doc, {
             head: [headers],
             body: data,
             foot: [totalsRow],
