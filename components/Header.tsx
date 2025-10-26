@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../src/contexts/AuthContext';
 
 const Header: React.FC = () => {
     const { session, supabase } = useAuth();
@@ -43,3 +43,6 @@ const Header: React.FC = () => {
             </div>
         </header>
     );
+};
+
+export default Header;

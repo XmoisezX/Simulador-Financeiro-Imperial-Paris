@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { SimulationInput, SimulationResult } from '../types';
-import { useFinancialSimulator } from '../hooks/useFinancialSimulator';
-import { initialSimulationInputs } from '../constants';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
-import Sidebar from '../components/Sidebar';
-import Dashboard from '../components/Dashboard';
+import { SimulationInput, SimulationResult } from '../../types';
+import { useFinancialSimulator } from '../../hooks/useFinancialSimulator';
+import { initialSimulationInputs } from '../../constants';
+import Header from '../../components/Header';
+import Footer from '../../components/Footer';
+import Sidebar from '../../components/Sidebar';
+import Dashboard from '../../components/Dashboard';
 
 const HomePage: React.FC = () => {
     const [inputs, setInputs] = useState<SimulationInput>(initialSimulationInputs);

@@ -1,7 +1,7 @@
 import React from 'react';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import LoginPage from './pages/Login';
-import HomePage from './pages/HomePage';
+import { AuthProvider, useAuth } from './src/contexts/AuthContext';
+import LoginPage from './src/pages/Login';
+import HomePage from './src/pages/HomePage';
 
 const AppContent: React.FC = () => {
     const { session } = useAuth();

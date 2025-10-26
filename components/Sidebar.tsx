@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { SimulationInput } from '../types';
 import NumberInput from './NumberInput';
 import CollapsibleCard from './CollapsibleCard';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../src/contexts/AuthContext';
 
 interface SidebarProps {
     inputs: SimulationInput;
