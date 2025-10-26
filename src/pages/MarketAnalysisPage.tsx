@@ -16,6 +16,7 @@ const MarketAnalysisPage: React.FC = () => {
     const liquidityByNeighborhoodChartRef = useRef<HTMLCanvasElement>(null);
     const salesMixChartRef = useRef<HTMLCanvasElement>(null);
     const projectionChartRef = useRef<HTMLCanvasElement>(null);
+    const brazilSalesChartRef = useRef<HTMLCanvasElement>(null);
 
     const neighborhoodData: { [key: string]: any } = {
         'Centro': {
@@ -125,6 +126,48 @@ const MarketAnalysisPage: React.FC = () => {
             initChart(salesMixChartRef, 'salesMixChart', { type: 'doughnut', data: { labels: ['Imóveis Usados', 'Lançamentos / Na Planta'], datasets: [{ data: [65, 35], backgroundColor: ['#1e3a8a', '#60a5fa'] }] }, options: chartOptions });
         } else if (activeTab === 'tab-projecoes') {
             initChart(projectionChartRef, 'projectionChart', { type: 'bar', data: { labels: ['Valorização Média 2025', 'Projeção Valorização 2026'], datasets: [{ label: 'Preço Médio m²', data: [5500, 5800], backgroundColor: ['#3b82f6', '#1e3a8a'] }] }, options: { ...chartOptions, plugins: { ...chartOptions.plugins, legend: { display: false } } } });
+        } else if (activeTab === 'tab-brasil') {
+            const labels = ['2/ano', '3/ano', '4/ano', '5/ano', '6/ano', '7/ano', '9/ano', '11/ano', '12+/ano'];
+            const data = [3.9, 2.6, 6.8, 5.3, 7.7, 7.6, 9.1, 9.3, 9.8];
+            initChart(brazilSalesChartRef, 'brazilSalesChart', {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '% de Corretores',
+                        data: data,
+                        backgroundColor: '#3b82f6'
+                    }]
+                },
+                options: {
+                    ...chartOptions,
+                    plugins: {
+                        ...chartOptions.plugins,
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context: any) {
+                                    return `${context.raw}%`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: '% dos Corretores na Amostra'
+                            }
+                        },
+                        x: {
+                             title: {
+                                display: true,
+                                text: 'Média de Imóveis Vendidos por Ano'
+                            }
+                        }
+                    }
+                }
+            });
         }
         return () => Object.values(chartInstances.current).forEach((chart: any) => chart?.destroy());
     }, [activeTab]);
@@ -147,6 +190,7 @@ const MarketAnalysisPage: React.FC = () => {
                         <button className={tabButtonClasses('tab-bairros')} onClick={() => setActiveTab('tab-bairros')}>Análise por Bairro</button>
                         <button className={tabButtonClasses('tab-tipos')} onClick={() => setActiveTab('tab-tipos')}>Tipos de Imóvel</button>
                         <button className={tabButtonClasses('tab-projecoes')} onClick={() => setActiveTab('tab-projecoes')}>Projeções 2026</button>
+                        <button className={tabButtonClasses('tab-brasil')} onClick={() => setActiveTab('tab-brasil')}>Benchmark Brasil</button>
                     </div>
                 </div>
             </nav>
@@ -210,6 +254,21 @@ const MarketAnalysisPage: React.FC = () => {
                         </div>
                         <div className="bg-white p-4 sm:p-6 rounded-lg shadow"><h3 className="text-xl font-semibold mb-4 text-blue-900">Projeção de Valorização (Preço Médio m²)</h3><div className="chart-container"><canvas ref={projectionChartRef}></canvas></div></div>
                     </div>
+                </div>}
+
+                {activeTab === 'tab-brasil' && <div className="animate-fade-in">
+                    <h2 className="text-2xl font-bold text-blue-900 mb-4">Benchmark Nacional: Média de Vendas Anual por Corretor</h2>
+                    <p className="text-base text-slate-700 mb-6 max-w-3xl">
+                        Esta seção apresenta um panorama do desempenho médio de corretores de imóveis no Brasil, com base em uma pesquisa de mercado. Utilize estes dados como um benchmark para entender onde suas metas se posicionam em relação à média nacional. A pesquisa reflete a distribuição de corretores por faixas de vendas anuais.
+                    </p>
+                    <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
+                        <h3 className="text-xl font-semibold mb-4 text-blue-900">Média Anual de Vendas de Imóveis (últimos 3 anos)</h3>
+                        <div className="chart-container h-[400px]"><canvas ref={brazilSalesChartRef}></canvas></div>
+                        <p className="text-xs text-slate-500 mt-4 text-right">Fonte: Pesquisa Imóvel Guide</p>
+                    </div>
+                    <p className="text-sm text-slate-600 mt-6">
+                        <strong>Nota:</strong> Os dados apresentados referem-se exclusivamente a vendas de imóveis. Não foram fornecidos dados equivalentes para o mercado de aluguéis.
+                    </p>
                 </div>}
             </main>
 
