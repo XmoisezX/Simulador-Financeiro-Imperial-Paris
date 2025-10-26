@@ -1,20 +1,111 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { SimulationInput } from '../types';
 import NumberInput from './NumberInput';
 import CollapsibleCard from './CollapsibleCard';
+import { useAuth } from '../contexts/AuthContext';
 
 interface SidebarProps {
     inputs: SimulationInput;
     onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onLoadSimulation: (inputs: SimulationInput) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange }) => {
+interface SavedSimulation {
+    id: string;
+    name: string;
+    inputs: SimulationInput;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulation }) => {
+    const { supabase, session } = useAuth();
+    const [savedSimulations, setSavedSimulations] = useState<SavedSimulation[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const fetchSimulations = async () => {
+        if (!session) return;
+        setIsLoading(true);
+        const { data, error } = await supabase
+            .from('simulations')
+            .select('id, name, inputs')
+            .eq('user_id', session.user.id)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching simulations:', error);
+            alert('Não foi possível carregar as simulações salvas.');
+        } else {
+            setSavedSimulations(data as SavedSimulation[]);
+        }
+        setIsLoading(false);
+    };
+
+    useEffect(() => {
+        if (session) {
+            fetchSimulations();
+        }
+    }, [session]);
+
+    const handleSave = async () => {
+        const name = prompt("Digite um nome para esta simulação:");
+        if (name && session) {
+            const { error } = await supabase.from('simulations').insert({
+                user_id: session.user.id,
+                name: name,
+                inputs: inputs,
+            });
+
+            if (error) {
+                console.error('Error saving simulation:', error);
+                alert('Erro ao salvar a simulação.');
+            } else {
+                alert('Simulação salva com sucesso!');
+                fetchSimulations(); // Refresh the list
+            }
+        }
+    };
+    
+    const handleDelete = async (id: string) => {
+        if (confirm("Tem certeza que deseja excluir esta simulação?")) {
+            const { error } = await supabase.from('simulations').delete().match({ id });
+            if (error) {
+                alert('Erro ao excluir a simulação.');
+            } else {
+                alert('Simulação excluída.');
+                fetchSimulations();
+            }
+        }
+    };
+
     return (
-        <aside className="w-full lg:w-[420px] lg:flex-shrink-0 bg-white p-6 border-r border-gray-200 overflow-y-auto lg:h-[calc(100vh-80px)] lg:sticky top-[80px]">
-            <h2 className="text-xl font-bold text-dark-text mb-6">Parâmetros da Simulação</h2>
+        <aside className="w-full lg:w-[420px] lg:flex-shrink-0 bg-white p-6 border-r border-gray-200 overflow-y-auto lg:h-[calc(100vh-88px)] lg:sticky top-[88px]">
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-dark-text">Parâmetros</h2>
+                <button
+                    onClick={handleSave}
+                    className="px-4 py-2 text-sm font-medium text-white bg-primary-orange rounded-md hover:bg-secondary-orange transition-colors"
+                >
+                    Salvar Simulação
+                </button>
+            </div>
             
             <div className="space-y-4">
+                <CollapsibleCard title="Simulações Salvas">
+                    {isLoading ? <p>Carregando...</p> : (
+                        <div className="space-y-2">
+                            {savedSimulations.length > 0 ? savedSimulations.map(sim => (
+                                <div key={sim.id} className="flex justify-between items-center p-2 rounded-md hover:bg-gray-100">
+                                    <button onClick={() => onLoadSimulation(sim.inputs)} className="text-left text-blue-600 hover:underline">
+                                        {sim.name}
+                                    </button>
+                                    <button onClick={() => handleDelete(sim.id)} className="text-red-500 hover:text-red-700 text-xs">
+                                        Excluir
+                                    </button>
+                                </div>
+                            )) : <p className="text-sm text-gray-500">Nenhuma simulação salva.</p>}
+                        </div>
+                    )}
+                </CollapsibleCard>
+
                 <CollapsibleCard title="Premissas Financeiras" isOpenDefault>
                     <div className="grid grid-cols-2 gap-4">
                         <NumberInput label="Valor Médio Venda (R$)" id="avgSaleValue" value={inputs.avgSaleValue} onChange={onInputChange} step={10000} placeholder="300000" title="Valor médio estimado de cada venda. Principal fator para o faturamento de vendas." />
