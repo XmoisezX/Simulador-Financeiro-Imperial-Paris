@@ -163,7 +163,7 @@ const MarketAnalysisPage: React.FC = () => {
                 </div>}
                 
                 {activeTab === 'tab-bairros' && <div className="animate-fade-in">
-                    <p className="text-base text-slate-700 mb-6 max-w-3xl">Explore as nuances do mercado em diferentes localidades...</p>
+                    <p className="text-base text-slate-700 mb-6 max-w-3xl">Explore as nuances do mercado em diferentes localidades. Esta seção permite comparar o preço médio por metro quadrado e a liquidez (tempo médio para venda) entre os principais bairros. Clique em um bairro nos botões abaixo para ver uma análise detalhada sobre suas características e demanda.</p>
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="lg:col-span-1 bg-white p-4 sm:p-6 rounded-lg shadow">
                             <h3 className="text-xl font-semibold mb-4 text-blue-900">Análise por Bairro</h3>
