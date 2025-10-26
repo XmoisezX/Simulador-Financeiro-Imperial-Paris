@@ -36,7 +36,13 @@ export const useFinancialSimulator = () => {
 
             const currentMarketingCost = isExpansionActive ? inputs.marketingExpandedCost : inputs.marketingBaseCost;
             const currentInternCostTotal = isExpansionActive ? inputs.numberOfInterns * inputs.internCost : 0;
-            const currentFixedCosts = baseFixedCosts + inputs.proLaboreTotal + currentMarketingCost + currentInternCostTotal;
+            
+            let currentProLaboreCost = 0;
+            if (month >= inputs.proLaboreStartMonth) {
+                currentProLaboreCost = inputs.proLaboreAlessandro + inputs.proLaboreTamires + inputs.proLaboreMoisez;
+            }
+
+            const currentFixedCosts = baseFixedCosts + currentProLaboreCost + currentMarketingCost + currentInternCostTotal;
 
             const grossRevenueSalesPartners = currentSalesTargetPartners * inputs.avgSaleValue * (inputs.commissionRateSale / 100);
             const grossRevenueSalesBrokers = currentSalesTargetBrokers * inputs.avgSaleValue * (inputs.commissionRateSale / 100);
@@ -78,7 +84,6 @@ export const useFinancialSimulator = () => {
             accumulatedCashFlow += monthlyCashFlow;
             accumulatedRentalContracts += currentRentalsTarget;
 
-            // New Metrics Calculation
             const contributionMarginPercent = grossRevenueTotal > 0 ? (netRevenueForFixedCosts / grossRevenueTotal) * 100 : 0;
             const operatingProfit = netRevenueForFixedCosts - currentFixedCosts;
             const operatingProfitabilityPercent = grossRevenueTotal > 0 ? (operatingProfit / grossRevenueTotal) * 100 : 0;

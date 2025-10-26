@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SimulationInput } from '../types';
 import NumberInput from './NumberInput';
-import TextInput from './TextInput'; // Importando o novo componente
+import TextInput from './TextInput';
 import CollapsibleCard from './CollapsibleCard';
 import { useAuth } from '../src/contexts/AuthContext';
 
@@ -21,7 +21,7 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
     const { supabase, session } = useAuth();
     const [savedSimulations, setSavedSimulations] = useState<SavedSimulation[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [simulationName, setSimulationName] = useState(''); // Estado para o nome da simulação
+    const [simulationName, setSimulationName] = useState('');
 
     const fetchSimulations = async () => {
         if (!session) return;
@@ -64,8 +64,8 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
                 alert('Erro ao salvar a simulação.');
             } else {
                 alert('Simulação salva com sucesso!');
-                setSimulationName(''); // Limpa o campo após salvar
-                fetchSimulations(); // Refresh the list
+                setSimulationName('');
+                fetchSimulations();
             }
         }
     };
@@ -158,12 +158,20 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
                         <NumberInput label="Água e Luz (R$)" id="custoAguaLuz" value={inputs.custoAguaLuz} onChange={onInputChange} step={10} title="Custo mensal com contas de água e eletricidade." />
                     </div>
                      <NumberInput label="Outros Custos Fixos (R$)" id="custoOutrosFixos" value={inputs.custoOutrosFixos} onChange={onInputChange} step={10} title="Outros custos fixos mensais não listados acima." />
-                     <NumberInput label="Pró-Labore Total (R$/mês)" id="proLaboreTotal" value={inputs.proLaboreTotal} onChange={onInputChange} step={500} placeholder="Remuneração" title="Retirada mensal fixa para os sócios." />
+                    
+                    <h3 className="text-md font-semibold text-light-text border-t pt-4 mt-2">Pró-Labore Sócios</h3>
+                    <NumberInput label="Mês Início Pró-Labore" id="proLaboreStartMonth" value={inputs.proLaboreStartMonth} onChange={onInputChange} min={1} max={12} title="Mês em que o pagamento do pró-labore para os sócios começará." />
+                    <div className="grid grid-cols-3 gap-2 mt-2">
+                        <NumberInput label="Alessandro (R$)" id="proLaboreAlessandro" value={inputs.proLaboreAlessandro} onChange={onInputChange} step={100} title="Valor do pró-labore mensal para Alessandro Gomes." />
+                        <NumberInput label="Tamires (R$)" id="proLaboreTamires" value={inputs.proLaboreTamires} onChange={onInputChange} step={100} title="Valor do pró-labore mensal para Tamires Torres." />
+                        <NumberInput label="Moisez (R$)" id="proLaboreMoisez" value={inputs.proLaboreMoisez} onChange={onInputChange} step={100} title="Valor do pró-labore mensal para Moisez Torres." />
+                    </div>
+
+                    <h3 className="text-md font-semibold text-light-text border-t pt-4 mt-2">Marketing e Expansão</h3>
                     <div className="grid grid-cols-2 gap-4">
                          <NumberInput label="Invest. Mkt Base (R$/mês)" id="marketingBaseCost" value={inputs.marketingBaseCost} onChange={onInputChange} step={100} placeholder="Facebook Ads" title="Investimento mensal fixo em marketing durante os meses iniciais (antes da expansão)." />
                          <NumberInput label="Invest. Mkt Expandido (R$/mês)" id="marketingExpandedCost" value={inputs.marketingExpandedCost} onChange={onInputChange} step={500} placeholder="Tráfego Pago" title="Investimento mensal em marketing após o início do plano de expansão." />
                     </div>
-                    <h3 className="text-md font-semibold text-light-text border-t pt-4 mt-2">Estrutura Expansão</h3>
                      <NumberInput label="Mês Início Expansão" id="expansionStartMonth" value={inputs.expansionStartMonth} onChange={onInputChange} min={1} max={12} title="Mês em que os custos de expansão (marketing, estagiários, etc.) começam a ser aplicados." />
                     <div className="grid grid-cols-2 gap-4">
                        <NumberInput label="Nº Estagiários" id="numberOfInterns" value={inputs.numberOfInterns} onChange={onInputChange} min={0} title="Quantidade de estagiários contratados a partir do mês de expansão." />

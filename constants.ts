@@ -10,7 +10,6 @@ export const initialSimulationInputs: SimulationInput = {
     propertyPayment2Amount: 275000,
     initialCash: 0,
     custoSetupInicial: 5000,
-    // Detailed fixed costs
     custoContabilidade: 100,
     custoCRM: 470.30,
     custoInternetTel: 150,
@@ -20,8 +19,11 @@ export const initialSimulationInputs: SimulationInput = {
     custoOutrosFixos: 200,
     taxaSelicEstimadaAnual: 10,
     outrosCustosVarPercentFatBruto: 1,
-    // End detailed fixed costs
-    proLaboreTotal: 6000,
+    // Pro-labore defaults
+    proLaboreStartMonth: 1,
+    proLaboreAlessandro: 2000,
+    proLaboreTamires: 2000,
+    proLaboreMoisez: 2000,
     marketingBaseCost: 500,
     marketingExpandedCost: 3000,
     expansionStartMonth: 5,

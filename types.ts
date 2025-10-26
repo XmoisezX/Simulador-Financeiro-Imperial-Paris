@@ -7,20 +7,21 @@ export interface SimulationInput {
   propertyPayment2Month: number;
   propertyPayment2Amount: number;
   initialCash: number;
-  // New one-time cost
   custoSetupInicial: number;
-  // baseFixedCosts is replaced by detailed costs
   custoContabilidade: number;
   custoCRM: number;
   custoInternetTel: number;
   custoAguaLuz: number;
-  // New fixed costs
   custoAluguelCondominio: number;
   salarioAdministrativo: number;
   custoOutrosFixos: number;
   taxaSelicEstimadaAnual: number;
   outrosCustosVarPercentFatBruto: number;
-  proLaboreTotal: number;
+  // Pro-labore changes
+  proLaboreStartMonth: number;
+  proLaboreAlessandro: number;
+  proLaboreTamires: number;
+  proLaboreMoisez: number;
   marketingBaseCost: number;
   marketingExpandedCost: number;
   expansionStartMonth: number;
@@ -62,7 +63,6 @@ export interface MonthlyResult {
   currentPropertyPayment: number;
   monthlyCashFlow: number;
   accumulatedCashFlow: number;
-  // New metrics
   salesCount: number;
   rentalsCount: number;
   contributionMarginPercent: number;
@@ -84,7 +84,6 @@ export interface SimulationTotals {
     totalFixedCosts: number;
     totalPropertyPayments: number;
     finalAccumulatedCashFlow: number;
-    // New totals/averages
     totalSalesCount: number;
     totalRentalsCount: number;
     avgContributionMarginPercent: number;
