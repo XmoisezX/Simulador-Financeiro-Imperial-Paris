@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { MonthlyResult, SimulationTotals } from '../types';
 
@@ -33,7 +32,7 @@ const TD: React.FC<{ children: React.ReactNode, className?: string }> = ({ child
 
 const ResultsTable: React.FC<ResultsTableProps> = ({ monthlyData, totals, taxRate }) => {
     const headers = [
-        "Mês", "Nº Vendas", "Nº Aluguéis", "Fat Bruto Venda", "Fat Bruto Alug (1º)", "Fat Bruto Alug (Adm)", "Fat Bruto Total",
+        "Mês", "Nº Vendas", "VGV", "Nº Aluguéis", "Fat Bruto Venda", "Fat Bruto Alug (1º)", "Fat Bruto Alug (Adm)", "Fat Bruto Total",
         `Imposto SN (${taxRate}%)`, "Com Var Venda (S)", "Com Var Venda (C)", "Com Var Alug (1º S)",
         "Rec Líquida (p/ CF)", "Custo Fixo Total", "Pagto Imóvel", "Fluxo Caixa Mês", "Fluxo Caixa Acum.",
         "Margem Contrib.", "Lucratividade Op.", "Ponto Equil."
@@ -42,6 +41,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ monthlyData, totals, taxRat
     const tooltips: { [key: string]: string } = {
         "Mês": "Mês da simulação (1 a 12).",
         "Nº Vendas": "Número total de vendas realizadas no mês (sócios + corretores).",
+        "VGV": "Valor Geral de Vendas. (Nº Vendas * Valor Médio Venda). Representa o valor total dos imóveis transacionados.",
         "Nº Aluguéis": "Número de novos contratos de aluguel fechados no mês.",
         "Fat Bruto Venda": "Faturamento Bruto Total gerado apenas pelas vendas no mês. (Nº Vendas * Valor Médio Venda * % Comissão Empresa)",
         "Fat Bruto Alug (1º)": "Faturamento Bruto gerado pelos novos contratos de aluguel. (Nº Aluguéis Novos * Valor Médio Aluguel)",
@@ -63,7 +63,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ monthlyData, totals, taxRat
 
     return (
          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1600px] border-collapse">
+            <table className="w-full min-w-[1700px] border-collapse">
                 <thead>
                     <tr className="bg-orange-100 text-kpi-value-color font-semibold tracking-wider">
                         {headers.map((header, index) => (
@@ -78,6 +78,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ monthlyData, totals, taxRat
                         <tr key={row.month} className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-orange-50 transition-colors duration-150`}>
                             <TD className="text-center font-semibold">{row.month}</TD>
                             <TD className="text-center">{row.salesCount}</TD>
+                            <TD>{formatCurrency(row.vgv)}</TD>
                             <TD className="text-center">{row.rentalsCount}</TD>
                             <TD>{formatCurrency(row.grossRevenueSales)}</TD>
                             <TD>{formatCurrency(row.grossRevenueRental1st)}</TD>
@@ -102,6 +103,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ monthlyData, totals, taxRat
                     <tr className="bg-gray-200 font-bold text-dark-text border-t-2 border-gray-400">
                         <TD className="text-left">Total/Média</TD>
                         <TD className="text-center">{totals.totalSalesCount}</TD>
+                        <TD>{formatCurrency(totals.totalVgv)}</TD>
                         <TD className="text-center">{totals.totalRentalsCount}</TD>
                         <TD>{formatCurrency(totals.grossRevenueSales)}</TD>
                         <TD>{formatCurrency(totals.grossRevenueRental1st)}</TD>
