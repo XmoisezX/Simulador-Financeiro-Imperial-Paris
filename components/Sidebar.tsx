@@ -121,8 +121,8 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
 
                 <CollapsibleCard title="Premissas Financeiras" isOpenDefault>
                     <div className="grid grid-cols-2 gap-4">
-                        <NumberInput label="Valor Médio Venda (R$)" id="avgSaleValue" value={inputs.avgSaleValue} onChange={onInputChange} step={10000} placeholder="300000" title="Valor médio estimado de cada venda. Principal fator para o faturamento de vendas." />
-                        <NumberInput label="Valor Médio Aluguel (R$)" id="avgRentalValue" value={inputs.avgRentalValue} onChange={onInputChange} step={100} placeholder="2500" title="Valor do primeiro aluguel (comissão) e base para o cálculo da administração mensal." />
+                        <NumberInput label="Valor Médio Venda" id="avgSaleValue" value={inputs.avgSaleValue} onChange={onInputChange} step={10000} placeholder="300000" title="Valor médio estimado de cada venda. Principal fator para o faturamento de vendas." isCurrency />
+                        <NumberInput label="Valor Médio Aluguel" id="avgRentalValue" value={inputs.avgRentalValue} onChange={onInputChange} step={100} placeholder="2500" title="Valor do primeiro aluguel (comissão) e base para o cálculo da administração mensal." isCurrency />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <NumberInput label="Alíquota SN (%)" id="taxRate" value={inputs.taxRate} onChange={onInputChange} step={0.1} placeholder="6" title="Alíquota percentual do Simples Nacional que incide sobre o Faturamento Bruto Total." />
@@ -130,52 +130,52 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <NumberInput label="Mês Pagto. Imóvel 1" id="propertyPayment1Month" value={inputs.propertyPayment1Month} onChange={onInputChange} min={1} max={12} title="Mês (1 a 12) em que o primeiro pagamento de imóvel será realizado." />
-                        <NumberInput label="Valor Pagto. 1 (R$)" id="propertyPayment1Amount" value={inputs.propertyPayment1Amount} onChange={onInputChange} step={1000} title="Custo do primeiro imóvel a ser pago, impactando o fluxo de caixa no mês correspondente." />
+                        <NumberInput label="Valor Pagto. 1" id="propertyPayment1Amount" value={inputs.propertyPayment1Amount} onChange={onInputChange} step={1000} title="Custo do primeiro imóvel a ser pago, impactando o fluxo de caixa no mês correspondente." isCurrency />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <NumberInput label="Mês Pagto. Imóvel 2" id="propertyPayment2Month" value={inputs.propertyPayment2Month} onChange={onInputChange} min={1} max={12} title="Mês (1 a 12) em que o segundo pagamento de imóvel será realizado." />
-                        <NumberInput label="Valor Pagto. 2 (R$)" id="propertyPayment2Amount" value={inputs.propertyPayment2Amount} onChange={onInputChange} step={1000} title="Custo do segundo imóvel a ser pago, base para o cálculo da correção." />
+                        <NumberInput label="Valor Pagto. 2" id="propertyPayment2Amount" value={inputs.propertyPayment2Amount} onChange={onInputChange} step={1000} title="Custo do segundo imóvel a ser pago, base para o cálculo da correção." isCurrency />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                        <NumberInput label="Caixa Inicial (R$)" id="initialCash" value={inputs.initialCash} onChange={onInputChange} step={1000} placeholder="Valor inicial" title="Valor inicial em caixa no começo do primeiro mês da simulação." />
+                        <NumberInput label="Caixa Inicial" id="initialCash" value={inputs.initialCash} onChange={onInputChange} step={1000} placeholder="Valor inicial" title="Valor inicial em caixa no começo do primeiro mês da simulação." isCurrency />
                          <NumberInput label="SELIC Estimada Anual (%)" id="taxaSelicEstimadaAnual" value={inputs.taxaSelicEstimadaAnual} onChange={onInputChange} step={0.5} placeholder="10" title="Taxa SELIC anual estimada para corrigir o valor do segundo pagamento do imóvel." />
                     </div>
-                     <NumberInput label="Custo Setup Inicial (R$)" id="custoSetupInicial" value={inputs.custoSetupInicial} onChange={onInputChange} step={500} title="Custo único no primeiro mês para montagem do negócio (móveis, computadores, etc)." />
+                     <NumberInput label="Custo Setup Inicial" id="custoSetupInicial" value={inputs.custoSetupInicial} onChange={onInputChange} step={500} title="Custo único no primeiro mês para montagem do negócio (móveis, computadores, etc)." isCurrency />
                 </CollapsibleCard>
 
                 <CollapsibleCard title="Custos e Estrutura">
                     <h3 className="text-md font-semibold text-light-text mb-2">Custos Fixos Mensais</h3>
                      <div className="grid grid-cols-2 gap-4">
-                        <NumberInput label="Aluguel/Condomínio (R$)" id="custoAluguelCondominio" value={inputs.custoAluguelCondominio} onChange={onInputChange} step={100} title="Custo mensal com aluguel e condomínio do escritório." />
-                        <NumberInput label="Salário Admin. (R$)" id="salarioAdministrativo" value={inputs.salarioAdministrativo} onChange={onInputChange} step={100} title="Custo mensal com salários da equipe administrativa." />
+                        <NumberInput label="Aluguel/Condomínio" id="custoAluguelCondominio" value={inputs.custoAluguelCondominio} onChange={onInputChange} step={100} title="Custo mensal com aluguel e condomínio do escritório." isCurrency />
+                        <NumberInput label="Salário Admin." id="salarioAdministrativo" value={inputs.salarioAdministrativo} onChange={onInputChange} step={100} title="Custo mensal com salários da equipe administrativa." isCurrency />
                     </div>
                      <div className="grid grid-cols-2 gap-4">
-                        <NumberInput label="Contabilidade (R$)" id="custoContabilidade" value={inputs.custoContabilidade} onChange={onInputChange} step={10} title="Custo mensal com serviços de contabilidade." />
-                        <NumberInput label="CRM e Sistemas (R$)" id="custoCRM" value={inputs.custoCRM} onChange={onInputChange} step={10} title="Custo mensal com software de CRM e outras ferramentas." />
+                        <NumberInput label="Contabilidade" id="custoContabilidade" value={inputs.custoContabilidade} onChange={onInputChange} step={10} title="Custo mensal com serviços de contabilidade." isCurrency />
+                        <NumberInput label="CRM e Sistemas" id="custoCRM" value={inputs.custoCRM} onChange={onInputChange} step={10} title="Custo mensal com software de CRM e outras ferramentas." isCurrency />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                        <NumberInput label="Internet e Tel. (R$)" id="custoInternetTel" value={inputs.custoInternetTel} onChange={onInputChange} step={10} title="Custo mensal com serviços de internet e telefonia." />
-                        <NumberInput label="Água e Luz (R$)" id="custoAguaLuz" value={inputs.custoAguaLuz} onChange={onInputChange} step={10} title="Custo mensal com contas de água e eletricidade." />
+                        <NumberInput label="Internet e Tel." id="custoInternetTel" value={inputs.custoInternetTel} onChange={onInputChange} step={10} title="Custo mensal com serviços de internet e telefonia." isCurrency />
+                        <NumberInput label="Água e Luz" id="custoAguaLuz" value={inputs.custoAguaLuz} onChange={onInputChange} step={10} title="Custo mensal com contas de água e eletricidade." isCurrency />
                     </div>
-                     <NumberInput label="Outros Custos Fixos (R$)" id="custoOutrosFixos" value={inputs.custoOutrosFixos} onChange={onInputChange} step={10} title="Outros custos fixos mensais não listados acima." />
+                     <NumberInput label="Outros Custos Fixos" id="custoOutrosFixos" value={inputs.custoOutrosFixos} onChange={onInputChange} step={10} title="Outros custos fixos mensais não listados acima." isCurrency />
                     
                     <h3 className="text-md font-semibold text-light-text border-t pt-4 mt-2">Pró-Labore Sócios</h3>
                     <NumberInput label="Mês Início Pró-Labore" id="proLaboreStartMonth" value={inputs.proLaboreStartMonth} onChange={onInputChange} min={1} max={12} title="Mês em que o pagamento do pró-labore para os sócios começará." />
                     <div className="grid grid-cols-3 gap-2 mt-2">
-                        <NumberInput label="Alessandro (R$)" id="proLaboreAlessandro" value={inputs.proLaboreAlessandro} onChange={onInputChange} step={100} title="Valor do pró-labore mensal para Alessandro Gomes." />
-                        <NumberInput label="Tamires (R$)" id="proLaboreTamires" value={inputs.proLaboreTamires} onChange={onInputChange} step={100} title="Valor do pró-labore mensal para Tamires Torres." />
-                        <NumberInput label="Moisez (R$)" id="proLaboreMoisez" value={inputs.proLaboreMoisez} onChange={onInputChange} step={100} title="Valor do pró-labore mensal para Moisez Torres." />
+                        <NumberInput label="Alessandro" id="proLaboreAlessandro" value={inputs.proLaboreAlessandro} onChange={onInputChange} step={100} title="Valor do pró-labore mensal para Alessandro Gomes." isCurrency />
+                        <NumberInput label="Tamires" id="proLaboreTamires" value={inputs.proLaboreTamires} onChange={onInputChange} step={100} title="Valor do pró-labore mensal para Tamires Torres." isCurrency />
+                        <NumberInput label="Moisez" id="proLaboreMoisez" value={inputs.proLaboreMoisez} onChange={onInputChange} step={100} title="Valor do pró-labore mensal para Moisez Torres." isCurrency />
                     </div>
 
                     <h3 className="text-md font-semibold text-light-text border-t pt-4 mt-2">Marketing e Expansão</h3>
                     <div className="grid grid-cols-2 gap-4">
-                         <NumberInput label="Invest. Mkt Base (R$/mês)" id="marketingBaseCost" value={inputs.marketingBaseCost} onChange={onInputChange} step={100} placeholder="Facebook Ads" title="Investimento mensal fixo em marketing durante os meses iniciais (antes da expansão)." />
-                         <NumberInput label="Invest. Mkt Expandido (R$/mês)" id="marketingExpandedCost" value={inputs.marketingExpandedCost} onChange={onInputChange} step={500} placeholder="Tráfego Pago" title="Investimento mensal em marketing após o início do plano de expansão." />
+                         <NumberInput label="Invest. Mkt Base" id="marketingBaseCost" value={inputs.marketingBaseCost} onChange={onInputChange} step={100} placeholder="Facebook Ads" title="Investimento mensal fixo em marketing durante os meses iniciais (antes da expansão)." isCurrency />
+                         <NumberInput label="Invest. Mkt Expandido" id="marketingExpandedCost" value={inputs.marketingExpandedCost} onChange={onInputChange} step={500} placeholder="Tráfego Pago" title="Investimento mensal em marketing após o início do plano de expansão." isCurrency />
                     </div>
                      <NumberInput label="Mês Início Expansão" id="expansionStartMonth" value={inputs.expansionStartMonth} onChange={onInputChange} min={1} max={12} title="Mês em que os custos de expansão (marketing, estagiários, etc.) começam a ser aplicados." />
                     <div className="grid grid-cols-2 gap-4">
                        <NumberInput label="Nº Estagiários" id="numberOfInterns" value={inputs.numberOfInterns} onChange={onInputChange} min={0} title="Quantidade de estagiários contratados a partir do mês de expansão." />
-                       <NumberInput label="Custo/Estagiário (R$)" id="internCost" value={inputs.internCost} onChange={onInputChange} step={100} title="Custo mensal por cada estagiário contratado." />
+                       <NumberInput label="Custo/Estagiário" id="internCost" value={inputs.internCost} onChange={onInputChange} step={100} title="Custo mensal por cada estagiário contratado." isCurrency />
                     </div>
                     <NumberInput label="Nº Corretores Externos" id="numberOfBrokers" value={inputs.numberOfBrokers} onChange={onInputChange} min={0} title="Quantidade de corretores externos que começam a atuar a partir do mês de expansão." />
                 </CollapsibleCard>
