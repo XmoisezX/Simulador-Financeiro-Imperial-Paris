@@ -1,4 +1,3 @@
-
 import { SimulationInput } from './types';
 
 export const initialSimulationInputs: SimulationInput = {
@@ -10,11 +9,14 @@ export const initialSimulationInputs: SimulationInput = {
     propertyPayment2Month: 12,
     propertyPayment2Amount: 275000,
     initialCash: 0,
+    custoSetupInicial: 5000,
     // Detailed fixed costs
     custoContabilidade: 100,
     custoCRM: 470.30,
     custoInternetTel: 150,
     custoAguaLuz: 300,
+    custoAluguelCondominio: 2000,
+    salarioAdministrativo: 2500,
     custoOutrosFixos: 200,
     taxaSelicEstimadaAnual: 10,
     outrosCustosVarPercentFatBruto: 1,

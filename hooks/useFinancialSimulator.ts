@@ -12,7 +12,7 @@ export const useFinancialSimulator = () => {
         let totalNetRevenueForFixedCosts = 0, totalFixedCosts = 0, totalPropertyPayments = 0;
         let totalSalesCount = 0, totalRentalsCount = 0, totalVgv = 0;
 
-        const baseFixedCosts = inputs.custoContabilidade + inputs.custoCRM + inputs.custoInternetTel + inputs.custoAguaLuz + inputs.custoOutrosFixos;
+        const baseFixedCosts = inputs.custoContabilidade + inputs.custoCRM + inputs.custoInternetTel + inputs.custoAguaLuz + inputs.custoOutrosFixos + inputs.custoAluguelCondominio + inputs.salarioAdministrativo;
 
         for (let month = 1; month <= 12; month++) {
             const isSlowMonth = month <= inputs.slowStartMonths;
@@ -67,6 +67,7 @@ export const useFinancialSimulator = () => {
             const netRevenueForFixedCosts = grossRevenueTotal - taxAmount - commissionVarSalesPartners - commissionVarSalesBrokersPaid - commissionVarRental1stPartners - otherVariableCosts - brokerRental1stComm - brokerRentalAdminComm;
             
             let currentPropertyPayment = 0;
+            if (month === 1) currentPropertyPayment += inputs.custoSetupInicial;
             if (month === inputs.propertyPayment1Month) currentPropertyPayment += inputs.propertyPayment1Amount;
             if (month === inputs.propertyPayment2Month) {
                 const correction = inputs.propertyPayment2Amount * (inputs.taxaSelicEstimadaAnual / 100);

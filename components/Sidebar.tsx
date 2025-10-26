@@ -140,10 +140,15 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
                         <NumberInput label="Caixa Inicial (R$)" id="initialCash" value={inputs.initialCash} onChange={onInputChange} step={1000} placeholder="Valor inicial" title="Valor inicial em caixa no começo do primeiro mês da simulação." />
                          <NumberInput label="SELIC Estimada Anual (%)" id="taxaSelicEstimadaAnual" value={inputs.taxaSelicEstimadaAnual} onChange={onInputChange} step={0.5} placeholder="10" title="Taxa SELIC anual estimada para corrigir o valor do segundo pagamento do imóvel." />
                     </div>
+                     <NumberInput label="Custo Setup Inicial (R$)" id="custoSetupInicial" value={inputs.custoSetupInicial} onChange={onInputChange} step={500} title="Custo único no primeiro mês para montagem do negócio (móveis, computadores, etc)." />
                 </CollapsibleCard>
 
                 <CollapsibleCard title="Custos e Estrutura">
                     <h3 className="text-md font-semibold text-light-text mb-2">Custos Fixos Mensais</h3>
+                     <div className="grid grid-cols-2 gap-4">
+                        <NumberInput label="Aluguel/Condomínio (R$)" id="custoAluguelCondominio" value={inputs.custoAluguelCondominio} onChange={onInputChange} step={100} title="Custo mensal com aluguel e condomínio do escritório." />
+                        <NumberInput label="Salário Admin. (R$)" id="salarioAdministrativo" value={inputs.salarioAdministrativo} onChange={onInputChange} step={100} title="Custo mensal com salários da equipe administrativa." />
+                    </div>
                      <div className="grid grid-cols-2 gap-4">
                         <NumberInput label="Contabilidade (R$)" id="custoContabilidade" value={inputs.custoContabilidade} onChange={onInputChange} step={10} title="Custo mensal com serviços de contabilidade." />
                         <NumberInput label="CRM e Sistemas (R$)" id="custoCRM" value={inputs.custoCRM} onChange={onInputChange} step={10} title="Custo mensal com software de CRM e outras ferramentas." />

@@ -7,11 +7,16 @@ export interface SimulationInput {
   propertyPayment2Month: number;
   propertyPayment2Amount: number;
   initialCash: number;
+  // New one-time cost
+  custoSetupInicial: number;
   // baseFixedCosts is replaced by detailed costs
   custoContabilidade: number;
   custoCRM: number;
   custoInternetTel: number;
   custoAguaLuz: number;
+  // New fixed costs
+  custoAluguelCondominio: number;
+  salarioAdministrativo: number;
   custoOutrosFixos: number;
   taxaSelicEstimadaAnual: number;
   outrosCustosVarPercentFatBruto: number;
