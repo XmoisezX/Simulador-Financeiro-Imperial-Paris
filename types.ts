@@ -1,4 +1,3 @@
-
 export interface SimulationInput {
   avgSaleValue: number;
   avgRentalValue: number;
@@ -64,6 +63,7 @@ export interface MonthlyResult {
   contributionMarginPercent: number;
   operatingProfitabilityPercent: number;
   breakEvenPoint: number;
+  vgv: number;
 }
 
 export interface SimulationTotals {
@@ -85,6 +85,7 @@ export interface SimulationTotals {
     avgContributionMarginPercent: number;
     avgOperatingProfitabilityPercent: number;
     avgBreakEvenPoint: number;
+    totalVgv: number;
 }
 
 export interface SimulationSummary {
