@@ -9,7 +9,7 @@ import ExportButtons from './ExportButtons'; // Importando o novo componente
 
 const formatCurrency = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-const Dashboard: React.FC<{ results: SimulationResult, inputs: SimulationInput }> = ({ results, inputs }) => {
+const Dashboard: React.FC<{ results: SimulationResult, inputs: SimulationInput, onExtend: () => void }> = ({ results, inputs, onExtend }) => {
     const { summary, monthlyData, totals } = results;
     
     const totalNetRevenue = totals.netRevenueForFixedCosts - totals.totalFixedCosts;
@@ -19,7 +19,15 @@ const Dashboard: React.FC<{ results: SimulationResult, inputs: SimulationInput }
             {/* Header com botões de exportação */}
             <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-dark-text">Dashboard de Resultados</h2>
-                <ExportButtons monthlyData={monthlyData} totals={totals} />
+                <div className="flex items-center space-x-2">
+                    <button
+                        onClick={onExtend}
+                        className="px-4 py-2 text-sm font-medium text-primary-orange border border-primary-orange rounded-md hover:bg-orange-50 transition-colors"
+                    >
+                        Estender +12 Meses
+                    </button>
+                    <ExportButtons monthlyData={monthlyData} totals={totals} />
+                </div>
             </div>
 
             {/* KPI Section */}

@@ -10,12 +10,13 @@ import Dashboard from '../../components/Dashboard';
 const HomePage: React.FC = () => {
     const [inputs, setInputs] = useState<SimulationInput>(initialSimulationInputs);
     const [results, setResults] = useState<SimulationResult | null>(null);
+    const [duration, setDuration] = useState(12);
     const calculateSimulation = useFinancialSimulator();
 
     useEffect(() => {
-        const simulationData = calculateSimulation(inputs);
+        const simulationData = calculateSimulation(inputs, duration);
         setResults(simulationData);
-    }, [inputs, calculateSimulation]);
+    }, [inputs, calculateSimulation, duration]);
 
     const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const { id, value } = e.target;
@@ -27,6 +28,11 @@ const HomePage: React.FC = () => {
 
     const handleLoadSimulation = useCallback((loadedInputs: SimulationInput) => {
         setInputs(loadedInputs);
+        setDuration(12); // Reset duration when loading a simulation
+    }, []);
+
+    const handleExtendSimulation = useCallback(() => {
+        setDuration(prevDuration => prevDuration + 12);
     }, []);
     
     return (
@@ -36,7 +42,7 @@ const HomePage: React.FC = () => {
                 <Sidebar inputs={inputs} onInputChange={handleInputChange} onLoadSimulation={handleLoadSimulation} />
                 <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
                     {results ? (
-                        <Dashboard results={results} inputs={inputs} />
+                        <Dashboard results={results} inputs={inputs} onExtend={handleExtendSimulation} />
                     ) : (
                         <div className="flex items-center justify-center h-full">
                             <p className="text-xl text-gray-500">Gerando simulação...</p>

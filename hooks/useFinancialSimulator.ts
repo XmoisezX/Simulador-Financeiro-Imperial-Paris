@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { SimulationInput, MonthlyResult, SimulationResult } from '../types';
 
 export const useFinancialSimulator = () => {
-    const calculateSimulation = useCallback((inputs: SimulationInput): SimulationResult => {
+    const calculateSimulation = useCallback((inputs: SimulationInput, duration: number): SimulationResult => {
         const monthlyData: MonthlyResult[] = [];
         let accumulatedCashFlow = inputs.initialCash;
         let accumulatedRentalContracts = 0;
@@ -14,7 +14,7 @@ export const useFinancialSimulator = () => {
 
         const baseFixedCosts = inputs.custoContabilidade + inputs.custoCRM + inputs.custoInternetTel + inputs.custoAguaLuz + inputs.custoOutrosFixos + inputs.custoAluguelCondominio + inputs.salarioAdministrativo;
 
-        for (let month = 1; month <= 12; month++) {
+        for (let month = 1; month <= duration; month++) {
             const isSlowMonth = month <= inputs.slowStartMonths;
             const isExpansionActive = month >= inputs.expansionStartMonth;
 
@@ -146,7 +146,7 @@ export const useFinancialSimulator = () => {
             totalVgv,
             avgContributionMarginPercent: totalGrossRevenue > 0 ? (totalNetRevenueForFixedCosts / totalGrossRevenue) * 100 : 0,
             avgOperatingProfitabilityPercent: totalGrossRevenue > 0 ? ((totalNetRevenueForFixedCosts - totalFixedCosts) / totalGrossRevenue) * 100 : 0,
-            avgBreakEvenPoint: monthlyData.reduce((acc, row) => acc + row.breakEvenPoint, 0) / 12,
+            avgBreakEvenPoint: monthlyData.reduce((acc, row) => acc + row.breakEvenPoint, 0) / duration,
         };
         
         const correctedPayment2 = inputs.propertyPayment2Amount * (1 + inputs.taxaSelicEstimadaAnual / 100);
