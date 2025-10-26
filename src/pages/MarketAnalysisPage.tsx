@@ -184,7 +184,7 @@ const MarketAnalysisPage: React.FC = () => {
                 </div>}
 
                 {activeTab === 'tab-tipos' && <div className="animate-fade-in">
-                    <p className="text-base text-slate-700 mb-6 max-w-3xl">O mercado não é homogêneo. Esta seção compara o desempenho de imóveis usados versus lançamentos...</p>
+                    <p className="text-base text-slate-700 mb-6 max-w-3xl">O mercado não é homogêneo. Esta seção compara o desempenho de imóveis usados versus lançamentos (na planta). Entenda as diferenças em liquidez, perfil de demanda e participação de cada segmento no volume total de vendas.</p>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
                             <h3 className="text-xl font-semibold mb-6 text-blue-900">Comparativo: Usados vs. Lançamentos</h3>
@@ -198,13 +198,14 @@ const MarketAnalysisPage: React.FC = () => {
                 </div>}
 
                 {activeTab === 'tab-projecoes' && <div className="animate-fade-in">
-                    <p className="text-base text-slate-700 mb-6 max-w-3xl">Olhando para o futuro, esta seção detalha as projeções e tendências esperadas...</p>
+                    <p className="text-base text-slate-700 mb-6 max-w-3xl">Olhando para o futuro, esta seção detalha as projeções e tendências esperadas para o mercado imobiliário de Pelotas até 2026. Analisamos os fatores de crescimento, os nichos mais promissores e os desafios que o setor deve enfrentar.</p>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
                             <h3 className="text-xl font-semibold mb-6 text-blue-900">Tendências e Projeções para 2026</h3>
                             <div className="space-y-4 text-slate-700">
-                                <div><h4 className="font-semibold text-blue-800">Crescimento Cauteloso</h4><p>Espera-se uma valorização média de 5-7% ao ano...</p></div>
-                                <div><h4 className="font-semibold text-blue-800">Foco em Nichos</h4><p>A demanda por imóveis do programa "Minha Casa, Minha Vida" deve crescer...</p></div>
+                                <div><h4 className="font-semibold text-blue-800">Crescimento Cauteloso</h4><p>Espera-se uma valorização média de 5-7% ao ano, alinhada à inflação e ao crescimento econômico modesto. O mercado deve se manter aquecido, mas sem a euforia de ciclos anteriores.</p></div>
+                                <div><h4 className="font-semibold text-blue-800">Foco em Nichos</h4><p>A demanda por imóveis do programa "Minha Casa, Minha Vida" deve crescer nas zonas de expansão (Fragata, Três Vendas). Simultaneamente, o segmento de alto padrão em condomínios fechados (Areal, Laranjal) continuará com alta procura.</p></div>
+                                <div><h4 className="font-semibold text-blue-800">Desafios para Imóveis Usados</h4><p>Com a concorrência dos lançamentos, imóveis usados que necessitam de grandes reformas ou estão fora da faixa de preço do mercado terão maior dificuldade de venda, exigindo reajuste de valores para manter a liquidez.</p></div>
                             </div>
                         </div>
                         <div className="bg-white p-4 sm:p-6 rounded-lg shadow"><h3 className="text-xl font-semibold mb-4 text-blue-900">Projeção de Valorização (Preço Médio m²)</h3><div className="chart-container"><canvas ref={projectionChartRef}></canvas></div></div>
