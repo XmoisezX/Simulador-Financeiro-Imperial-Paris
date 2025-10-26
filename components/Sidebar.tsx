@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SimulationInput } from '../types';
 import NumberInput from './NumberInput';
+import TextInput from './TextInput'; // Importando o novo componente
 import CollapsibleCard from './CollapsibleCard';
 import { useAuth } from '../src/contexts/AuthContext';
 
@@ -20,6 +21,7 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
     const { supabase, session } = useAuth();
     const [savedSimulations, setSavedSimulations] = useState<SavedSimulation[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [simulationName, setSimulationName] = useState(''); // Estado para o nome da simulação
 
     const fetchSimulations = async () => {
         if (!session) return;
@@ -46,11 +48,14 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
     }, [session]);
 
     const handleSave = async () => {
-        const name = prompt("Digite um nome para esta simulação:");
-        if (name && session) {
+        if (!simulationName.trim()) {
+            alert("Por favor, digite um nome para a simulação antes de salvar.");
+            return;
+        }
+        if (session) {
             const { error } = await supabase.from('simulations').insert({
                 user_id: session.user.id,
-                name: name,
+                name: simulationName.trim(),
                 inputs: inputs,
             });
 
@@ -59,6 +64,7 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
                 alert('Erro ao salvar a simulação.');
             } else {
                 alert('Simulação salva com sucesso!');
+                setSimulationName(''); // Limpa o campo após salvar
                 fetchSimulations(); // Refresh the list
             }
         }
@@ -78,13 +84,20 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
 
     return (
         <aside className="w-full lg:w-[420px] lg:flex-shrink-0 bg-white p-6 border-r border-gray-200 overflow-y-auto lg:h-[calc(100vh-88px)] lg:sticky top-[88px]">
-            <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-dark-text">Parâmetros</h2>
+            <div className="space-y-4 mb-6">
+                 <h2 className="text-xl font-bold text-dark-text">Parâmetros</h2>
+                 <TextInput 
+                    label="Nome da Simulação"
+                    id="simulationName"
+                    value={simulationName}
+                    onChange={(e) => setSimulationName(e.target.value)}
+                    placeholder="Ex: Cenário Otimista"
+                />
                 <button
                     onClick={handleSave}
-                    className="px-4 py-2 text-sm font-medium text-white bg-primary-orange rounded-md hover:bg-secondary-orange transition-colors"
+                    className="w-full px-4 py-2 text-sm font-medium text-white bg-primary-orange rounded-md hover:bg-secondary-orange transition-colors"
                 >
-                    Salvar Simulação
+                    Salvar Simulação Atual
                 </button>
             </div>
             

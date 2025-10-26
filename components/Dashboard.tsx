@@ -5,6 +5,7 @@ import CashFlowChart from './CashFlowChart';
 import RevenueChart from './RevenueChart';
 import ResultsTable from './ResultsTable';
 import CollapsibleCard from './CollapsibleCard';
+import ExportButtons from './ExportButtons'; // Importando o novo componente
 
 const formatCurrency = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -15,6 +16,12 @@ const Dashboard: React.FC<{ results: SimulationResult, inputs: SimulationInput }
 
     return (
         <div className="space-y-8 animate-fade-in">
+            {/* Header com botões de exportação */}
+            <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-dark-text">Dashboard de Resultados</h2>
+                <ExportButtons monthlyData={monthlyData} totals={totals} />
+            </div>
+
             {/* KPI Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <KpiCard title="Caixa Final Acumulado" value={formatCurrency(summary.finalCash)} status={summary.isViable ? 'positive' : 'negative'} />
