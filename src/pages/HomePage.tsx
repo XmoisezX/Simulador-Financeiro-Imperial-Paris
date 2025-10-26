@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { SimulationInput, SimulationResult } from '../../types';
 import { useFinancialSimulator } from '../../hooks/useFinancialSimulator';
 import { initialSimulationInputs } from '../../constants';
-import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import Sidebar from '../../components/Sidebar';
 import Dashboard from '../../components/Dashboard';
@@ -40,8 +39,7 @@ const HomePage: React.FC = () => {
     }, []);
     
     return (
-        <div className="flex flex-col min-h-screen bg-gray-50 font-sans">
-            <Header />
+        <>
             <div className="flex flex-1 flex-col lg:flex-row">
                 <Sidebar inputs={inputs} onInputChange={handleInputChange} onLoadSimulation={handleLoadSimulation} />
                 <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
@@ -61,7 +59,7 @@ const HomePage: React.FC = () => {
                 </main>
             </div>
             <Footer />
-        </div>
+        </>
     );
 };
 
