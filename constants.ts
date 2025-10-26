@@ -1,0 +1,47 @@
+
+import { SimulationInput } from './types';
+
+export const initialSimulationInputs: SimulationInput = {
+    avgSaleValue: 300000,
+    avgRentalValue: 2500,
+    taxRate: 6,
+    propertyPayment1Month: 6,
+    propertyPayment1Amount: 40000,
+    propertyPayment2Month: 12,
+    propertyPayment2Amount: 275000,
+    initialCash: 0,
+    // Detailed fixed costs
+    custoContabilidade: 100,
+    custoCRM: 470.30,
+    custoInternetTel: 150,
+    custoAguaLuz: 300,
+    custoOutrosFixos: 200,
+    taxaSelicEstimadaAnual: 10,
+    outrosCustosVarPercentFatBruto: 1,
+    // End detailed fixed costs
+    proLaboreTotal: 6000,
+    marketingBaseCost: 500,
+    marketingExpandedCost: 3000,
+    expansionStartMonth: 5,
+    numberOfInterns: 2,
+    internCost: 1000,
+    numberOfBrokers: 4,
+    slowStartMonths: 3,
+    salesTargetPartnersSlow: 1,
+    rentalsTargetSlow: 4,
+    salesTargetPartnersFull: 3,
+    salesTargetBrokersFull: 1, // Per broker
+    percRampaMes1: 50,
+    percRampaMes2: 75,
+    percRampaMes3: 100,
+    rentalsTargetFull: 8,
+    commissionRateSale: 6,
+    partnerCommissionVarSale: 20,
+    brokerCommissionSale: 3,
+    brokerCommissionListing: 1,
+    brokerInternalListingRatio: 50,
+    partnerCommissionVarRental1st: 30,
+    brokerCommissionRental1stPercent: 0,
+    brokerCommissionRentalAdminPercent: 0,
+    commissionRateRentalAdmin: 10,
+};

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Simulador Financeiro - Imperial Paris Imóveis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'primary-orange': '#ff6600',
+              'secondary-orange': '#ff8533',
+              'light-orange-bg': '#fffaf0',
+              'dark-text': '#333333',
+              'light-text': '#666666',
+              'kpi-value-color': '#d95a00',
+            },
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+            animation: {
+              'fade-in': 'fadeIn 0.5s ease-in-out',
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
+              },
+            },
+          }
+        }
+      }
+    </script>
+    <style>
+      /* Hiding number input arrows */
+      input[type=number]::-webkit-inner-spin-button,
+      input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      input[type=number] {
+        -moz-appearance: textfield; /* Firefox */
+      }
+      /* Styling for details/summary accordion */
+      details > summary {
+        list-style: none;
+      }
+      details > summary::-webkit-details-marker {
+        display: none;
+      }
+      details summary .chevron {
+        transition: transform 0.2s;
+      }
+      details[open] summary .chevron {
+        transform: rotate(180deg);
+      }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="bg-gray-100 text-dark-text">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+</body>
+</html>
