@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import PerformanceBenchmarkPage from './PerformanceBenchmarkPage';
 
 // Let TypeScript know Chart.js is available on the window object from the CDN
 declare var Chart: any;
@@ -185,12 +186,13 @@ const MarketAnalysisPage: React.FC = () => {
 
             <nav className="sticky top-[88px] bg-white z-10 shadow-md">
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex space-x-4 sm:space-x-8 -mb-px">
+                    <div className="flex space-x-4 sm:space-x-8 -mb-px overflow-x-auto">
                         <button className={tabButtonClasses('tab-overview')} onClick={() => setActiveTab('tab-overview')}>Visão Geral</button>
                         <button className={tabButtonClasses('tab-bairros')} onClick={() => setActiveTab('tab-bairros')}>Análise por Bairro</button>
                         <button className={tabButtonClasses('tab-tipos')} onClick={() => setActiveTab('tab-tipos')}>Tipos de Imóvel</button>
                         <button className={tabButtonClasses('tab-projecoes')} onClick={() => setActiveTab('tab-projecoes')}>Projeções 2026</button>
                         <button className={tabButtonClasses('tab-brasil')} onClick={() => setActiveTab('tab-brasil')}>Benchmark Brasil</button>
+                        <button className={tabButtonClasses('tab-performance')} onClick={() => setActiveTab('tab-performance')}>Benchmark de Performance</button>
                     </div>
                 </div>
             </nav>
@@ -270,6 +272,8 @@ const MarketAnalysisPage: React.FC = () => {
                         <strong>Nota:</strong> Os dados apresentados referem-se exclusivamente a vendas de imóveis. Não foram fornecidos dados equivalentes para o mercado de aluguéis.
                     </p>
                 </div>}
+
+                {activeTab === 'tab-performance' && <PerformanceBenchmarkPage />}
             </main>
 
             <footer className="text-center text-slate-500 text-sm py-8 mt-8 border-t border-slate-200">
