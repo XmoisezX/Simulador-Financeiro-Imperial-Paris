@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { SimulationInput, MonthlyResult, SimulationResult } from '../types';
 
@@ -11,7 +10,7 @@ export const useFinancialSimulator = () => {
         let totalGrossSales = 0, totalGrossRental1st = 0, totalGrossRentalAdmin = 0, totalGrossRevenue = 0;
         let totalTax = 0, totalCommVarSaleS = 0, totalCommVarSaleC = 0, totalCommVarRent1stS = 0;
         let totalNetRevenueForFixedCosts = 0, totalFixedCosts = 0, totalPropertyPayments = 0;
-        let totalSalesCount = 0, totalRentalsCount = 0;
+        let totalSalesCount = 0, totalRentalsCount = 0, totalVgv = 0;
 
         const baseFixedCosts = inputs.custoContabilidade + inputs.custoCRM + inputs.custoInternetTel + inputs.custoAguaLuz + inputs.custoOutrosFixos;
 
@@ -33,6 +32,7 @@ export const useFinancialSimulator = () => {
             const currentRentalsTarget = isSlowMonth ? inputs.rentalsTargetSlow : inputs.rentalsTargetFull;
             const salesCount = currentSalesTargetPartners + currentSalesTargetBrokers;
             const rentalsCount = currentRentalsTarget;
+            const vgv = salesCount * inputs.avgSaleValue;
 
             const currentMarketingCost = isExpansionActive ? inputs.marketingExpandedCost : inputs.marketingBaseCost;
             const currentInternCostTotal = isExpansionActive ? inputs.numberOfInterns * inputs.internCost : 0;
@@ -102,7 +102,8 @@ export const useFinancialSimulator = () => {
                 rentalsCount,
                 contributionMarginPercent,
                 operatingProfitabilityPercent,
-                breakEvenPoint
+                breakEvenPoint,
+                vgv
             });
 
             totalGrossSales += grossRevenueSales;
@@ -118,6 +119,7 @@ export const useFinancialSimulator = () => {
             totalPropertyPayments += currentPropertyPayment;
             totalSalesCount += salesCount;
             totalRentalsCount += rentalsCount;
+            totalVgv += vgv;
         }
 
         const totals = {
@@ -135,6 +137,7 @@ export const useFinancialSimulator = () => {
             finalAccumulatedCashFlow: accumulatedCashFlow,
             totalSalesCount,
             totalRentalsCount,
+            totalVgv,
             avgContributionMarginPercent: totalGrossRevenue > 0 ? (totalNetRevenueForFixedCosts / totalGrossRevenue) * 100 : 0,
             avgOperatingProfitabilityPercent: totalGrossRevenue > 0 ? ((totalNetRevenueForFixedCosts - totalFixedCosts) / totalGrossRevenue) * 100 : 0,
             avgBreakEvenPoint: monthlyData.reduce((acc, row) => acc + row.breakEvenPoint, 0) / 12,
