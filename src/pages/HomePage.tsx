@@ -34,6 +34,10 @@ const HomePage: React.FC = () => {
     const handleExtendSimulation = useCallback(() => {
         setDuration(prevDuration => prevDuration + 12);
     }, []);
+
+    const handleGoBackSimulation = useCallback(() => {
+        setDuration(prevDuration => (prevDuration > 12 ? prevDuration - 12 : 12));
+    }, []);
     
     return (
         <div className="flex flex-col min-h-screen bg-gray-50 font-sans">
@@ -42,7 +46,13 @@ const HomePage: React.FC = () => {
                 <Sidebar inputs={inputs} onInputChange={handleInputChange} onLoadSimulation={handleLoadSimulation} />
                 <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
                     {results ? (
-                        <Dashboard results={results} inputs={inputs} onExtend={handleExtendSimulation} />
+                        <Dashboard 
+                            results={results} 
+                            inputs={inputs} 
+                            onExtend={handleExtendSimulation}
+                            onGoBack={handleGoBackSimulation}
+                            duration={duration}
+                        />
                     ) : (
                         <div className="flex items-center justify-center h-full">
                             <p className="text-xl text-gray-500">Gerando simulação...</p>

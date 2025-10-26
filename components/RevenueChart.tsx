@@ -44,6 +44,11 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ data }) => {
                             data: data.map(d => d.grossRevenueRentalAdmin),
                             backgroundColor: '#10b981',
                         },
+                        {
+                            label: 'Regularização',
+                            data: data.map(d => d.grossRevenueRegularization),
+                            backgroundColor: '#facc15', // Amarelo
+                        },
                     ]
                 },
                 options: {

@@ -125,6 +125,10 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
                         <NumberInput label="Valor Médio Aluguel" id="avgRentalValue" value={inputs.avgRentalValue} onChange={onInputChange} step={100} placeholder="2500" title="Valor do primeiro aluguel (comissão) e base para o cálculo da administração mensal." isCurrency />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
+                        <NumberInput label="Média Reg./Mês" id="avgRegularizationsPerMonth" value={inputs.avgRegularizationsPerMonth} onChange={onInputChange} step={1} placeholder="1" title="Média de regularizações de imóveis por mês." />
+                        <NumberInput label="Valor Médio Reg." id="avgRegularizationValue" value={inputs.avgRegularizationValue} onChange={onInputChange} step={500} placeholder="3000" title="Valor médio cobrado por cada regularização de imóvel." isCurrency />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
                         <NumberInput label="Alíquota SN (%)" id="taxRate" value={inputs.taxRate} onChange={onInputChange} step={0.1} placeholder="6" title="Alíquota percentual do Simples Nacional que incide sobre o Faturamento Bruto Total." />
                         <NumberInput label="Outros Custos Var. (%)" id="outrosCustosVarPercentFatBruto" value={inputs.outrosCustosVarPercentFatBruto} onChange={onInputChange} step={0.5} placeholder="1" title="Percentual de outros custos variáveis que incidem sobre o Faturamento Bruto Total (ex: taxas de portal, etc)." />
                     </div>

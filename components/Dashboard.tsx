@@ -5,11 +5,17 @@ import CashFlowChart from './CashFlowChart';
 import RevenueChart from './RevenueChart';
 import ResultsTable from './ResultsTable';
 import CollapsibleCard from './CollapsibleCard';
-import ExportButtons from './ExportButtons'; // Importando o novo componente
+import ExportButtons from './ExportButtons';
 
 const formatCurrency = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-const Dashboard: React.FC<{ results: SimulationResult, inputs: SimulationInput, onExtend: () => void }> = ({ results, inputs, onExtend }) => {
+const Dashboard: React.FC<{ 
+    results: SimulationResult, 
+    inputs: SimulationInput, 
+    onExtend: () => void,
+    onGoBack: () => void,
+    duration: number
+}> = ({ results, inputs, onExtend, onGoBack, duration }) => {
     const { summary, monthlyData, totals } = results;
     
     const totalNetRevenue = totals.netRevenueForFixedCosts - totals.totalFixedCosts;
@@ -20,6 +26,13 @@ const Dashboard: React.FC<{ results: SimulationResult, inputs: SimulationInput, 
             <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-dark-text">Dashboard de Resultados</h2>
                 <div className="flex items-center space-x-2">
+                    <button
+                        onClick={onGoBack}
+                        disabled={duration <= 12}
+                        className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        Voltar 12 Meses
+                    </button>
                     <button
                         onClick={onExtend}
                         className="px-4 py-2 text-sm font-medium text-primary-orange border border-primary-orange rounded-md hover:bg-orange-50 transition-colors"

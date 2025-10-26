@@ -7,7 +7,7 @@ export const useFinancialSimulator = () => {
         let accumulatedCashFlow = inputs.initialCash;
         let accumulatedRentalContracts = 0;
 
-        let totalGrossSales = 0, totalGrossRental1st = 0, totalGrossRentalAdmin = 0, totalGrossRevenue = 0;
+        let totalGrossSales = 0, totalGrossRental1st = 0, totalGrossRentalAdmin = 0, totalGrossRegularization = 0, totalGrossRevenue = 0;
         let totalTax = 0, totalCommVarSaleS = 0, totalCommVarSaleC = 0, totalCommVarRent1stS = 0;
         let totalNetRevenueForFixedCosts = 0, totalFixedCosts = 0, totalPropertyPayments = 0;
         let totalSalesCount = 0, totalRentalsCount = 0, totalVgv = 0;
@@ -50,8 +50,9 @@ export const useFinancialSimulator = () => {
             
             const grossRevenueRental1st = currentRentalsTarget * inputs.avgRentalValue;
             const grossRevenueRentalAdmin = accumulatedRentalContracts * inputs.avgRentalValue * (inputs.commissionRateRentalAdmin / 100);
+            const grossRevenueRegularization = inputs.avgRegularizationsPerMonth * inputs.avgRegularizationValue;
             
-            const grossRevenueTotal = grossRevenueSales + grossRevenueRental1st + grossRevenueRentalAdmin;
+            const grossRevenueTotal = grossRevenueSales + grossRevenueRental1st + grossRevenueRentalAdmin + grossRevenueRegularization;
             const taxAmount = grossRevenueTotal * (inputs.taxRate / 100);
 
             const commissionVarSalesPartners = grossRevenueSalesPartners * (inputs.partnerCommissionVarSale / 100);
@@ -94,6 +95,7 @@ export const useFinancialSimulator = () => {
                 grossRevenueSales,
                 grossRevenueRental1st,
                 grossRevenueRentalAdmin,
+                grossRevenueRegularization,
                 grossRevenueTotal,
                 taxAmount,
                 commissionVarSalesPartners,
@@ -115,6 +117,7 @@ export const useFinancialSimulator = () => {
             totalGrossSales += grossRevenueSales;
             totalGrossRental1st += grossRevenueRental1st;
             totalGrossRentalAdmin += grossRevenueRentalAdmin;
+            totalGrossRegularization += grossRevenueRegularization;
             totalGrossRevenue += grossRevenueTotal;
             totalTax += taxAmount;
             totalCommVarSaleS += commissionVarSalesPartners;
@@ -132,6 +135,7 @@ export const useFinancialSimulator = () => {
             grossRevenueSales: totalGrossSales,
             grossRevenueRental1st: totalGrossRental1st,
             grossRevenueRentalAdmin: totalGrossRentalAdmin,
+            grossRevenueRegularization: totalGrossRegularization,
             grossRevenueTotal: totalGrossRevenue,
             taxAmount: totalTax,
             commissionVarSalesPartners: totalCommVarSaleS,

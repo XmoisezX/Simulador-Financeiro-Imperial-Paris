@@ -32,20 +32,21 @@ const TD: React.FC<{ children: React.ReactNode, className?: string }> = ({ child
 
 const ResultsTable: React.FC<ResultsTableProps> = ({ monthlyData, totals, taxRate }) => {
     const headers = [
-        "Mês", "Nº Vendas", "VGV", "Nº Aluguéis", "Fat Bruto Venda", "Fat Bruto Alug (1º)", "Fat Bruto Alug (Adm)", "Fat Bruto Total",
+        "Mês", "Nº Vendas", "VGV", "Nº Aluguéis", "Fat Bruto Venda", "Fat Bruto Alug (1º)", "Fat Bruto Alug (Adm)", "Fat Bruto Reg.", "Fat Bruto Total",
         `Imposto SN (${taxRate}%)`, "Com Var Venda (S)", "Com Var Venda (C)", "Com Var Alug (1º S)",
         "Rec Líquida (p/ CF)", "Custo Fixo Total", "Pagto Imóvel", "Fluxo Caixa Mês", "Fluxo Caixa Acum.",
         "Margem Contrib.", "Lucratividade Op.", "Ponto Equil."
     ];
 
     const tooltips: { [key: string]: string } = {
-        "Mês": "Mês da simulação (1 a 12).",
+        "Mês": "Mês da simulação.",
         "Nº Vendas": "Número total de vendas realizadas no mês (sócios + corretores).",
         "VGV": "Valor Geral de Vendas. (Nº Vendas * Valor Médio Venda). Representa o valor total dos imóveis transacionados.",
         "Nº Aluguéis": "Número de novos contratos de aluguel fechados no mês.",
         "Fat Bruto Venda": "Faturamento Bruto Total gerado apenas pelas vendas no mês. (Nº Vendas * Valor Médio Venda * % Comissão Empresa)",
         "Fat Bruto Alug (1º)": "Faturamento Bruto gerado pelos novos contratos de aluguel. (Nº Aluguéis Novos * Valor Médio Aluguel)",
         "Fat Bruto Alug (Adm)": "Faturamento Bruto recorrente da administração dos contratos de aluguel acumulados. (Nº Contratos Acum. * Valor Médio Aluguel * % Admin.)",
+        "Fat Bruto Reg.": "Faturamento Bruto gerado pela regularização de imóveis.",
         "Fat Bruto Total": "Soma de todo o faturamento bruto no mês. Base de cálculo para o imposto.",
         [`Imposto SN (${taxRate}%)`]: `Valor do imposto Simples Nacional a ser pago. (Faturamento Bruto Total * ${taxRate}%)`,
         "Com Var Venda (S)": "Comissão variável paga aos sócios sobre as vendas que eles realizaram.",
@@ -63,7 +64,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ monthlyData, totals, taxRat
 
     return (
          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1700px] border-collapse">
+            <table className="w-full min-w-[1800px] border-collapse">
                 <thead>
                     <tr className="bg-orange-100 text-kpi-value-color font-semibold tracking-wider">
                         {headers.map((header, index) => (
@@ -83,6 +84,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ monthlyData, totals, taxRat
                             <TD>{formatCurrency(row.grossRevenueSales)}</TD>
                             <TD>{formatCurrency(row.grossRevenueRental1st)}</TD>
                             <TD>{formatCurrency(row.grossRevenueRentalAdmin)}</TD>
+                            <TD>{formatCurrency(row.grossRevenueRegularization)}</TD>
                             <TD>{formatCurrency(row.grossRevenueTotal)}</TD>
                             <TD>{formatCurrency(row.taxAmount)}</TD>
                             <TD>{formatCurrency(row.commissionVarSalesPartners)}</TD>
@@ -108,6 +110,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ monthlyData, totals, taxRat
                         <TD>{formatCurrency(totals.grossRevenueSales)}</TD>
                         <TD>{formatCurrency(totals.grossRevenueRental1st)}</TD>
                         <TD>{formatCurrency(totals.grossRevenueRentalAdmin)}</TD>
+                        <TD>{formatCurrency(totals.grossRevenueRegularization)}</TD>
                         <TD>{formatCurrency(totals.grossRevenueTotal)}</TD>
                         <TD>{formatCurrency(totals.taxAmount)}</TD>
                         <TD>{formatCurrency(totals.commissionVarSalesPartners)}</TD>
