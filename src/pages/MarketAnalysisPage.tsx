@@ -153,7 +153,7 @@ const MarketAnalysisPage: React.FC = () => {
 
             <main className="container mx-auto p-4 sm:p-6 lg:p-8">
                 {activeTab === 'tab-overview' && <div className="animate-fade-in">
-                    <p className="text-base text-slate-700 mb-6 max-w-3xl">Esta seção apresenta uma visão macro do mercado imobiliário em Pelotas...</p>
+                    <p className="text-base text-slate-700 mb-6 max-w-3xl">Esta seção apresenta uma visão macro do mercado imobiliário em Pelotas, destacando os principais indicadores de desempenho (KPIs) e a tendência de valorização geral dos imóveis na área urbana. Use estes dados como um ponto de partida para entender a saúde e a direção do mercado.</p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-8">
                         <div className="kpi-card"><h2 className="kpi-title">Preço Médio m² (Urbano)</h2><p className="kpi-value">R$ 5.150</p></div>
                         <div className="kpi-card"><h2 className="kpi-title">Liquidez Média (Usados)</h2><p className="kpi-value">135 Dias</p></div>
