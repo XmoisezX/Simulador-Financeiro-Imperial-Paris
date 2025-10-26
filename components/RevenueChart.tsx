@@ -86,7 +86,7 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ data }) => {
         };
     }, [data]);
 
-    return <div className="relative h-[350px]"><canvas ref={chartRef}></canvas></div>;
+    return <div className="relative h-[350px]"><canvas ref={chartRef} id="revenueChartCanvas"></canvas></div>;
 };
 
 export default RevenueChart;

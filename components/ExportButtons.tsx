@@ -91,9 +91,29 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({ monthlyData, totals }) =>
             orientation: 'landscape',
         });
 
+        doc.text("Relatório da Simulação Financeira - Gráficos", 14, 16);
+
+        const cashFlowCanvas = document.getElementById('cashFlowChartCanvas') as HTMLCanvasElement;
+        const revenueCanvas = document.getElementById('revenueChartCanvas') as HTMLCanvasElement;
+
+        const addChartToPdf = (canvas: HTMLCanvasElement, x: number, y: number) => {
+            if (canvas) {
+                const chartImage = canvas.toDataURL('image/png', 1.0);
+                const aspectRatio = canvas.width / canvas.height;
+                const imageWidth = 130;
+                const imageHeight = imageWidth / aspectRatio;
+                doc.addImage(chartImage, 'PNG', x, y, imageWidth, imageHeight);
+            }
+        };
+
+        addChartToPdf(cashFlowCanvas, 14, 25);
+        addChartToPdf(revenueCanvas, 154, 25);
+
+        doc.addPage();
+        doc.text("Relatório da Simulação Financeira - Dados Detalhados", 14, 16);
+
         const { data, totalsRow } = getExportData();
 
-        doc.text("Relatório da Simulação Financeira", 14, 16);
         autoTable(doc, {
             head: [headers],
             body: data,
@@ -105,18 +125,18 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({ monthlyData, totals }) =>
                 cellPadding: 1,
             },
             headStyles: {
-                fillColor: [255, 102, 0], // primary-orange
+                fillColor: [255, 102, 0],
                 textColor: 255,
                 fontStyle: 'bold',
             },
             footStyles: {
-                fillColor: [229, 231, 235], // gray-200
+                fillColor: [229, 231, 235],
                 textColor: 0,
                 fontStyle: 'bold',
             },
         });
 
-        doc.save('relatorio_simulacao.pdf');
+        doc.save('relatorio_simulacao_completo.pdf');
     };
 
     return (
