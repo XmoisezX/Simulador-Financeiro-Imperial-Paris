@@ -24,6 +24,8 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
     const [isLoading, setIsLoading] = useState(false);
     const [simulationName, setSimulationName] = useState('');
     const [currentSimulationId, setCurrentSimulationId] = useState<string | null>(null);
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editingName, setEditingName] = useState('');
 
     const fetchSimulations = async () => {
         if (!session) return;
@@ -85,7 +87,6 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
         }
     };
     
-    // This function now takes the ID explicitly, ensuring we update the correct record.
     const handleUpdate = async (id: string) => {
         if (!simulationName.trim()) {
              alert("O nome da simulação não pode estar vazio.");
@@ -134,6 +135,46 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
     const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSimulationName(e.target.value);
     };
+    
+    const startRename = (sim: SavedSimulation) => {
+        setEditingId(sim.id);
+        setEditingName(sim.name);
+    };
+
+    const handleRename = async (id: string) => {
+        const newName = editingName.trim();
+        if (!newName) {
+            alert("O nome da simulação não pode estar vazio.");
+            return;
+        }
+        
+        if (session) {
+            const { error } = await supabase
+                .from('simulations')
+                .update({ name: newName })
+                .match({ id: id, user_id: session.user.id });
+
+            if (error) {
+                console.error('Error renaming simulation:', error);
+                alert('Erro ao renomear a simulação.');
+            } else {
+                // If the renamed simulation is the currently loaded one, update the main input name state
+                if (currentSimulationId === id) {
+                    setSimulationName(newName);
+                }
+                setEditingId(null);
+                fetchSimulations(); // Refresh the list
+            }
+        }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, id: string) => {
+        if (e.key === 'Enter') {
+            handleRename(id);
+        } else if (e.key === 'Escape') {
+            setEditingId(null);
+        }
+    };
 
     return (
         <aside className="w-full lg:w-[420px] lg:flex-shrink-0 bg-white p-6 border-r border-gray-200 overflow-y-auto lg:h-[calc(100vh-88px)] lg:sticky top-[88px]">
@@ -176,9 +217,27 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
                         <div className="space-y-2">
                             {savedSimulations.length > 0 ? savedSimulations.map(sim => (
                                 <div key={sim.id} className={`flex justify-between items-center p-2 rounded-md transition-colors ${currentSimulationId === sim.id ? 'bg-blue-100 border border-blue-300' : 'hover:bg-gray-100'}`}>
-                                    <button onClick={() => handleLoad(sim)} className="text-left text-blue-600 hover:underline font-medium flex-1 min-w-0 truncate pr-2">
-                                        {sim.name} {currentSimulationId === sim.id && '(Atual)'}
-                                    </button>
+                                    {editingId === sim.id ? (
+                                        <TextInput
+                                            label=""
+                                            id={`rename-${sim.id}`}
+                                            value={editingName}
+                                            onChange={(e) => setEditingName(e.target.value)}
+                                            onBlur={() => handleRename(sim.id)}
+                                            onKeyDown={(e) => handleKeyDown(e, sim.id)}
+                                            className="flex-1 min-w-0 mr-2"
+                                            autoFocus
+                                        />
+                                    ) : (
+                                        <button 
+                                            onClick={() => handleLoad(sim)} 
+                                            onDoubleClick={() => startRename(sim)}
+                                            className="text-left text-blue-600 hover:underline font-medium flex-1 min-w-0 truncate pr-2"
+                                            title="Clique para carregar. Duplo clique para renomear."
+                                        >
+                                            {sim.name} {currentSimulationId === sim.id && '(Atual)'}
+                                        </button>
+                                    )}
                                     <div className="flex space-x-2 items-center">
                                         {currentSimulationId === sim.id && (
                                             <button
