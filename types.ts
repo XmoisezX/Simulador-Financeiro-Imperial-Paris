@@ -50,6 +50,9 @@ export interface SimulationInput {
   brokerCommissionRental1stPercent: number;
   brokerCommissionRentalAdminPercent: number;
   commissionRateRentalAdmin: number;
+  // Novos campos para estagiários
+  internCommissionRental1stPercent: number; // Comissão % sobre 1º aluguel
+  internRentalRatio: number; // Proporção de aluguéis (0-100%)
 }
 
 export interface MonthlyResult {

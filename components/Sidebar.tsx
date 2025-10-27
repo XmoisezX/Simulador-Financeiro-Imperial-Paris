@@ -382,6 +382,12 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
                         <NumberInput label="Var. Corr. (1º Alug.)" id="brokerCommissionRental1stPercent" value={inputs.brokerCommissionRental1stPercent} onChange={onInputChange} step={1} title="Comissão paga a corretores sobre novos aluguéis (se aplicável)." />
                         <NumberInput label="Var. Corr. (Admin.)" id="brokerCommissionRentalAdminPercent" value={inputs.brokerCommissionRentalAdminPercent} onChange={onInputChange} step={0.5} title="Comissão paga a corretores sobre a administração de aluguéis (se aplicável)." />
                     </div>
+                    
+                    <h3 className="text-md font-semibold text-light-text border-t pt-4 mt-2">Comissões Estagiários (Aluguel)</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        <NumberInput label="Comissão Estag. (1º Alug. %)" id="internCommissionRental1stPercent" value={inputs.internCommissionRental1stPercent} onChange={onInputChange} step={1} title="Comissão paga aos estagiários sobre o valor do primeiro aluguel (em %)." />
+                        <NumberInput label="Proporção Alug. Estag. (%)" id="internRentalRatio" value={inputs.internRentalRatio} onChange={onInputChange} step={5} title="Percentual dos novos contratos de aluguel que são atribuídos aos estagiários." />
+                    </div>
                 </CollapsibleCard>
             </div>
         </aside>

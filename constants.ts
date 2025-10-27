@@ -54,4 +54,7 @@ export const initialSimulationInputs: SimulationInput = {
     brokerCommissionRental1stPercent: 0,
     brokerCommissionRentalAdminPercent: 0,
     commissionRateRentalAdmin: 10,
+    // Novos campos para estagiários
+    internCommissionRental1stPercent: 10, // 10% de comissão sobre o 1º aluguel
+    internRentalRatio: 20, // 20% dos aluguéis são provenientes de estagiários
 };
