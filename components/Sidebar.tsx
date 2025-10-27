@@ -22,6 +22,7 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
     const [savedSimulations, setSavedSimulations] = useState<SavedSimulation[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [simulationName, setSimulationName] = useState('');
+    const [currentSimulationId, setCurrentSimulationId] = useState<string | null>(null);
 
     const fetchSimulations = async () => {
         if (!session) return;
@@ -65,11 +66,33 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
             } else {
                 alert('Simulação salva com sucesso!');
                 setSimulationName('');
+                setCurrentSimulationId(null);
                 fetchSimulations();
             }
         }
     };
     
+    const handleUpdate = async () => {
+        if (!currentSimulationId) {
+            alert("Nenhuma simulação selecionada para atualizar.");
+            return;
+        }
+        if (session) {
+            const { error } = await supabase
+                .from('simulations')
+                .update({ inputs: inputs, name: simulationName.trim() })
+                .match({ id: currentSimulationId, user_id: session.user.id });
+
+            if (error) {
+                console.error('Error updating simulation:', error);
+                alert('Erro ao atualizar a simulação.');
+            } else {
+                alert(`Simulação "${simulationName}" atualizada com sucesso!`);
+                fetchSimulations();
+            }
+        }
+    };
+
     const handleDelete = async (id: string) => {
         if (confirm("Tem certeza que deseja excluir esta simulação?")) {
             const { error } = await supabase.from('simulations').delete().match({ id });
@@ -77,10 +100,22 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
                 alert('Erro ao excluir a simulação.');
             } else {
                 alert('Simulação excluída.');
+                if (currentSimulationId === id) {
+                    setCurrentSimulationId(null);
+                    setSimulationName('');
+                }
                 fetchSimulations();
             }
         }
     };
+    
+    const handleLoad = (sim: SavedSimulation) => {
+        onLoadSimulation(sim.inputs);
+        setSimulationName(sim.name);
+        setCurrentSimulationId(sim.id);
+    };
+
+    const isUpdateMode = currentSimulationId !== null;
 
     return (
         <aside className="w-full lg:w-[420px] lg:flex-shrink-0 bg-white p-6 border-r border-gray-200 overflow-y-auto lg:h-[calc(100vh-88px)] lg:sticky top-[88px]">
@@ -90,15 +125,44 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
                     label="Nome da Simulação"
                     id="simulationName"
                     value={simulationName}
-                    onChange={(e) => setSimulationName(e.target.value)}
+                    onChange={(e) => {
+                        setSimulationName(e.target.value);
+                        // Clear current ID if the name changes, unless it matches an existing one
+                        const matchingSim = savedSimulations.find(sim => sim.name === e.target.value);
+                        setCurrentSimulationId(matchingSim ? matchingSim.id : null);
+                    }}
                     placeholder="Ex: Cenário Otimista"
                 />
-                <button
-                    onClick={handleSave}
-                    className="w-full px-4 py-2 text-sm font-medium text-white bg-primary-orange rounded-md hover:bg-secondary-orange transition-colors"
-                >
-                    Salvar Simulação Atual
-                </button>
+                <div className="flex space-x-2">
+                    <button
+                        onClick={handleSave}
+                        className={`w-full px-4 py-2 text-sm font-medium text-white rounded-md transition-colors ${isUpdateMode ? 'bg-gray-400 hover:bg-gray-500' : 'bg-primary-orange hover:bg-secondary-orange'}`}
+                        disabled={isUpdateMode}
+                        title={isUpdateMode ? "Desmarque a simulação atual para salvar uma nova" : "Salvar a simulação atual com o nome acima"}
+                    >
+                        Salvar Nova Simulação
+                    </button>
+                    <button
+                        onClick={handleUpdate}
+                        className={`w-full px-4 py-2 text-sm font-medium text-white rounded-md transition-colors ${isUpdateMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'}`}
+                        disabled={!isUpdateMode}
+                        title={isUpdateMode ? `Atualizar a simulação "${simulationName}"` : "Selecione uma simulação salva para atualizar"}
+                    >
+                        Atualizar
+                    </button>
+                </div>
+                {currentSimulationId && (
+                    <button
+                        onClick={() => {
+                            setCurrentSimulationId(null);
+                            setSimulationName('');
+                            onLoadSimulation(initialSimulationInputs);
+                        }}
+                        className="w-full text-sm text-gray-500 hover:text-gray-700 underline mt-2"
+                    >
+                        Limpar Seleção
+                    </button>
+                )}
             </div>
             
             <div className="space-y-4">
@@ -106,9 +170,9 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
                     {isLoading ? <p>Carregando...</p> : (
                         <div className="space-y-2">
                             {savedSimulations.length > 0 ? savedSimulations.map(sim => (
-                                <div key={sim.id} className="flex justify-between items-center p-2 rounded-md hover:bg-gray-100">
-                                    <button onClick={() => onLoadSimulation(sim.inputs)} className="text-left text-blue-600 hover:underline">
-                                        {sim.name}
+                                <div key={sim.id} className={`flex justify-between items-center p-2 rounded-md transition-colors ${currentSimulationId === sim.id ? 'bg-blue-100 border border-blue-300' : 'hover:bg-gray-100'}`}>
+                                    <button onClick={() => handleLoad(sim)} className="text-left text-blue-600 hover:underline font-medium">
+                                        {sim.name} {currentSimulationId === sim.id && '(Atual)'}
                                     </button>
                                     <button onClick={() => handleDelete(sim.id)} className="text-red-500 hover:text-red-700 text-xs">
                                         Excluir
@@ -167,7 +231,7 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
                     <NumberInput label="Mês Início Pró-Labore" id="proLaboreStartMonth" value={inputs.proLaboreStartMonth} onChange={onInputChange} min={1} max={12} title="Mês em que o pagamento do pró-labore para os sócios começará." />
                     <div className="grid grid-cols-3 gap-2 mt-2">
                         <NumberInput label="Alessandro" id="proLaboreAlessandro" value={inputs.proLaboreAlessandro} onChange={onInputChange} step={100} title="Valor do pró-labore mensal para Alessandro Gomes." isCurrency />
-                        <NumberInput label="Tamires" id="proLaboreTamires" value={inputs.proLaboreTamires} onChange={onInputChange} step={100} title="Valor do pró-labore mensal para Tamires Torres." isCurrency />
+                        <NumberInput label="Tamires" id="proLaboreTamires} value={inputs.proLaboreTamires} onChange={onInputChange} step={100} title="Valor do pró-labore mensal para Tamires Torres." isCurrency />
                         <NumberInput label="Moisez" id="proLaboreMoisez" value={inputs.proLaboreMoisez} onChange={onInputChange} step={100} title="Valor do pró-labore mensal para Moisez Torres." isCurrency />
                     </div>
 
