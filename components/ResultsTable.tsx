@@ -73,13 +73,25 @@ const EditableCell: React.FC<EditableCellProps> = ({ month, field, projectedValu
     const isActual = actualValue !== null;
     
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        // Remove non-digit characters (and comma/dot if currency)
-        const rawValue = e.target.value.replace(/[^\d,.]/g, '');
+        const rawValue = e.target.value;
         
-        // Convert to number, handling Brazilian format (comma as decimal separator)
+        if (rawValue.trim() === '') {
+            // Se o campo estiver vazio, passamos null para o handler
+            onActualDataChange(month, field, null);
+            return;
+        }
+        
+        // 1. Remove pontos de milhar (se houver)
+        // 2. Substitui a vírgula decimal por ponto
         const cleanValue = rawValue.replace(/\./g, '').replace(/,/g, '.');
         
-        const numericValue = cleanValue === '' ? null : parseFloat(cleanValue);
+        const numericValue = parseFloat(cleanValue);
+        
+        // Se o valor não for um número válido (NaN), não atualizamos o estado
+        if (isNaN(numericValue)) {
+            // Podemos optar por não fazer nada ou passar null se o usuário limpar o campo
+            return; 
+        }
         
         onActualDataChange(month, field, numericValue);
     };
@@ -94,19 +106,26 @@ const EditableCell: React.FC<EditableCellProps> = ({ month, field, projectedValu
         return <TD className={`text-right ${isCurrency ? '' : 'text-center'}`}>{isCurrency ? formatCurrency(projectedValue) : (isInteger ? projectedValue.toFixed(0) : projectedValue.toFixed(2))}</TD>;
     }
 
+    // Para meses passados, usamos o valor real (se existir) ou o projetado para preencher o input
+    const inputValue = actualValue !== null 
+        ? (isCurrency ? new Intl.NumberFormat('pt-BR').format(actualValue) : (isInteger ? Math.round(actualValue).toString() : actualValue.toFixed(2)))
+        : ''; // Se não houver valor real, o input começa vazio para facilitar a digitação
+
+    const projectedDisplay = isCurrency ? formatCurrency(projectedValue) : (isInteger ? projectedValue.toFixed(0) : projectedValue.toFixed(2));
+
     return (
         <td className="p-0">
             <div className={`flex flex-col items-end justify-center h-full p-1 ${isActual ? 'bg-yellow-100' : 'bg-white'}`}>
                 <input
                     type="text"
-                    value={formattedDisplayValue}
+                    value={inputValue}
                     onChange={handleChange}
-                    placeholder={isCurrency ? formatCurrency(projectedValue) : (isInteger ? projectedValue.toFixed(0) : projectedValue.toFixed(2))}
+                    placeholder={projectedDisplay}
                     className={`w-full text-right text-xs md:text-sm border-none focus:ring-0 p-0 m-0 bg-transparent ${isActual ? 'font-bold text-dark-text' : 'text-gray-500'}`}
                     style={{ minWidth: isCurrency ? '100px' : '50px' }}
                 />
                 <span className="text-[10px] text-gray-400 italic">
-                    {isActual ? `Proj: ${isCurrency ? formatCurrency(projectedValue) : (isInteger ? projectedValue.toFixed(0) : projectedValue.toFixed(2))}` : 'Projetado'}
+                    {isActual ? `Proj: ${projectedDisplay}` : 'Projetado'}
                 </span>
             </div>
         </td>
