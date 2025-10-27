@@ -39,6 +39,10 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
             alert('Não foi possível carregar as simulações salvas.');
         } else {
             setSavedSimulations(data as SavedSimulation[]);
+            // If the currently loaded simulation was deleted or renamed externally, ensure state consistency
+            if (currentSimulationId && !data.some(sim => sim.id === currentSimulationId)) {
+                 setCurrentSimulationId(null);
+            }
         }
         setIsLoading(false);
     };
@@ -59,32 +63,30 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
             const existingSim = savedSimulations.find(sim => sim.name.trim() === simulationName.trim());
             
             if (existingSim) {
-                alert(`Já existe uma simulação chamada "${simulationName}". Use o botão 'Atualizar' ou mude o nome para salvar como novo.`);
+                alert(`Já existe uma simulação chamada "${simulationName}". Use o botão 'Atualizar' para sobrescrever ou mude o nome.`);
                 return;
             }
 
-            const { error } = await supabase.from('simulations').insert({
+            const { error, data } = await supabase.from('simulations').insert({
                 user_id: session.user.id,
                 name: simulationName.trim(),
                 inputs: inputs,
-            });
+            }).select('id').single();
 
             if (error) {
                 console.error('Error saving simulation:', error);
                 alert('Erro ao salvar a simulação.');
             } else {
                 alert('Simulação salva com sucesso!');
-                // After saving a new one, we load it to enable update mode
+                // Set the newly created ID as current to enable immediate update mode
+                setCurrentSimulationId(data.id);
                 fetchSimulations();
-                // We rely on fetchSimulations to update the list, and the user can load it manually.
-                // For simplicity, we don't try to auto-set the ID of the newly created item here.
             }
         }
     };
     
-    const handleUpdate = async (idToUpdate: string | null = currentSimulationId) => {
-        const id = idToUpdate || currentSimulationId;
-        if (!id) {
+    const handleUpdate = async () => {
+        if (!currentSimulationId) {
             alert("Nenhuma simulação selecionada para atualizar.");
             return;
         }
@@ -97,14 +99,13 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
             const { error } = await supabase
                 .from('simulations')
                 .update({ inputs: inputs, name: simulationName.trim() })
-                .match({ id: id, user_id: session.user.id });
+                .match({ id: currentSimulationId, user_id: session.user.id });
 
             if (error) {
                 console.error('Error updating simulation:', error);
                 alert('Erro ao atualizar a simulação.');
             } else {
                 alert(`Simulação "${simulationName}" atualizada com sucesso!`);
-                setCurrentSimulationId(id); // Ensure ID is set after update
                 fetchSimulations();
             }
         }
@@ -133,24 +134,9 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
         setCurrentSimulationId(sim.id);
     };
 
+    // Simplified name change handler: only updates the name state
     const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newName = e.target.value;
-        setSimulationName(newName);
-        
-        // If the user changes the name, we check if it matches an existing ID.
-        // If it matches, we set the ID to enable update mode for that specific simulation.
-        const matchingSim = savedSimulations.find(sim => sim.name === newName);
-        if (matchingSim) {
-            setCurrentSimulationId(matchingSim.id);
-        } else if (currentSimulationId) {
-            // If the user is editing the name of a loaded simulation, we keep the ID
-            // so they can update the name and inputs simultaneously.
-            // We only clear the ID if they explicitly clear the selection.
-            // We rely on the 'Salvar Nova Simulação' button to prevent overwriting if the name is changed to an existing one.
-        } else {
-            // If no simulation is loaded, and the name doesn't match any existing one, we stay in 'new save' mode (currentSimulationId = null)
-            setCurrentSimulationId(null);
-        }
+        setSimulationName(e.target.value);
     };
 
     const isUpdateMode = currentSimulationId !== null;
@@ -169,14 +155,13 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
                 <div className="flex space-x-2">
                     <button
                         onClick={handleSaveNew}
-                        className={`w-full px-4 py-2 text-sm font-medium text-white rounded-md transition-colors ${isUpdateMode ? 'bg-gray-400 hover:bg-gray-500' : 'bg-primary-orange hover:bg-secondary-orange'}`}
-                        disabled={isUpdateMode}
-                        title={isUpdateMode ? "Desmarque a simulação atual para salvar uma nova" : "Salvar a simulação atual com o nome acima"}
+                        className="w-full px-4 py-2 text-sm font-medium text-white bg-primary-orange rounded-md hover:bg-secondary-orange transition-colors"
+                        title="Salvar a simulação atual como um novo registro."
                     >
                         Salvar Nova Simulação
                     </button>
                     <button
-                        onClick={() => handleUpdate()}
+                        onClick={handleUpdate}
                         className={`w-full px-4 py-2 text-sm font-medium text-white rounded-md transition-colors ${isUpdateMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'}`}
                         disabled={!isUpdateMode}
                         title={isUpdateMode ? `Atualizar a simulação "${simulationName}"` : "Selecione uma simulação salva para atualizar"}
@@ -198,6 +183,26 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
                 )}
             </div>
             
+            {/* Simulações Salvas movidas para cima */}
+            <div className="space-y-4 mb-6">
+                <CollapsibleCard title="Simulações Salvas" isOpenDefault>
+                    {isLoading ? <p>Carregando...</p> : (
+                        <div className="space-y-2">
+                            {savedSimulations.length > 0 ? savedSimulations.map(sim => (
+                                <div key={sim.id} className={`flex justify-between items-center p-2 rounded-md transition-colors ${currentSimulationId === sim.id ? 'bg-blue-100 border border-blue-300' : 'hover:bg-gray-100'}`}>
+                                    <button onClick={() => handleLoad(sim)} className="text-left text-blue-600 hover:underline font-medium">
+                                        {sim.name} {currentSimulationId === sim.id && '(Atual)'}
+                                    </button>
+                                    <button onClick={() => handleDelete(sim.id)} className="text-red-500 hover:text-red-700 text-xs">
+                                        Excluir
+                                    </button>
+                                </div>
+                            )) : <p className="text-sm text-gray-500">Nenhuma simulação salva.</p>}
+                        </div>
+                    )}
+                </CollapsibleCard>
+            </div>
+
             <div className="space-y-4">
                 <CollapsibleCard title="Premissas Financeiras" isOpenDefault>
                     <div className="grid grid-cols-2 gap-4">
@@ -301,25 +306,6 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
                         <NumberInput label="Var. Corr. (1º Alug.)" id="brokerCommissionRental1stPercent" value={inputs.brokerCommissionRental1stPercent} onChange={onInputChange} step={1} title="Comissão paga a corretores sobre novos aluguéis (se aplicável)." />
                         <NumberInput label="Var. Corr. (Admin.)" id="brokerCommissionRentalAdminPercent" value={inputs.brokerCommissionRentalAdminPercent} onChange={onInputChange} step={0.5} title="Comissão paga a corretores sobre a administração de aluguéis (se aplicável)." />
                     </div>
-                </CollapsibleCard>
-            </div>
-            
-            <div className="space-y-4 mt-6">
-                <CollapsibleCard title="Simulações Salvas">
-                    {isLoading ? <p>Carregando...</p> : (
-                        <div className="space-y-2">
-                            {savedSimulations.length > 0 ? savedSimulations.map(sim => (
-                                <div key={sim.id} className={`flex justify-between items-center p-2 rounded-md transition-colors ${currentSimulationId === sim.id ? 'bg-blue-100 border border-blue-300' : 'hover:bg-gray-100'}`}>
-                                    <button onClick={() => handleLoad(sim)} className="text-left text-blue-600 hover:underline font-medium">
-                                        {sim.name} {currentSimulationId === sim.id && '(Atual)'}
-                                    </button>
-                                    <button onClick={() => handleDelete(sim.id)} className="text-red-500 hover:text-red-700 text-xs">
-                                        Excluir
-                                    </button>
-                                </div>
-                            )) : <p className="text-sm text-gray-500">Nenhuma simulação salva.</p>}
-                        </div>
-                    )}
                 </CollapsibleCard>
             </div>
         </aside>
