@@ -81,6 +81,7 @@ export const useFinancialSimulator = () => {
             const taxAmount = taxableGrossRevenue * (inputs.taxRate / 100);
 
             // 5. Outros Custos Variáveis (sobre o Faturamento Bruto Total)
+            // NOTA: Mantido sobre grossRevenueTotal conforme a constante 'outrosCustosVarPercentFatBruto'
             const otherVariableCosts = grossRevenueTotal * (inputs.outrosCustosVarPercentFatBruto / 100);
 
             // 6. Comissões Variáveis dos Sócios
@@ -92,6 +93,7 @@ export const useFinancialSimulator = () => {
             const brokerRentalAdminComm = isExpansionActive ? grossRevenueRentalAdmin * (inputs.brokerCommissionRentalAdminPercent / 100) : 0;
 
             // 8. Receita Líquida para Custos Fixos (Net Revenue)
+            // Base: Faturamento Tributável (que já descontou a comissão dos corretores externos)
             const netRevenueForFixedCosts = taxableGrossRevenue 
                 - taxAmount 
                 - commissionVarSalesPartners 
@@ -138,8 +140,8 @@ export const useFinancialSimulator = () => {
                 monthlyCashFlow,
                 accumulatedCashFlow,
                 salesCount,
-                salesCountPartners, // Adicionado
-                salesCountBrokers,  // Adicionado
+                salesCountPartners, 
+                salesCountBrokers,  
                 rentalsCount,
                 contributionMarginPercent,
                 operatingProfitabilityPercent,
