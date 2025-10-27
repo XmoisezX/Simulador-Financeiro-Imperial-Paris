@@ -8,6 +8,8 @@ export interface SimulationInput {
   propertyPayment1Amount: number;
   propertyPayment2Month: number;
   propertyPayment2Amount: number;
+  propertyPayment3Month: number; // Novo: Mês Pagto. Reforma
+  propertyPayment3Amount: number; // Novo: Valor Pagto. Reforma
   initialCash: number;
   custoSetupInicial: number;
   custoContabilidade: number;

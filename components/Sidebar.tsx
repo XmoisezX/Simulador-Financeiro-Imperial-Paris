@@ -283,6 +283,11 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
                         <NumberInput label="Mês Pagto. Imóvel 2" id="propertyPayment2Month" value={inputs.propertyPayment2Month} onChange={onInputChange} min={1} max={12} title="Mês (1 a 12) em que o segundo pagamento de imóvel será realizado." />
                         <NumberInput label="Valor Pagto. 2" id="propertyPayment2Amount" value={inputs.propertyPayment2Amount} onChange={onInputChange} step={1000} title="Custo do segundo imóvel a ser pago, base para o cálculo da correção." isCurrency />
                     </div>
+                    {/* NOVO CAMPO: Pagamento de Reforma */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <NumberInput label="Mês Pagto. Reforma" id="propertyPayment3Month" value={inputs.propertyPayment3Month} onChange={onInputChange} min={1} max={12} title="Mês (1 a 12) em que o pagamento da reforma será realizado." />
+                        <NumberInput label="Valor Pagto. Reforma" id="propertyPayment3Amount" value={inputs.propertyPayment3Amount} onChange={onInputChange} step={1000} title="Custo da reforma, impactando o fluxo de caixa no mês correspondente." isCurrency />
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                         <NumberInput label="Caixa Inicial" id="initialCash" value={inputs.initialCash} onChange={onInputChange} step={1000} placeholder="Valor inicial" title="Valor inicial em caixa no começo do primeiro mês da simulação." isCurrency />
                          <NumberInput label="SELIC Estimada Anual (%)" id="taxaSelicEstimadaAnual" value={inputs.taxaSelicEstimadaAnual} onChange={onInputChange} step={0.5} placeholder="10" title="Taxa SELIC anual estimada para corrigir o valor do segundo pagamento do imóvel." />

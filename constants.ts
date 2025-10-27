@@ -12,6 +12,8 @@ export const initialSimulationInputs: SimulationInput = {
     propertyPayment1Amount: 40000,
     propertyPayment2Month: 12,
     propertyPayment2Amount: 275000,
+    propertyPayment3Month: 8, // Novo: Mês Pagto. Reforma
+    propertyPayment3Amount: 15000, // Novo: Valor Pagto. Reforma
     initialCash: 0,
     custoSetupInicial: 5000,
     custoContabilidade: 100,

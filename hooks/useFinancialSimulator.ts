@@ -81,7 +81,6 @@ export const useFinancialSimulator = () => {
             const taxAmount = taxableGrossRevenue * (inputs.taxRate / 100);
 
             // 5. Outros Custos Variáveis (sobre o Faturamento Bruto Total)
-            // NOTA: Mantido sobre grossRevenueTotal conforme a constante 'outrosCustosVarPercentFatBruto'
             const otherVariableCosts = grossRevenueTotal * (inputs.outrosCustosVarPercentFatBruto / 100);
 
             // 6. Comissões Variáveis dos Sócios
@@ -93,7 +92,6 @@ export const useFinancialSimulator = () => {
             const brokerRentalAdminComm = isExpansionActive ? grossRevenueRentalAdmin * (inputs.brokerCommissionRentalAdminPercent / 100) : 0;
 
             // 8. Receita Líquida para Custos Fixos (Net Revenue)
-            // Base: Faturamento Tributável (que já descontou a comissão dos corretores externos)
             const netRevenueForFixedCosts = taxableGrossRevenue 
                 - taxAmount 
                 - commissionVarSalesPartners 
@@ -109,16 +107,18 @@ export const useFinancialSimulator = () => {
                 const correction = inputs.propertyPayment2Amount * (inputs.taxaSelicEstimadaAnual / 100);
                 currentPropertyPayment += inputs.propertyPayment2Amount + correction;
             }
+            // NOVO PAGAMENTO: Reforma
+            if (month === inputs.propertyPayment3Month) {
+                currentPropertyPayment += inputs.propertyPayment3Amount;
+            }
 
             const monthlyCashFlow = netRevenueForFixedCosts - currentFixedCosts - currentPropertyPayment;
             accumulatedCashFlow += monthlyCashFlow;
             accumulatedRentalContracts += currentRentalsTarget;
 
             // Calculation of Contribution Margin, Operating Profitability, and Break-Even Point
-            // Base para índices agora é o Faturamento Tributável (Taxable Gross Revenue)
             const contributionMarginPercent = taxableGrossRevenue > 0 ? (netRevenueForFixedCosts / taxableGrossRevenue) * 100 : 0;
             
-            // Lucratividade Operacional = (Fluxo Caixa Mês / Receita Líquida) * 100
             const operatingProfitabilityPercent = netRevenueForFixedCosts > 0 ? (monthlyCashFlow / netRevenueForFixedCosts) * 100 : 0;
             
             const breakEvenPoint = contributionMarginPercent > 0 ? currentFixedCosts / (contributionMarginPercent / 100) : 0;
@@ -192,8 +192,9 @@ export const useFinancialSimulator = () => {
             avgBreakEvenPoint: monthlyData.reduce((acc, row) => acc + row.breakEvenPoint, 0) / duration,
         };
         
+        // Atualizando o cálculo do custo total do imóvel para incluir a reforma
         const correctedPayment2 = inputs.propertyPayment2Amount * (1 + inputs.taxaSelicEstimadaAnual / 100);
-        const totalPropertyCost = inputs.propertyPayment1Amount + correctedPayment2;
+        const totalPropertyCost = inputs.propertyPayment1Amount + correctedPayment2 + inputs.propertyPayment3Amount;
         const bufferTarget = totalPropertyCost * 0.10;
         const isViable = accumulatedCashFlow >= 0;
 
