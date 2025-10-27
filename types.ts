@@ -53,6 +53,9 @@ export interface SimulationInput {
   // Novos campos para estagiários
   internCommissionRental1stPercent: number; // Comissão % sobre 1º aluguel
   internRentalRatio: number; // Proporção de aluguéis (0-100%)
+  
+  // NOVO: Data de Início
+  startDate: string; 
 }
 
 export interface MonthlyResult {
@@ -66,6 +69,10 @@ export interface MonthlyResult {
   commissionVarSalesPartners: number;
   commissionVarSalesBrokersPaid: number;
   commissionVarRental1stPartners: number;
+  
+  // NOVO: Comissão Estagiários
+  commissionVarRental1stInterns: number; 
+  
   netRevenueForFixedCosts: number;
   currentFixedCosts: number;
   currentPropertyPayment: number;
@@ -79,6 +86,14 @@ export interface MonthlyResult {
   operatingProfitabilityPercent: number;
   breakEvenPoint: number;
   vgv: number;
+  
+  // NOVO: Campos para Dados Reais (Actual Data)
+  actualSalesCount: number | null;
+  actualRentalsCount: number | null;
+  actualGrossRevenueTotal: number | null;
+  actualCurrentFixedCosts: number | null;
+  actualPropertyPayment: number | null;
+  actualMonthlyCashFlow: number | null;
 }
 
 export interface SimulationTotals {
@@ -91,6 +106,10 @@ export interface SimulationTotals {
     commissionVarSalesPartners: number;
     commissionVarSalesBrokersPaid: number;
     commissionVarRental1stPartners: number;
+    
+    // NOVO: Comissão Estagiários
+    commissionVarRental1stInterns: number; 
+    
     netRevenueForFixedCosts: number;
     totalFixedCosts: number;
     totalPropertyPayments: number;

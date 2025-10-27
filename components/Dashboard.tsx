@@ -1,5 +1,5 @@
 import React from 'react';
-import { SimulationInput, SimulationResult } from '../types';
+import { SimulationInput, SimulationResult, MonthlyResult } from '../types';
 import KpiCard from './KpiCard';
 import CashFlowChart from './CashFlowChart';
 import RevenueChart from './RevenueChart';
@@ -9,13 +9,17 @@ import ExportButtons from './ExportButtons';
 
 const formatCurrency = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-const Dashboard: React.FC<{ 
-    results: SimulationResult, 
-    inputs: SimulationInput, 
-    onExtend: () => void,
-    onGoBack: () => void,
-    duration: number
-}> = ({ results, inputs, onExtend, onGoBack, duration }) => {
+interface DashboardProps {
+    results: SimulationResult; 
+    inputs: SimulationInput; 
+    onExtend: () => void;
+    onGoBack: () => void;
+    duration: number;
+    onActualDataChange: (month: number, field: keyof MonthlyResult, value: number | null) => void;
+    actualData: Record<number, Partial<MonthlyResult>>;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ results, inputs, onExtend, onGoBack, duration, onActualDataChange, actualData }) => {
     const { summary, monthlyData, totals } = results;
     
     const totalNetRevenue = totals.netRevenueForFixedCosts - totals.totalFixedCosts;
@@ -65,7 +69,14 @@ const Dashboard: React.FC<{
 
             {/* Detailed Table Section */}
             <CollapsibleCard title="Visão Detalhada Mês a Mês">
-                 <ResultsTable monthlyData={monthlyData} totals={totals} taxRate={inputs.taxRate} />
+                 <ResultsTable 
+                    monthlyData={monthlyData} 
+                    totals={totals} 
+                    taxRate={inputs.taxRate} 
+                    startDate={inputs.startDate}
+                    onActualDataChange={onActualDataChange}
+                    actualData={actualData}
+                 />
             </CollapsibleCard>
         </div>
     );

@@ -57,4 +57,7 @@ export const initialSimulationInputs: SimulationInput = {
     // Novos campos para estagiários
     internCommissionRental1stPercent: 10, // 10% de comissão sobre o 1º aluguel
     internRentalRatio: 20, // 20% dos aluguéis são provenientes de estagiários
+    
+    // NOVO: Data de Início
+    startDate: new Date().toISOString().split('T')[0],
 };

@@ -263,6 +263,14 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
 
             <div className="space-y-4">
                 <CollapsibleCard title="Premissas Financeiras">
+                    <TextInput 
+                        label="Data de Início da Simulação" 
+                        id="startDate" 
+                        type="date"
+                        value={inputs.startDate} 
+                        onChange={onInputChange} 
+                        title="A data de início define o mês 1 para a comparação Real vs. Projetado." 
+                    />
                     <div className="grid grid-cols-2 gap-4">
                         <NumberInput label="Valor Médio Venda" id="avgSaleValue" value={inputs.avgSaleValue} onChange={onInputChange} step={10000} placeholder="300000" title="Valor médio estimado de cada venda. Principal fator para o faturamento de vendas." isCurrency />
                         <NumberInput label="Valor Médio Aluguel" id="avgRentalValue" value={inputs.avgRentalValue} onChange={onInputChange} step={100} placeholder="2500" title="Valor do primeiro aluguel (comissão) e base para o cálculo da administração mensal." isCurrency />
