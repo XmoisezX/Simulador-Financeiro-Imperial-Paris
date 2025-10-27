@@ -26,14 +26,14 @@ export const useFinancialSimulator = () => {
     const calculateSimulation = useCallback((
         inputs: SimulationInput, 
         duration: number, 
-        actualData: Record<number, Partial<MonthlyResult>> = {} // NOVO ARGUMENTO
+        actualData: Record<number, Partial<MonthlyResult>> = {}
     ): SimulationResult => {
         
-        const currentMonthIndex = getCurrentMonthIndex(inputs.startDate); // Determina o mês atual para lógica R/P
+        const currentMonthIndex = getCurrentMonthIndex(inputs.startDate);
         
         const monthlyData: MonthlyResult[] = [];
         let accumulatedCashFlow = inputs.initialCash;
-        let accumulatedRentalContracts = 0;
+        let accumulatedRentalContracts = 0; // Contratos acumulados para cálculo de Adm. Aluguel
 
         // Reset totals for recalculation
         let totalGrossSales = 0, totalGrossRental1st = 0, totalGrossRentalAdmin = 0, totalGrossRegularization = 0, totalGrossRevenue = 0;
@@ -47,15 +47,15 @@ export const useFinancialSimulator = () => {
 
         for (let month = 1; month <= duration; month++) {
             
-            // Verifica se há dados reais para este mês
             const actual = actualData[month];
-            const isActualMonth = !!actual && month < currentMonthIndex; // Só consideramos 'real' se o mês já passou
+            const isPastMonth = month < currentMonthIndex;
             
-            // --- Determine Projected Values (P) ---
+            // --- 1. Determinar Contagens (Vendas e Aluguéis) ---
             
             const isSlowMonth = month <= inputs.slowStartMonths;
             const isExpansionActive = month >= inputs.expansionStartMonth;
 
+            // Projeção de Vendas
             const salesTargetPerPartner = isSlowMonth ? inputs.salesTargetPartnersSlow : inputs.salesTargetPartnersFull;
             const projectedSalesCountPartners = salesTargetPerPartner * NUMBER_OF_PARTNERS;
             
@@ -67,30 +67,23 @@ export const useFinancialSimulator = () => {
                 else if (expansionMonthIndex === 1) projectedSalesCountBrokers = Math.ceil(fullBrokerTarget * (inputs.percRampaMes2 / 100));
                 else projectedSalesCountBrokers = Math.ceil(fullBrokerTarget * (inputs.percRampaMes3 / 100));
             }
-
+            const projectedSalesCountTotal = projectedSalesCountPartners + projectedSalesCountBrokers;
             const projectedRentalsCount = isSlowMonth ? inputs.rentalsTargetSlow : inputs.rentalsTargetFull;
             
-            // --- Use Actual (A) or Projected (P) Counts ---
+            // Valores a serem usados no cálculo (Real se passado, Projetado caso contrário)
+            const salesCount = isPastMonth && actual?.actualSalesCount !== null && actual?.actualSalesCount !== undefined ? actual.actualSalesCount : projectedSalesCountTotal;
+            const rentalsCount = isPastMonth && actual?.actualRentalsCount !== null && actual?.actualRentalsCount !== undefined ? actual.actualRentalsCount : projectedRentalsCount;
             
-            const projectedSalesCountTotal = projectedSalesCountPartners + projectedSalesCountBrokers;
-            
-            // Se houver dado real de vendas, usamos ele. Caso contrário, usamos a projeção.
-            const salesCount = isActualMonth && actual.actualSalesCount !== null ? actual.actualSalesCount : projectedSalesCountTotal;
-            
-            // Se usamos o total real, distribuímos proporcionalmente entre sócios e corretores (mantendo a proporção projetada)
-            const salesCountPartners = isActualMonth && actual.actualSalesCount !== null 
+            // Distribuição de Vendas (usada para calcular comissão de sócios vs corretores)
+            const salesCountPartners = isPastMonth && actual?.actualSalesCount !== null && actual?.actualSalesCount !== undefined
                 ? Math.round(salesCount * (projectedSalesCountPartners / (projectedSalesCountTotal || 1))) 
                 : projectedSalesCountPartners;
-                
-            const salesCountBrokers = isActualMonth && actual.actualSalesCount !== null 
-                ? salesCount - salesCountPartners 
-                : projectedSalesCountBrokers;
-                
-            const rentalsCount = isActualMonth && actual.actualRentalsCount !== null ? actual.actualRentalsCount : projectedRentalsCount;
+            const salesCountBrokers = salesCount - salesCountPartners;
             
             const vgv = salesCount * inputs.avgSaleValue;
 
-            // --- Fixed Costs (P/A) ---
+            // --- 2. Custos Fixos e Pagamentos de Imóvel ---
+            
             const projectedMarketingCost = isExpansionActive ? inputs.marketingExpandedCost : inputs.marketingBaseCost;
             const projectedInternCostTotal = isExpansionActive ? inputs.numberOfInterns * inputs.internCost : 0;
             
@@ -103,7 +96,6 @@ export const useFinancialSimulator = () => {
 
             const projectedFixedCosts = baseFixedCosts + projectedProLaboreCost + projectedINSSCost + projectedMarketingCost + projectedInternCostTotal;
             
-            // --- Property Payments (P/A) ---
             let projectedPropertyPayment = 0;
             if (month === 1) projectedPropertyPayment += inputs.custoSetupInicial;
             if (month === inputs.propertyPayment1Month) projectedPropertyPayment += inputs.propertyPayment1Amount;
@@ -115,31 +107,34 @@ export const useFinancialSimulator = () => {
                 projectedPropertyPayment += inputs.propertyPayment3Amount;
             }
             
-            // Usa o valor real se fornecido, caso contrário, usa a projeção
-            const currentFixedCosts = isActualMonth && actual.actualCurrentFixedCosts !== null ? actual.actualCurrentFixedCosts : projectedFixedCosts;
-            const currentPropertyPayment = isActualMonth && actual.actualPropertyPayment !== null ? actual.actualPropertyPayment : projectedPropertyPayment;
+            // Valores R/P para Custos Fixos e Pagamentos
+            const currentFixedCosts = isPastMonth && actual?.actualCurrentFixedCosts !== null && actual?.actualCurrentFixedCosts !== undefined ? actual.actualCurrentFixedCosts : projectedFixedCosts;
+            const currentPropertyPayment = isPastMonth && actual?.actualPropertyPayment !== null && actual?.actualPropertyPayment !== undefined ? actual.actualPropertyPayment : projectedPropertyPayment;
             
-            // --- Revenue Calculation (P/A) ---
+            // --- 3. Receita Bruta (Calculada a partir das Contagens R/P) ---
             
-            // 1. Cálculo da Receita Bruta (Total de comissão da imobiliária)
+            // Receita Bruta de Vendas (Comissão da Imobiliária)
             const grossRevenueSalesPartners = salesCountPartners * inputs.avgSaleValue * (inputs.commissionRateSale / 100);
             const grossRevenueSalesBrokers = salesCountBrokers * inputs.avgSaleValue * (inputs.commissionRateSale / 100);
             const grossRevenueSales = grossRevenueSalesPartners + grossRevenueSalesBrokers;
             
+            // Receita Bruta 1º Aluguel
             const grossRevenueRental1st = rentalsCount * inputs.avgRentalValue;
             
-            // Accumulated contracts must be based on actual rentals if available for previous months
-            // accumulatedRentalContracts já carrega o valor do mês anterior.
-            
+            // Receita Bruta Adm. Aluguel (Depende do acumulado do mês anterior)
             const grossRevenueRentalAdmin = accumulatedRentalContracts * inputs.avgRentalValue * (inputs.commissionRateRentalAdmin / 100);
+            
+            // Receita Bruta Regularização
             const grossRevenueRegularization = inputs.avgRegularizationsPerMonth * inputs.avgRegularizationValue;
             
-            const projectedGrossRevenueTotal = grossRevenueSales + grossRevenueRental1st + grossRevenueRentalAdmin + grossRevenueRegularization;
+            const calculatedGrossRevenueTotal = grossRevenueSales + grossRevenueRental1st + grossRevenueRentalAdmin + grossRevenueRegularization;
             
-            // Usa Receita Bruta Total Real se fornecida, caso contrário usa a calculada
-            const grossRevenueTotal = isActualMonth && actual.actualGrossRevenueTotal !== null ? actual.actualGrossRevenueTotal : projectedGrossRevenueTotal;
+            // Valor R/P para Receita Bruta Total
+            const grossRevenueTotal = isPastMonth && actual?.actualGrossRevenueTotal !== null && actual?.actualGrossRevenueTotal !== undefined ? actual.actualGrossRevenueTotal : calculatedGrossRevenueTotal;
 
-            // 2. Cálculo da Comissão Variável dos Corretores Externos (Custo que não é faturamento da empresa)
+            // --- 4. Custos Variáveis e Receita Líquida ---
+            
+            // Comissão Variável dos Corretores Externos (Custo que não é faturamento da empresa)
             let commissionVarSalesBrokersPaid = 0;
             if (salesCountBrokers > 0 && inputs.avgSaleValue > 0) {
                 const salesBrokerInternalListing = Math.round(salesCountBrokers * (inputs.brokerInternalListingRatio / 100));
@@ -149,33 +144,32 @@ export const useFinancialSimulator = () => {
                 commissionVarSalesBrokersPaid = (salesBrokerInternalListing * commissionPerSaleInternal) + (salesBrokerExternalListing * commissionPerSaleExternal);
             }
             
-            // 3. Faturamento Tributável (Base de Cálculo para Imposto e Índices)
+            // Faturamento Tributável (Base de Cálculo para Imposto e Índices)
+            // Se o GrossRevenueTotal for real, usamos ele. Se for projetado, usamos o calculado.
             const taxableGrossRevenue = grossRevenueTotal - commissionVarSalesBrokersPaid;
 
-            // 4. Cálculo do Imposto sobre o Faturamento Tributável
+            // Imposto sobre o Faturamento Tributável
             const taxAmount = taxableGrossRevenue * (inputs.taxRate / 100);
 
-            // 5. Outros Custos Variáveis (sobre o Faturamento Bruto Total)
+            // Outros Custos Variáveis (sobre o Faturamento Bruto Total R/P)
             const otherVariableCosts = grossRevenueTotal * (inputs.outrosCustosVarPercentFatBruto / 100);
 
-            // 6. Comissões Variáveis dos Sócios
+            // Comissões Variáveis dos Sócios (Calculadas sobre as receitas brutas projetadas/calculadas)
             const commissionVarSalesPartners = grossRevenueSalesPartners * (inputs.partnerCommissionVarSale / 100);
             const commissionVarRental1stPartners = grossRevenueRental1st * (inputs.partnerCommissionVarRental1st / 100);
             
-            // 7. Comissões Variáveis de Aluguel para Corretores (se aplicável)
+            // Comissões Variáveis de Aluguel para Corretores (se aplicável)
             const brokerRental1stComm = isExpansionActive ? grossRevenueRental1st * (inputs.brokerCommissionRental1stPercent / 100) : 0;
             const brokerRentalAdminComm = isExpansionActive ? grossRevenueRentalAdmin * (inputs.brokerCommissionRentalAdminPercent / 100) : 0;
             
-            // 8. Comissões Variáveis de Aluguel para Estagiários (NOVO)
+            // Comissões Variáveis de Aluguel para Estagiários
             let commissionVarRental1stInterns = 0;
             if (isExpansionActive && inputs.numberOfInterns > 0) {
-                // Calcula a porção de novos aluguéis atribuída a estagiários
                 const internRentalPortion = grossRevenueRental1st * (inputs.internRentalRatio / 100);
-                // Calcula a comissão sobre essa porção
                 commissionVarRental1stInterns = internRentalPortion * (inputs.internCommissionRental1stPercent / 100);
             }
 
-            // 9. Receita Líquida para Custos Fixos (Net Revenue)
+            // Receita Líquida para Custos Fixos (Net Revenue)
             const netRevenueForFixedCosts = taxableGrossRevenue 
                 - taxAmount 
                 - commissionVarSalesPartners 
@@ -183,54 +177,61 @@ export const useFinancialSimulator = () => {
                 - otherVariableCosts 
                 - brokerRental1stComm 
                 - brokerRentalAdminComm
-                - commissionVarRental1stInterns; // Subtrai comissão de estagiários
+                - commissionVarRental1stInterns;
             
-            // 10. Monthly Cash Flow
-            const projectedMonthlyCashFlow = netRevenueForFixedCosts - currentFixedCosts - currentPropertyPayment;
+            // --- 5. Fluxo de Caixa e Acumulado ---
             
-            // Usa Fluxo de Caixa Mensal Real se fornecido, caso contrário usa a projeção
-            const monthlyCashFlow = isActualMonth && actual.actualMonthlyCashFlow !== null ? actual.actualMonthlyCashFlow : projectedMonthlyCashFlow;
+            const calculatedMonthlyCashFlow = netRevenueForFixedCosts - currentFixedCosts - currentPropertyPayment;
             
-            // 11. Accumulated Cash Flow
+            // Valor R/P para Fluxo de Caixa Mensal
+            const monthlyCashFlow = isPastMonth && actual?.actualMonthlyCashFlow !== null && actual?.actualMonthlyCashFlow !== undefined ? actual.actualMonthlyCashFlow : calculatedMonthlyCashFlow;
+            
+            // Atualiza o caixa acumulado
             accumulatedCashFlow += monthlyCashFlow;
             
-            // 12. Update Accumulated Rental Contracts
+            // Atualiza contratos de aluguel acumulados (para o cálculo do próximo mês)
             accumulatedRentalContracts += rentalsCount;
 
-            // Calculation of Contribution Margin, Operating Profitability, and Break-Even Point
+            // --- 6. Índices ---
+            
             const contributionMarginPercent = taxableGrossRevenue > 0 ? (netRevenueForFixedCosts / taxableGrossRevenue) * 100 : 0;
             
             const operatingProfitabilityPercent = netRevenueForFixedCosts > 0 ? (monthlyCashFlow / netRevenueForFixedCosts) * 100 : 0;
             
             const breakEvenPoint = contributionMarginPercent > 0 ? currentFixedCosts / (contributionMarginPercent / 100) : 0;
 
-            // --- Store Results ---
+            // --- 7. Armazenar Resultados ---
             
             const resultRow: MonthlyResult = {
                 month,
+                // Receitas Brutas (Calculadas)
                 grossRevenueSales,
                 grossRevenueRental1st,
                 grossRevenueRentalAdmin,
                 grossRevenueRegularization,
+                
+                // Valores R/P
                 grossRevenueTotal,
+                currentFixedCosts,
+                currentPropertyPayment,
+                monthlyCashFlow,
+                salesCount,
+                rentalsCount,
+                vgv,
+                
+                // Valores Derivados
                 taxAmount,
                 commissionVarSalesPartners,
                 commissionVarSalesBrokersPaid,
                 commissionVarRental1stPartners,
-                commissionVarRental1stInterns, // NOVO
+                commissionVarRental1stInterns,
                 netRevenueForFixedCosts,
-                currentFixedCosts,
-                currentPropertyPayment,
-                monthlyCashFlow,
                 accumulatedCashFlow,
-                salesCount,
                 salesCountPartners, 
                 salesCountBrokers,  
-                rentalsCount,
                 contributionMarginPercent,
                 operatingProfitabilityPercent,
                 breakEvenPoint,
-                vgv,
                 
                 // Armazena os inputs reais para display/comparação
                 actualSalesCount: actual?.actualSalesCount ?? null,
@@ -243,7 +244,7 @@ export const useFinancialSimulator = () => {
             
             monthlyData.push(resultRow);
 
-            // --- Update Totals (using the calculated values for the month) ---
+            // --- 8. Atualizar Totais ---
             totalGrossSales += grossRevenueSales;
             totalGrossRental1st += grossRevenueRental1st;
             totalGrossRentalAdmin += grossRevenueRentalAdmin;
@@ -253,7 +254,7 @@ export const useFinancialSimulator = () => {
             totalCommVarSaleS += commissionVarSalesPartners;
             totalCommVarSaleC += commissionVarSalesBrokersPaid;
             totalCommVarRent1stS += commissionVarRental1stPartners;
-            totalCommVarRent1stI += commissionVarRental1stInterns; // NOVO
+            totalCommVarRent1stI += commissionVarRental1stInterns;
             totalNetRevenueForFixedCosts += netRevenueForFixedCosts;
             totalFixedCosts += currentFixedCosts;
             totalPropertyPayments += currentPropertyPayment;
@@ -275,7 +276,7 @@ export const useFinancialSimulator = () => {
             commissionVarSalesPartners: totalCommVarSaleS,
             commissionVarSalesBrokersPaid: totalCommVarSaleC,
             commissionVarRental1stPartners: totalCommVarRent1stS,
-            commissionVarRental1stInterns: totalCommVarRent1stI, // NOVO
+            commissionVarRental1stInterns: totalCommVarRent1stI,
             netRevenueForFixedCosts: totalNetRevenueForFixedCosts,
             totalFixedCosts: totalFixedCosts,
             totalPropertyPayments: totalPropertyPayments,
