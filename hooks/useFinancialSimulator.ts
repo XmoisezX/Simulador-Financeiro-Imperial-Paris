@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { SimulationInput, MonthlyResult, SimulationResult } from '../types';
+import { INSS_PRO_LABORE_COST } from '../constants';
 
 export const useFinancialSimulator = () => {
     const calculateSimulation = useCallback((inputs: SimulationInput, duration: number): SimulationResult => {
@@ -43,11 +44,13 @@ export const useFinancialSimulator = () => {
             const currentInternCostTotal = isExpansionActive ? inputs.numberOfInterns * inputs.internCost : 0;
             
             let currentProLaboreCost = 0;
+            let currentINSSCost = 0;
             if (month >= inputs.proLaboreStartMonth) {
                 currentProLaboreCost = inputs.proLaboreAlessandro + inputs.proLaboreTamires + inputs.proLaboreMoisez;
+                currentINSSCost = INSS_PRO_LABORE_COST;
             }
 
-            const currentFixedCosts = baseFixedCosts + currentProLaboreCost + currentMarketingCost + currentInternCostTotal;
+            const currentFixedCosts = baseFixedCosts + currentProLaboreCost + currentINSSCost + currentMarketingCost + currentInternCostTotal;
 
             // 1. Cálculo da Receita Bruta (Total de comissão da imobiliária)
             const grossRevenueSalesPartners = currentSalesTargetPartners * inputs.avgSaleValue * (inputs.commissionRateSale / 100);

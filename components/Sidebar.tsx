@@ -4,7 +4,7 @@ import NumberInput from './NumberInput';
 import TextInput from './TextInput';
 import CollapsibleCard from './CollapsibleCard';
 import { useAuth } from '../src/contexts/AuthContext';
-import { initialSimulationInputs } from '../constants';
+import { initialSimulationInputs, INSS_PRO_LABORE_COST } from '../constants';
 
 interface SidebarProps {
     inputs: SimulationInput;
@@ -17,6 +17,8 @@ interface SavedSimulation {
     name: string;
     inputs: SimulationInput;
 }
+
+const formatCurrency = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulation }) => {
     const { supabase, session } = useAuth();
@@ -311,6 +313,19 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
                         <NumberInput label="Tamires" id="proLaboreTamires" value={inputs.proLaboreTamires} onChange={onInputChange} step={100} title="Valor do pró-labore mensal para Tamires Torres." isCurrency />
                         <NumberInput label="Moisez" id="proLaboreMoisez" value={inputs.proLaboreMoisez} onChange={onInputChange} step={100} title="Valor do pró-labore mensal para Moisez Torres." isCurrency />
                     </div>
+                    
+                    {/* Novo campo fixo para INSS */}
+                    <div className="p-3 bg-gray-50 rounded-md border border-gray-200 mt-4">
+                        <label className="block text-sm font-medium text-light-text mb-1">
+                            INSS Pró-Labore (11% sobre R$ 2.000 x 3)
+                        </label>
+                        <p className="text-base font-semibold text-dark-text">
+                            {formatCurrency(INSS_PRO_LABORE_COST)}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                            Custo fixo mensal de INSS patronal, aplicado a partir do Mês de Início do Pró-Labore.
+                        </p>
+                    </div>
 
                     <h3 className="text-md font-semibold text-light-text border-t pt-4 mt-2">Marketing e Expansão</h3>
                     <div className="grid grid-cols-2 gap-4">
@@ -340,7 +355,7 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
                      <NumberInput label="Média Vendas/Mês (Corretor)" id="salesTargetBrokersFull" value={inputs.salesTargetBrokersFull} onChange={onInputChange} min={0} placeholder="Unid." title="Defina a meta média de vendas que cada corretor externo deve atingir por mês após o período de rampa inicial." />
                      <div className="grid grid-cols-3 gap-2">
                          <NumberInput label="Rampa M1 (%)" id="percRampaMes1" value={inputs.percRampaMes1} onChange={onInputChange} min={0} max={200} step={10} title="Percentual da meta total de corretores a ser atingida no primeiro mês de expansão." />
-                         <NumberInput label="Rampa M2 (%)" id="percRampaMes2" value={inputs.percRampaMes2} onChange={onInputChange} min={0} max={200} step={10} title="Percentual da meta total de corretores a ser atingida no segundo mês de expansão." />
+                         <NumberInput label="Rampa M2 (%)" id="percRampaMes2} onChange={onInputChange} min={0} max={200} step={10} title="Percentual da meta total de corretores a ser atingida no segundo mês de expansão." />
                          <NumberInput label="Rampa M3+ (%)" id="percRampaMes3" value={inputs.percRampaMes3} onChange={onInputChange} min={0} max={200} step={10} title="Percentual da meta total de corretores a ser atingida do terceiro mês de expansão em diante." />
                      </div>
 

@@ -1,8 +1,12 @@
 import { SimulationInput } from './types';
 
+export const INSS_PRO_LABORE_COST = 660; // 3 sócios * R$2000 (base) * 11%
+
 export const initialSimulationInputs: SimulationInput = {
     avgSaleValue: 300000,
     avgRentalValue: 2500,
+    avgRegularizationsPerMonth: 1,
+    avgRegularizationValue: 3000,
     taxRate: 6,
     propertyPayment1Month: 6,
     propertyPayment1Amount: 40000,
