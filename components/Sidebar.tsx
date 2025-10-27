@@ -355,7 +355,7 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
                      <NumberInput label="Média Vendas/Mês (Corretor)" id="salesTargetBrokersFull" value={inputs.salesTargetBrokersFull} onChange={onInputChange} min={0} placeholder="Unid." title="Defina a meta média de vendas que cada corretor externo deve atingir por mês após o período de rampa inicial." />
                      <div className="grid grid-cols-3 gap-2">
                          <NumberInput label="Rampa M1 (%)" id="percRampaMes1" value={inputs.percRampaMes1} onChange={onInputChange} min={0} max={200} step={10} title="Percentual da meta total de corretores a ser atingida no primeiro mês de expansão." />
-                         <NumberInput label="Rampa M2 (%)" id="percRampaMes2} onChange={onInputChange} min={0} max={200} step={10} title="Percentual da meta total de corretores a ser atingida no segundo mês de expansão." />
+                         <NumberInput label="Rampa M2 (%)" id="percRampaMes2" value={inputs.percRampaMes2} onChange={onInputChange} min={0} max={200} step={10} title="Percentual da meta total de corretores a ser atingida no segundo mês de expansão." />
                          <NumberInput label="Rampa M3+ (%)" id="percRampaMes3" value={inputs.percRampaMes3} onChange={onInputChange} min={0} max={200} step={10} title="Percentual da meta total de corretores a ser atingida do terceiro mês de expansão em diante." />
                      </div>
 
