@@ -87,8 +87,10 @@ export const useFinancialSimulator = () => {
 
             // Calculation of Contribution Margin, Operating Profitability, and Break-Even Point
             const contributionMarginPercent = grossRevenueTotal > 0 ? (netRevenueForFixedCosts / grossRevenueTotal) * 100 : 0;
-            const operatingProfit = netRevenueForFixedCosts - currentFixedCosts;
-            const operatingProfitabilityPercent = grossRevenueTotal > 0 ? (operatingProfit / grossRevenueTotal) * 100 : 0;
+            
+            // UPDATED: Lucratividade Operacional = (Fluxo Caixa Mês / Receita Líquida) * 100
+            const operatingProfitabilityPercent = netRevenueForFixedCosts > 0 ? (monthlyCashFlow / netRevenueForFixedCosts) * 100 : 0;
+            
             const breakEvenPoint = contributionMarginPercent > 0 ? currentFixedCosts / (contributionMarginPercent / 100) : 0;
 
             monthlyData.push({
@@ -149,8 +151,9 @@ export const useFinancialSimulator = () => {
             totalSalesCount,
             totalRentalsCount,
             totalVgv,
+            // Recalculando a média total com a nova fórmula
             avgContributionMarginPercent: totalGrossRevenue > 0 ? (totalNetRevenueForFixedCosts / totalGrossRevenue) * 100 : 0,
-            avgOperatingProfitabilityPercent: totalGrossRevenue > 0 ? ((totalNetRevenueForFixedCosts - totalFixedCosts) / totalGrossRevenue) * 100 : 0,
+            avgOperatingProfitabilityPercent: totalNetRevenueForFixedCosts > 0 ? ((accumulatedCashFlow - inputs.initialCash) / totalNetRevenueForFixedCosts) * 100 : 0,
             avgBreakEvenPoint: monthlyData.reduce((acc, row) => acc + row.breakEvenPoint, 0) / duration,
         };
         
