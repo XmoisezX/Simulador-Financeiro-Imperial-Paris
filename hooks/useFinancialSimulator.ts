@@ -24,19 +24,19 @@ export const useFinancialSimulator = () => {
 
             // Meta de vendas por sócio * Número de sócios
             const salesTargetPerPartner = isSlowMonth ? inputs.salesTargetPartnersSlow : inputs.salesTargetPartnersFull;
-            const currentSalesTargetPartners = salesTargetPerPartner * NUMBER_OF_PARTNERS;
+            const salesCountPartners = salesTargetPerPartner * NUMBER_OF_PARTNERS;
             
-            let currentSalesTargetBrokers = 0;
+            let salesCountBrokers = 0;
             const fullBrokerTarget = inputs.numberOfBrokers * inputs.salesTargetBrokersFull;
             if (isExpansionActive && inputs.numberOfBrokers > 0 && fullBrokerTarget > 0) {
                 const expansionMonthIndex = month - inputs.expansionStartMonth;
-                if (expansionMonthIndex === 0) currentSalesTargetBrokers = Math.ceil(fullBrokerTarget * (inputs.percRampaMes1 / 100));
-                else if (expansionMonthIndex === 1) currentSalesTargetBrokers = Math.ceil(fullBrokerTarget * (inputs.percRampaMes2 / 100));
-                else currentSalesTargetBrokers = Math.ceil(fullBrokerTarget * (inputs.percRampaMes3 / 100));
+                if (expansionMonthIndex === 0) salesCountBrokers = Math.ceil(fullBrokerTarget * (inputs.percRampaMes1 / 100));
+                else if (expansionMonthIndex === 1) salesCountBrokers = Math.ceil(fullBrokerTarget * (inputs.percRampaMes2 / 100));
+                else salesCountBrokers = Math.ceil(fullBrokerTarget * (inputs.percRampaMes3 / 100));
             }
 
             const currentRentalsTarget = isSlowMonth ? inputs.rentalsTargetSlow : inputs.rentalsTargetFull;
-            const salesCount = currentSalesTargetPartners + currentSalesTargetBrokers;
+            const salesCount = salesCountPartners + salesCountBrokers;
             const rentalsCount = currentRentalsTarget;
             const vgv = salesCount * inputs.avgSaleValue;
 
@@ -53,8 +53,8 @@ export const useFinancialSimulator = () => {
             const currentFixedCosts = baseFixedCosts + currentProLaboreCost + currentINSSCost + currentMarketingCost + currentInternCostTotal;
 
             // 1. Cálculo da Receita Bruta (Total de comissão da imobiliária)
-            const grossRevenueSalesPartners = currentSalesTargetPartners * inputs.avgSaleValue * (inputs.commissionRateSale / 100);
-            const grossRevenueSalesBrokers = currentSalesTargetBrokers * inputs.avgSaleValue * (inputs.commissionRateSale / 100);
+            const grossRevenueSalesPartners = salesCountPartners * inputs.avgSaleValue * (inputs.commissionRateSale / 100);
+            const grossRevenueSalesBrokers = salesCountBrokers * inputs.avgSaleValue * (inputs.commissionRateSale / 100);
             const grossRevenueSales = grossRevenueSalesPartners + grossRevenueSalesBrokers;
             
             const grossRevenueRental1st = currentRentalsTarget * inputs.avgRentalValue;
@@ -65,9 +65,9 @@ export const useFinancialSimulator = () => {
 
             // 2. Cálculo da Comissão Variável dos Corretores Externos (Custo que não é faturamento da empresa)
             let commissionVarSalesBrokersPaid = 0;
-            if (currentSalesTargetBrokers > 0 && inputs.avgSaleValue > 0) {
-                const salesBrokerInternalListing = Math.round(currentSalesTargetBrokers * (inputs.brokerInternalListingRatio / 100));
-                const salesBrokerExternalListing = currentSalesTargetBrokers - salesBrokerInternalListing;
+            if (salesCountBrokers > 0 && inputs.avgSaleValue > 0) {
+                const salesBrokerInternalListing = Math.round(salesCountBrokers * (inputs.brokerInternalListingRatio / 100));
+                const salesBrokerExternalListing = salesCountBrokers - salesBrokerInternalListing;
                 const commissionPerSaleInternal = inputs.avgSaleValue * (inputs.brokerCommissionSale / 100);
                 const commissionPerSaleExternal = inputs.avgSaleValue * ((inputs.brokerCommissionSale + inputs.brokerCommissionListing) / 100);
                 commissionVarSalesBrokersPaid = (salesBrokerInternalListing * commissionPerSaleInternal) + (salesBrokerExternalListing * commissionPerSaleExternal);
@@ -138,6 +138,8 @@ export const useFinancialSimulator = () => {
                 monthlyCashFlow,
                 accumulatedCashFlow,
                 salesCount,
+                salesCountPartners, // Adicionado
+                salesCountBrokers,  // Adicionado
                 rentalsCount,
                 contributionMarginPercent,
                 operatingProfitabilityPercent,
