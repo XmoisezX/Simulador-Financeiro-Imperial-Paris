@@ -11,6 +11,9 @@ export const useFinancialSimulator = () => {
         let totalTax = 0, totalCommVarSaleS = 0, totalCommVarSaleC = 0, totalCommVarRent1stS = 0;
         let totalNetRevenueForFixedCosts = 0, totalFixedCosts = 0, totalPropertyPayments = 0;
         let totalSalesCount = 0, totalRentalsCount = 0, totalVgv = 0;
+        
+        // Definindo o número de sócios com base nos inputs de pró-labore
+        const NUMBER_OF_PARTNERS = 3; 
 
         const baseFixedCosts = inputs.custoContabilidade + inputs.custoCRM + inputs.custoInternetTel + inputs.custoAguaLuz + inputs.custoOutrosFixos + inputs.custoAluguelCondominio + inputs.salarioAdministrativo;
 
@@ -18,7 +21,9 @@ export const useFinancialSimulator = () => {
             const isSlowMonth = month <= inputs.slowStartMonths;
             const isExpansionActive = month >= inputs.expansionStartMonth;
 
-            const currentSalesTargetPartners = isSlowMonth ? inputs.salesTargetPartnersSlow : inputs.salesTargetPartnersFull;
+            // Meta de vendas por sócio * Número de sócios
+            const salesTargetPerPartner = isSlowMonth ? inputs.salesTargetPartnersSlow : inputs.salesTargetPartnersFull;
+            const currentSalesTargetPartners = salesTargetPerPartner * NUMBER_OF_PARTNERS;
             
             let currentSalesTargetBrokers = 0;
             const fullBrokerTarget = inputs.numberOfBrokers * inputs.salesTargetBrokersFull;
