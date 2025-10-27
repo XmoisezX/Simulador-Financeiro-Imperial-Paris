@@ -39,7 +39,7 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
             alert('Não foi possível carregar as simulações salvas.');
         } else {
             setSavedSimulations(data as SavedSimulation[]);
-            // If the currently loaded simulation was deleted or renamed externally, ensure state consistency
+            // Ensure state consistency if the current ID is no longer valid
             if (currentSimulationId && !data.some(sim => sim.id === currentSimulationId)) {
                  setCurrentSimulationId(null);
             }
@@ -63,7 +63,7 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
             const existingSim = savedSimulations.find(sim => sim.name.trim() === simulationName.trim());
             
             if (existingSim) {
-                alert(`Já existe uma simulação chamada "${simulationName}". Use o botão 'Atualizar' para sobrescrever ou mude o nome.`);
+                alert(`Já existe uma simulação chamada "${simulationName}". Use o botão 'Atualizar' na lista de simulações para sobrescrever ou mude o nome.`);
                 return;
             }
 
@@ -85,11 +85,8 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
         }
     };
     
-    const handleUpdate = async () => {
-        if (!currentSimulationId) {
-            alert("Nenhuma simulação selecionada para atualizar.");
-            return;
-        }
+    // This function now takes the ID explicitly, ensuring we update the correct record.
+    const handleUpdate = async (id: string) => {
         if (!simulationName.trim()) {
              alert("O nome da simulação não pode estar vazio.");
             return;
@@ -99,7 +96,7 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
             const { error } = await supabase
                 .from('simulations')
                 .update({ inputs: inputs, name: simulationName.trim() })
-                .match({ id: currentSimulationId, user_id: session.user.id });
+                .match({ id: id, user_id: session.user.id });
 
             if (error) {
                 console.error('Error updating simulation:', error);
@@ -134,12 +131,9 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
         setCurrentSimulationId(sim.id);
     };
 
-    // Simplified name change handler: only updates the name state
     const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSimulationName(e.target.value);
     };
-
-    const isUpdateMode = currentSimulationId !== null;
 
     return (
         <aside className="w-full lg:w-[420px] lg:flex-shrink-0 bg-white p-6 border-r border-gray-200 overflow-y-auto lg:h-[calc(100vh-88px)] lg:sticky top-[88px]">
@@ -159,14 +153,6 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
                         title="Salvar a simulação atual como um novo registro."
                     >
                         Salvar Nova Simulação
-                    </button>
-                    <button
-                        onClick={handleUpdate}
-                        className={`w-full px-4 py-2 text-sm font-medium text-white rounded-md transition-colors ${isUpdateMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'}`}
-                        disabled={!isUpdateMode}
-                        title={isUpdateMode ? `Atualizar a simulação "${simulationName}"` : "Selecione uma simulação salva para atualizar"}
-                    >
-                        Atualizar
                     </button>
                 </div>
                 {currentSimulationId && (
@@ -190,12 +176,23 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
                         <div className="space-y-2">
                             {savedSimulations.length > 0 ? savedSimulations.map(sim => (
                                 <div key={sim.id} className={`flex justify-between items-center p-2 rounded-md transition-colors ${currentSimulationId === sim.id ? 'bg-blue-100 border border-blue-300' : 'hover:bg-gray-100'}`}>
-                                    <button onClick={() => handleLoad(sim)} className="text-left text-blue-600 hover:underline font-medium">
+                                    <button onClick={() => handleLoad(sim)} className="text-left text-blue-600 hover:underline font-medium flex-1 min-w-0 truncate pr-2">
                                         {sim.name} {currentSimulationId === sim.id && '(Atual)'}
                                     </button>
-                                    <button onClick={() => handleDelete(sim.id)} className="text-red-500 hover:text-red-700 text-xs">
-                                        Excluir
-                                    </button>
+                                    <div className="flex space-x-2 items-center">
+                                        {currentSimulationId === sim.id && (
+                                            <button
+                                                onClick={() => handleUpdate(sim.id)}
+                                                className="px-3 py-1 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
+                                                title={`Atualizar a simulação "${sim.name}" com os dados atuais.`}
+                                            >
+                                                Atualizar
+                                            </button>
+                                        )}
+                                        <button onClick={() => handleDelete(sim.id)} className="text-red-500 hover:text-red-700 text-xs px-2 py-1">
+                                            Excluir
+                                        </button>
+                                    </div>
                                 </div>
                             )) : <p className="text-sm text-gray-500">Nenhuma simulação salva.</p>}
                         </div>
@@ -204,7 +201,7 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
             </div>
 
             <div className="space-y-4">
-                <CollapsibleCard title="Premissas Financeiras" isOpenDefault>
+                <CollapsibleCard title="Premissas Financeiras">
                     <div className="grid grid-cols-2 gap-4">
                         <NumberInput label="Valor Médio Venda" id="avgSaleValue" value={inputs.avgSaleValue} onChange={onInputChange} step={10000} placeholder="300000" title="Valor médio estimado de cada venda. Principal fator para o faturamento de vendas." isCurrency />
                         <NumberInput label="Valor Médio Aluguel" id="avgRentalValue" value={inputs.avgRentalValue} onChange={onInputChange} step={100} placeholder="2500" title="Valor do primeiro aluguel (comissão) e base para o cálculo da administração mensal." isCurrency />
@@ -252,7 +249,7 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
                     <NumberInput label="Mês Início Pró-Labore" id="proLaboreStartMonth" value={inputs.proLaboreStartMonth} onChange={onInputChange} min={1} max={12} title="Mês em que o pagamento do pró-labore para os sócios começará." />
                     <div className="grid grid-cols-3 gap-2 mt-2">
                         <NumberInput label="Alessandro" id="proLaboreAlessandro" value={inputs.proLaboreAlessandro} onChange={onInputChange} step={100} title="Valor do pró-labore mensal para Alessandro Gomes." isCurrency />
-                        <NumberInput label="Tamires" id="proLaboreTamires" value={inputs.proLaboreTamires} onChange={onInputChange} step={100} title="Valor do pró-labore mensal para Tamires Torres." isCurrency />
+                        <NumberInput label="Tamires" id="proLaboreTamires} value={inputs.proLaboreTamires} onChange={onInputChange} step={100} title="Valor do pró-labore mensal para Tamires Torres." isCurrency />
                         <NumberInput label="Moisez" id="proLaboreMoisez" value={inputs.proLaboreMoisez} onChange={onInputChange} step={100} title="Valor do pró-labore mensal para Moisez Torres." isCurrency />
                     </div>
 
