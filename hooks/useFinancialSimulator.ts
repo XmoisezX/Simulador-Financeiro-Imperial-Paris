@@ -85,6 +85,7 @@ export const useFinancialSimulator = () => {
             accumulatedCashFlow += monthlyCashFlow;
             accumulatedRentalContracts += currentRentalsTarget;
 
+            // Calculation of Contribution Margin, Operating Profitability, and Break-Even Point
             const contributionMarginPercent = grossRevenueTotal > 0 ? (netRevenueForFixedCosts / grossRevenueTotal) * 100 : 0;
             const operatingProfit = netRevenueForFixedCosts - currentFixedCosts;
             const operatingProfitabilityPercent = grossRevenueTotal > 0 ? (operatingProfit / grossRevenueTotal) * 100 : 0;
