@@ -44,6 +44,7 @@ export const useFinancialSimulator = () => {
 
             const currentFixedCosts = baseFixedCosts + currentProLaboreCost + currentMarketingCost + currentInternCostTotal;
 
+            // 1. Cálculo da Receita Bruta (Total de comissão da imobiliária)
             const grossRevenueSalesPartners = currentSalesTargetPartners * inputs.avgSaleValue * (inputs.commissionRateSale / 100);
             const grossRevenueSalesBrokers = currentSalesTargetBrokers * inputs.avgSaleValue * (inputs.commissionRateSale / 100);
             const grossRevenueSales = grossRevenueSalesPartners + grossRevenueSalesBrokers;
@@ -53,10 +54,8 @@ export const useFinancialSimulator = () => {
             const grossRevenueRegularization = inputs.avgRegularizationsPerMonth * inputs.avgRegularizationValue;
             
             const grossRevenueTotal = grossRevenueSales + grossRevenueRental1st + grossRevenueRentalAdmin + grossRevenueRegularization;
-            const taxAmount = grossRevenueTotal * (inputs.taxRate / 100);
 
-            const commissionVarSalesPartners = grossRevenueSalesPartners * (inputs.partnerCommissionVarSale / 100);
-            
+            // 2. Cálculo da Comissão Variável dos Corretores Externos (Custo que não é faturamento da empresa)
             let commissionVarSalesBrokersPaid = 0;
             if (currentSalesTargetBrokers > 0 && inputs.avgSaleValue > 0) {
                 const salesBrokerInternalListing = Math.round(currentSalesTargetBrokers * (inputs.brokerInternalListingRatio / 100));
@@ -66,12 +65,32 @@ export const useFinancialSimulator = () => {
                 commissionVarSalesBrokersPaid = (salesBrokerInternalListing * commissionPerSaleInternal) + (salesBrokerExternalListing * commissionPerSaleExternal);
             }
             
-            const commissionVarRental1stPartners = grossRevenueRental1st * (inputs.partnerCommissionVarRental1st / 100);
+            // 3. Faturamento Tributável (Base de Cálculo para Imposto e Índices)
+            // Faturamento Bruto Total - Comissão dos Corretores Externos
+            const taxableGrossRevenue = grossRevenueTotal - commissionVarSalesBrokersPaid;
+
+            // 4. Cálculo do Imposto sobre o Faturamento Tributável
+            const taxAmount = taxableGrossRevenue * (inputs.taxRate / 100);
+
+            // 5. Outros Custos Variáveis (sobre o Faturamento Bruto Total)
             const otherVariableCosts = grossRevenueTotal * (inputs.outrosCustosVarPercentFatBruto / 100);
+
+            // 6. Comissões Variáveis dos Sócios
+            const commissionVarSalesPartners = grossRevenueSalesPartners * (inputs.partnerCommissionVarSale / 100);
+            const commissionVarRental1stPartners = grossRevenueRental1st * (inputs.partnerCommissionVarRental1st / 100);
+            
+            // 7. Comissões Variáveis de Aluguel para Corretores (se aplicável)
             const brokerRental1stComm = isExpansionActive ? grossRevenueRental1st * (inputs.brokerCommissionRental1stPercent / 100) : 0;
             const brokerRentalAdminComm = isExpansionActive ? grossRevenueRentalAdmin * (inputs.brokerCommissionRentalAdminPercent / 100) : 0;
 
-            const netRevenueForFixedCosts = grossRevenueTotal - taxAmount - commissionVarSalesPartners - commissionVarSalesBrokersPaid - commissionVarRental1stPartners - otherVariableCosts - brokerRental1stComm - brokerRentalAdminComm;
+            // 8. Receita Líquida para Custos Fixos (Net Revenue)
+            const netRevenueForFixedCosts = taxableGrossRevenue 
+                - taxAmount 
+                - commissionVarSalesPartners 
+                - commissionVarRental1stPartners 
+                - otherVariableCosts 
+                - brokerRental1stComm 
+                - brokerRentalAdminComm;
             
             let currentPropertyPayment = 0;
             if (month === 1) currentPropertyPayment += inputs.custoSetupInicial;
@@ -86,9 +105,10 @@ export const useFinancialSimulator = () => {
             accumulatedRentalContracts += currentRentalsTarget;
 
             // Calculation of Contribution Margin, Operating Profitability, and Break-Even Point
-            const contributionMarginPercent = grossRevenueTotal > 0 ? (netRevenueForFixedCosts / grossRevenueTotal) * 100 : 0;
+            // Base para índices agora é o Faturamento Tributável (Taxable Gross Revenue)
+            const contributionMarginPercent = taxableGrossRevenue > 0 ? (netRevenueForFixedCosts / taxableGrossRevenue) * 100 : 0;
             
-            // UPDATED: Lucratividade Operacional = (Fluxo Caixa Mês / Receita Líquida) * 100
+            // Lucratividade Operacional = (Fluxo Caixa Mês / Receita Líquida) * 100
             const operatingProfitabilityPercent = netRevenueForFixedCosts > 0 ? (monthlyCashFlow / netRevenueForFixedCosts) * 100 : 0;
             
             const breakEvenPoint = contributionMarginPercent > 0 ? currentFixedCosts / (contributionMarginPercent / 100) : 0;
@@ -133,6 +153,9 @@ export const useFinancialSimulator = () => {
             totalRentalsCount += rentalsCount;
             totalVgv += vgv;
         }
+        
+        // Recalculando o Faturamento Tributável Total para os Totais
+        const totalTaxableGrossRevenue = totalGrossRevenue - totalCommVarSaleC;
 
         const totals = {
             grossRevenueSales: totalGrossSales,
@@ -151,8 +174,8 @@ export const useFinancialSimulator = () => {
             totalSalesCount,
             totalRentalsCount,
             totalVgv,
-            // Recalculando a média total com a nova fórmula
-            avgContributionMarginPercent: totalGrossRevenue > 0 ? (totalNetRevenueForFixedCosts / totalGrossRevenue) * 100 : 0,
+            // Recalculando a média total com a nova fórmula (baseada no Faturamento Tributável Total)
+            avgContributionMarginPercent: totalTaxableGrossRevenue > 0 ? (totalNetRevenueForFixedCosts / totalTaxableGrossRevenue) * 100 : 0,
             avgOperatingProfitabilityPercent: totalNetRevenueForFixedCosts > 0 ? ((accumulatedCashFlow - inputs.initialCash) / totalNetRevenueForFixedCosts) * 100 : 0,
             avgBreakEvenPoint: monthlyData.reduce((acc, row) => acc + row.breakEvenPoint, 0) / duration,
         };
