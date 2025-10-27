@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import LoginPage from './src/pages/Login';
 import HomePage from './src/pages/HomePage';
 import MarketAnalysisPage from './src/pages/MarketAnalysisPage';
+import ListingGoalsPage from './src/pages/ListingGoalsPage';
 import Header from './components/Header';
 
 const AppContent: React.FC = () => {
@@ -19,6 +20,7 @@ const AppContent: React.FC = () => {
             <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/analise-de-mercado" element={<MarketAnalysisPage />} />
+                <Route path="/metas-agenciamento" element={<ListingGoalsPage />} />
                 <Route path="*" element={<Navigate to="/" />} />
             </Routes>
         </div>
