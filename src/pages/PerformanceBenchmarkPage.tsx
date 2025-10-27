@@ -20,7 +20,7 @@ const PerformanceBenchmarkPage: React.FC = () => {
             }
         };
 
-        // Chart 1: Sales Benchmark
+        // Chart 1: Sales Benchmark (Horizontal Bar Chart)
         const salesData = {
             labels: ['2/ano', '3/ano', '4/ano', '5/ano', '6/ano', '7/ano', '8/ano', '9/ano', '10/ano', '11/ano', '12/ano', '12+/ano'],
             datasets: [{
@@ -35,19 +35,27 @@ const PerformanceBenchmarkPage: React.FC = () => {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                indexAxis: 'y', // Makes the chart horizontal
                 plugins: {
                     legend: { display: false },
                     tooltip: { callbacks: { label: (context: any) => `${context.raw}%` } }
                 },
                 scales: {
-                    y: { title: { display: true, text: '% dos Corretores na Amostra' } },
-                    x: { title: { display: true, text: 'Média de Imóveis Vendidos por Ano' } }
+                    x: { 
+                        title: { display: true, text: '% dos Corretores na Amostra' }, // Eixo X agora é a porcentagem
+                        ticks: {
+                            callback: function(value: number) {
+                                return value + '%';
+                            }
+                        }
+                    },
+                    y: { title: { display: true, text: 'Média de Imóveis Vendidos por Ano' } } // Eixo Y agora é a categoria
                 }
             }
         };
         initChart(salesChartRef, 'salesChart', salesConfig);
 
-        // Chart 2: Leads Benchmark
+        // Chart 2: Leads Benchmark (Horizontal Bar Chart)
         const leadsData = {
             labels: ['Até 5', '6 a 10', '11 a 20', '21 a 30', '31 a 40', 'Acima de 50'],
             datasets: [{
@@ -62,13 +70,21 @@ const PerformanceBenchmarkPage: React.FC = () => {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                indexAxis: 'y', // Makes the chart horizontal
                 plugins: {
                     legend: { display: false },
                     tooltip: { callbacks: { label: (context: any) => `${context.raw}%` } }
                 },
                 scales: {
-                    y: { title: { display: true, text: '% dos Corretores' } },
-                    x: { title: { display: true, text: 'Leads Recebidos por Mês' } }
+                    x: { 
+                        title: { display: true, text: '% dos Corretores' }, // Eixo X agora é a porcentagem
+                        ticks: {
+                            callback: function(value: number) {
+                                return value + '%';
+                            }
+                        }
+                    },
+                    y: { title: { display: true, text: 'Leads Recebidos por Mês' } } // Eixo Y agora é a categoria
                 }
             }
         };
