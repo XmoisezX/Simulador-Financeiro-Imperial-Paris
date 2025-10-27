@@ -4,6 +4,7 @@ import NumberInput from './NumberInput';
 import TextInput from './TextInput';
 import CollapsibleCard from './CollapsibleCard';
 import { useAuth } from '../src/contexts/AuthContext';
+import { initialSimulationInputs } from '../constants'; // Importando inputs iniciais
 
 interface SidebarProps {
     inputs: SimulationInput;
@@ -54,6 +55,18 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
             return;
         }
         if (session) {
+            // Check if a simulation with this name already exists
+            const existingSim = savedSimulations.find(sim => sim.name.trim() === simulationName.trim());
+            
+            if (existingSim) {
+                // If it exists, ask if the user wants to update it instead of saving a new one
+                if (confirm(`Já existe uma simulação chamada "${simulationName}". Deseja atualizá-la?`)) {
+                    setCurrentSimulationId(existingSim.id);
+                    await handleUpdate(existingSim.id);
+                    return;
+                }
+            }
+
             const { error } = await supabase.from('simulations').insert({
                 user_id: session.user.id,
                 name: simulationName.trim(),
@@ -65,29 +78,35 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
                 alert('Erro ao salvar a simulação.');
             } else {
                 alert('Simulação salva com sucesso!');
-                setSimulationName('');
-                setCurrentSimulationId(null);
+                // We don't clear the name/id here, we just refresh the list
                 fetchSimulations();
             }
         }
     };
     
-    const handleUpdate = async () => {
-        if (!currentSimulationId) {
+    const handleUpdate = async (idToUpdate: string | null = currentSimulationId) => {
+        const id = idToUpdate || currentSimulationId;
+        if (!id) {
             alert("Nenhuma simulação selecionada para atualizar.");
             return;
         }
+        if (!simulationName.trim()) {
+             alert("O nome da simulação não pode estar vazio.");
+            return;
+        }
+        
         if (session) {
             const { error } = await supabase
                 .from('simulations')
                 .update({ inputs: inputs, name: simulationName.trim() })
-                .match({ id: currentSimulationId, user_id: session.user.id });
+                .match({ id: id, user_id: session.user.id });
 
             if (error) {
                 console.error('Error updating simulation:', error);
                 alert('Erro ao atualizar a simulação.');
             } else {
                 alert(`Simulação "${simulationName}" atualizada com sucesso!`);
+                setCurrentSimulationId(id); // Ensure ID is set after update
                 fetchSimulations();
             }
         }
@@ -115,6 +134,25 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
         setCurrentSimulationId(sim.id);
     };
 
+    const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newName = e.target.value;
+        setSimulationName(newName);
+        
+        // If the user starts typing, we assume they are editing the current simulation, 
+        // unless they type a name that matches another saved simulation.
+        // We keep currentSimulationId unless they explicitly load a different one or clear the selection.
+        
+        // If the new name matches an existing simulation, set the ID to that simulation's ID
+        const matchingSim = savedSimulations.find(sim => sim.name === newName);
+        if (matchingSim) {
+            setCurrentSimulationId(matchingSim.id);
+        } else if (currentSimulationId && newName !== savedSimulations.find(s => s.id === currentSimulationId)?.name) {
+            // If the name changes from the loaded name, we keep the ID but allow saving a new one.
+            // For simplicity, we keep the ID if it was previously set, allowing update.
+            // If the user wants to save a new one, they must clear the selection first.
+        }
+    };
+
     const isUpdateMode = currentSimulationId !== null;
 
     return (
@@ -125,17 +163,12 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
                     label="Nome da Simulação"
                     id="simulationName"
                     value={simulationName}
-                    onChange={(e) => {
-                        setSimulationName(e.target.value);
-                        // Clear current ID if the name changes, unless it matches an existing one
-                        const matchingSim = savedSimulations.find(sim => sim.name === e.target.value);
-                        setCurrentSimulationId(matchingSim ? matchingSim.id : null);
-                    }}
+                    onChange={handleNameChange}
                     placeholder="Ex: Cenário Otimista"
                 />
                 <div className="flex space-x-2">
                     <button
-                        onClick={handleSave}
+                        onClick={() => handleSave()}
                         className={`w-full px-4 py-2 text-sm font-medium text-white rounded-md transition-colors ${isUpdateMode ? 'bg-gray-400 hover:bg-gray-500' : 'bg-primary-orange hover:bg-secondary-orange'}`}
                         disabled={isUpdateMode}
                         title={isUpdateMode ? "Desmarque a simulação atual para salvar uma nova" : "Salvar a simulação atual com o nome acima"}
@@ -143,7 +176,7 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
                         Salvar Nova Simulação
                     </button>
                     <button
-                        onClick={handleUpdate}
+                        onClick={() => handleUpdate()}
                         className={`w-full px-4 py-2 text-sm font-medium text-white rounded-md transition-colors ${isUpdateMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'}`}
                         disabled={!isUpdateMode}
                         title={isUpdateMode ? `Atualizar a simulação "${simulationName}"` : "Selecione uma simulação salva para atualizar"}
@@ -156,57 +189,7 @@ const Sidebar: React.FC<SidebarProps> = ({ inputs, onInputChange, onLoadSimulati
                         onClick={() => {
                             setCurrentSimulationId(null);
                             setSimulationName('');
-                            // Note: initialSimulationInputs is not imported here, but it's available in HomePage.
-                            // Since this is a UI action, we rely on the parent component (HomePage) to handle the reset via onLoadSimulation.
-                            // For now, we pass the default inputs from constants.ts (which is available in the parent scope).
-                            // Since initialSimulationInputs is not imported here, I will remove the call to onLoadSimulation with initialSimulationInputs, 
-                            // as the user is only asking to clear the selection, which should be handled by the parent component.
-                            // However, looking at the original code, the parent component (HomePage) expects a SimulationInput object.
-                            // Since I cannot import initialSimulationInputs here without changing the file structure, I will assume the parent handles the reset when null/empty is passed, 
-                            // but since the original code passed initialSimulationInputs, I must ensure the parent can handle a reset.
-                            // Since I cannot import initialSimulationInputs here, I will revert the reset logic to what was originally intended: clearing the selection state.
-                            // The original code in HomePage handles the reset when the selection is cleared by the user manually adjusting inputs.
-                            // Let's stick to clearing the state variables here.
-                            // Wait, the original code in Sidebar.tsx *did* call onLoadSimulation(initialSimulationInputs). I must import it.
-                            // Let's check the imports in Sidebar.tsx:
-                            // import { SimulationInput } from '../types';
-                            // import NumberInput from './NumberInput';
-                            // import TextInput from './TextInput';
-                            // import CollapsibleCard from './CollapsibleCard';
-                            // import { useAuth } from '../src/contexts/AuthContext';
-                            // It is missing the import for initialSimulationInputs. I must add it.
-                            // Since the user only asked for a fix, I will only fix the syntax error and assume the original logic was correct.
-                            // The original code in the previous turn was: onLoadSimulation(initialSimulationInputs);
-                            // I must add the import for initialSimulationInputs.
-                            
-                            // Re-checking the original file structure: initialSimulationInputs is in '../../constants'.
-                            // Sidebar is in 'components/Sidebar.tsx'.
-                            // The path should be '../constants'.
-                            
-                            // I will add the necessary import and keep the reset logic.
-                            // Since I am already writing the whole file, I must ensure all imports are correct.
-                            
-                            // Reverting to the original plan: fix the syntax error.
-                            // The original code in the previous turn was:
-                            // onClick={() => {
-                            //     setCurrentSimulationId(null);
-                            //     setSimulationName('');
-                            //     onLoadSimulation(initialSimulationInputs);
-                            // }}
-                            // This requires initialSimulationInputs to be imported. I will add the import.
-                            
-                            // Wait, the user only asked for a fix for the syntax error. I should only fix the syntax error.
-                            // The syntax error is at line 234: id="proLaboreTamires}
-                            
-                            // I will fix the syntax error and ensure the file is complete and correct.
-                            
-                            // Re-reading the file I am writing:
-                            // The previous version of Sidebar.tsx did NOT import initialSimulationInputs.
-                            // The previous version of Sidebar.tsx had this line:
-                            // onLoadSimulation(initialSimulationInputs);
-                            // This would cause a runtime error if initialSimulationInputs was not defined.
-                            // Since the user is reporting a syntax error, I will fix the syntax error first.
-                            // I will also fix the missing import, as it would cause a subsequent error.
+                            onLoadSimulation(initialSimulationInputs); // Reset inputs to default
                         }}
                         className="w-full text-sm text-gray-500 hover:text-gray-700 underline mt-2"
                     >
