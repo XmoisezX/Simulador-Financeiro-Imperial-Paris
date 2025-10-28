@@ -201,7 +201,9 @@ const WatermarkRemoverPage: React.FC = () => {
                             className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center"
                         >
                             {isLoading ? (
-                                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gerando Preview...</>
+                                <React.Fragment>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gerando Preview...
+                                </React.Fragment>
                             ) : (
                                 'Gerar Preview (1 Imagem)'
                             )}
@@ -213,9 +215,13 @@ const WatermarkRemoverPage: React.FC = () => {
                             className="w-full px-4 py-2 text-sm font-medium text-white bg-primary-orange rounded-md hover:bg-secondary-orange transition-colors disabled:opacity-50 flex items-center justify-center"
                         >
                             {isConverting ? (
-                                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Convertendo e Gerando ZIP...</>
+                                <React.Fragment>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Convertendo e Gerando ZIP...
+                                </React.Fragment>
                             ) : (
-                                <><Download className="w-4 h-4 mr-2" /> Converter e Baixar ZIP ({uploadedFiles.length})</>
+                                <React.Fragment>
+                                    <Download className="w-4 h-4 mr-2" /> Converter e Baixar ZIP ({uploadedFiles.length})
+                                </React.Fragment>
                             )}
                         </button>
                     </div>
@@ -228,3 +234,6 @@ const WatermarkRemoverPage: React.FC = () => {
             </div>
         </div>
     );
+};
+
+export default WatermarkRemoverPage;
