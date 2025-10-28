@@ -5,7 +5,6 @@ import LoginPage from './src/pages/Login';
 import HomePage from './src/pages/HomePage';
 import MarketAnalysisPage from './src/pages/MarketAnalysisPage';
 import ListingGoalsPage from './src/pages/ListingGoalsPage';
-import WatermarkRemoverPage from './src/pages/WatermarkRemoverPage';
 import Header from './components/Header';
 
 const AppContent: React.FC = () => {
@@ -22,7 +21,6 @@ const AppContent: React.FC = () => {
                 <Route path="/" element={<HomePage />} />
                 <Route path="/analise-de-mercado" element={<MarketAnalysisPage />} />
                 <Route path="/metas-agenciamento" element={<ListingGoalsPage />} />
-                <Route path="/remover-marca-dagua" element={<WatermarkRemoverPage />} />
                 <Route path="*" element={<Navigate to="/" />} />
             </Routes>
         </div>
