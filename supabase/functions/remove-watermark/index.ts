@@ -49,8 +49,7 @@ serve(async (req) => {
         if (value instanceof Blob && 'name' in value && value.name) {
             const file = value as File;
             
-            // Limite de 5MB
-            if (file.size > 5242880) {
+            if (file.size > 5242880) { // 5MB limit
                  return errorResponse(`File ${file.name} exceeds the 5MB limit.`, 400);
             }
             
@@ -66,22 +65,7 @@ serve(async (req) => {
         return errorResponse("Nenhum arquivo de imagem válido enviado.", 400);
     }
 
-    // 4. Handle Preview Request
-    if (files.length === 1 && req.headers.get('X-Request-Type') === 'preview') {
-        const file = files[0];
-        
-        // SIMULAÇÃO: Retorna a imagem original
-        return new Response(file.content, {
-            status: 200,
-            headers: {
-                ...corsHeaders,
-                'Content-Type': file.name.endsWith('.png') ? 'image/png' : 'image/jpeg',
-                'Content-Disposition': `inline; filename="preview_${file.name}"`,
-            },
-        });
-    }
-
-    // 5. Handle Conversion/Download Request
+    // 4. Handle Conversion/Download Request
     const zipContent = await createSimulatedZip(files);
 
     return new Response(zipContent, {
@@ -95,7 +79,6 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Edge Function Error:", error);
-    // Retorna um erro 500 com detalhes
     return errorResponse(`Erro interno do servidor: ${error.message}`);
   }
 });
