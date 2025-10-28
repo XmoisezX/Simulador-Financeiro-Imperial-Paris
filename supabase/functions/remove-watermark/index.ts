@@ -20,6 +20,14 @@ async function createSimulatedZip(files: { name: string, content: Uint8Array }[]
     return new Uint8Array(atob(base64).split('').map(c => c.charCodeAt(0)));
 }
 
+// Helper para retornar erros JSON com CORS
+const errorResponse = (message: string, status: number = 500) => {
+    return new Response(JSON.stringify({ error: message }), {
+        status: status,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+};
+
 serve(async (req) => {
   // 1. Handle OPTIONS request for CORS preflight
   if (req.method === 'OPTIONS') {
@@ -30,27 +38,20 @@ serve(async (req) => {
     // 2. Authentication Check
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-        return new Response(JSON.stringify({ error: 'Unauthorized: Missing Authorization header' }), {
-            status: 401,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        return errorResponse('Unauthorized: Missing Authorization header', 401);
     }
     
     // 3. Process FormData
     const formData = await req.formData();
     const files: { name: string, content: Uint8Array }[] = [];
     
-    // Coleta todos os valores que são arquivos (Blob com nome)
     for (const value of formData.values()) {
         if (value instanceof Blob && 'name' in value && value.name) {
             const file = value as File;
             
             // Limite de 5MB
             if (file.size > 5242880) {
-                 return new Response(JSON.stringify({ error: `File ${file.name} exceeds the 5MB limit.` }), {
-                    status: 400,
-                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                });
+                 return errorResponse(`File ${file.name} exceeds the 5MB limit.`, 400);
             }
             
             const buffer = await file.arrayBuffer();
@@ -62,10 +63,7 @@ serve(async (req) => {
     }
 
     if (files.length === 0) {
-        return new Response(JSON.stringify({ error: "Nenhum arquivo de imagem válido enviado." }), {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        return errorResponse("Nenhum arquivo de imagem válido enviado.", 400);
     }
 
     // 4. Handle Preview Request
@@ -98,9 +96,6 @@ serve(async (req) => {
   } catch (error) {
     console.error("Edge Function Error:", error);
     // Retorna um erro 500 com detalhes
-    return new Response(JSON.stringify({ error: `Erro interno do servidor: ${error.message}` }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return errorResponse(`Erro interno do servidor: ${error.message}`);
   }
 });
