@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { zip } from "https://deno.land/x/zipjs@v2.7.18/index.js";
 
 const corsHeaders = {
@@ -28,7 +27,7 @@ serve(async (req) => {
   }
 
   try {
-    // 2. Authentication Check (Mandatory for Supabase functions)
+    // 2. Authentication Check
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
         return new Response(JSON.stringify({ error: 'Unauthorized: Missing Authorization header' }), {
@@ -41,16 +40,19 @@ serve(async (req) => {
     const formData = await req.formData();
     const files: { name: string, content: Uint8Array }[] = [];
     
+    // Coleta todos os valores que são arquivos (Blob com nome)
     for (const value of formData.values()) {
-        if (value instanceof Blob && 'name' in value) {
+        if (value instanceof Blob && 'name' in value && value.name) {
             const file = value as File;
-            // Check file size limit (5MB = 5 * 1024 * 1024 bytes)
+            
+            // Limite de 5MB
             if (file.size > 5242880) {
                  return new Response(JSON.stringify({ error: `File ${file.name} exceeds the 5MB limit.` }), {
                     status: 400,
                     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
                 });
             }
+            
             const buffer = await file.arrayBuffer();
             files.push({
                 name: file.name,
@@ -95,7 +97,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Edge Function Error:", error);
-    // Ensure error response includes CORS headers
+    // Retorna um erro 500 com detalhes
     return new Response(JSON.stringify({ error: `Erro interno do servidor: ${error.message}` }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
