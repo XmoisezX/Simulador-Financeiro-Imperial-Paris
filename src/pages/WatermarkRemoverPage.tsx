@@ -3,8 +3,9 @@ import { Upload, Download, Loader2, Image, X } from 'lucide-react';
 import ImagePreviewCard from '../components/ImagePreviewCard';
 import { useAuth } from '../contexts/AuthContext';
 
-// URL da Edge Function (Substitua o ID do projeto Supabase)
-const EDGE_FUNCTION_URL = "https://pqievwbfrbiqhvdyalrh.supabase.co/functions/v1/remove-watermark";
+// URLs for the Edge Functions
+const PREVIEW_FUNCTION_URL = "https://pqievwbfrbiqhvdyalrh.supabase.co/functions/v1/image-preview";
+const DOWNLOAD_FUNCTION_URL = "https://pqievwbfrbiqhvdyalrh.supabase.co/functions/v1/remove-watermark";
 
 interface UploadedFile {
     file: File;
@@ -56,15 +57,14 @@ const WatermarkRemoverPage: React.FC = () => {
 
         const fileToPreview = uploadedFiles[0].file;
         const formData = new FormData();
-        // Usamos 'file' como nome do campo para o preview
+        // Use the specific key 'file' that the new Edge Function expects
         formData.append('file', fileToPreview);
 
         try {
-            const response = await fetch(EDGE_FUNCTION_URL, {
+            const response = await fetch(PREVIEW_FUNCTION_URL, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${session?.access_token}`,
-                    'X-Request-Type': 'preview', // Sinaliza para a Edge Function que é um pedido de preview
                 },
                 body: formData,
             });
@@ -75,12 +75,13 @@ const WatermarkRemoverPage: React.FC = () => {
                     const errorJson = await response.json();
                     errorMessage = errorJson.error || errorMessage;
                 } catch {
+                    // If the response is not JSON, use the text body
                     errorMessage = await response.text();
                 }
                 throw new Error(errorMessage);
             }
 
-            // Cria um Blob URL para o preview
+            // Create a Blob URL for the preview
             const blob = await response.blob();
             const url = URL.createObjectURL(blob);
             setPreviewUrl(url);
@@ -104,12 +105,12 @@ const WatermarkRemoverPage: React.FC = () => {
 
         const formData = new FormData();
         uploadedFiles.forEach(item => {
-            // Usamos 'files' como nome do campo para o download em lote
+            // The download function can iterate through all values, so the key is less critical
             formData.append('files', item.file, item.file.name);
         });
 
         try {
-            const response = await fetch(EDGE_FUNCTION_URL, {
+            const response = await fetch(DOWNLOAD_FUNCTION_URL, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${session?.access_token}`,
@@ -119,7 +120,6 @@ const WatermarkRemoverPage: React.FC = () => {
 
             if (!response.ok) {
                 let errorMessage = `Erro no servidor: ${response.status}`;
-                // Tenta ler o erro como JSON se não for um 200
                 try {
                     const errorJson = await response.json();
                     errorMessage = errorJson.error || errorMessage;
@@ -129,7 +129,7 @@ const WatermarkRemoverPage: React.FC = () => {
                 throw new Error(errorMessage);
             }
 
-            // Baixa o arquivo ZIP
+            // Download the ZIP file
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -141,7 +141,7 @@ const WatermarkRemoverPage: React.FC = () => {
             window.URL.revokeObjectURL(url);
 
             alert(`Sucesso! ${uploadedFiles.length} imagem(ns) processada(s) e baixada(s) em um arquivo ZIP.`);
-            setUploadedFiles([]); // Limpa a lista após o download
+            setUploadedFiles([]); // Clear the list after download
             setPreviewUrl(null);
 
         } catch (err) {
@@ -160,7 +160,7 @@ const WatermarkRemoverPage: React.FC = () => {
             </p>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Coluna de Upload e Ações */}
+                {/* Upload and Actions Column */}
                 <div className="lg:col-span-1 space-y-6">
                     <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200 space-y-4">
                         <h2 className="text-xl font-semibold text-primary-orange">1. Selecione os Arquivos</h2>
@@ -221,13 +221,10 @@ const WatermarkRemoverPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Coluna de Preview */}
+                {/* Preview Column */}
                 <div className="lg:col-span-2">
                     <ImagePreviewCard previewUrl={previewUrl} isLoading={isLoading} error={error} />
                 </div>
             </div>
         </div>
     );
-};
-
-export default WatermarkRemoverPage;
