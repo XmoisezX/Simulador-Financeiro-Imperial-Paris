@@ -56,6 +56,7 @@ const WatermarkRemoverPage: React.FC = () => {
 
         const fileToPreview = uploadedFiles[0].file;
         const formData = new FormData();
+        // Usamos 'file' como nome do campo para o preview
         formData.append('file', fileToPreview);
 
         try {
@@ -69,8 +70,14 @@ const WatermarkRemoverPage: React.FC = () => {
             });
 
             if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Erro no servidor: ${response.status} - ${errorText.substring(0, 100)}...`);
+                let errorMessage = `Erro no servidor: ${response.status}`;
+                try {
+                    const errorJson = await response.json();
+                    errorMessage = errorJson.error || errorMessage;
+                } catch {
+                    errorMessage = await response.text();
+                }
+                throw new Error(errorMessage);
             }
 
             // Cria um Blob URL para o preview
@@ -80,7 +87,7 @@ const WatermarkRemoverPage: React.FC = () => {
 
         } catch (err) {
             console.error("Erro ao gerar preview:", err);
-            setError("Falha ao conectar com o serviço de processamento.");
+            setError(`Falha ao processar o preview: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
         } finally {
             setIsLoading(false);
         }
@@ -97,6 +104,7 @@ const WatermarkRemoverPage: React.FC = () => {
 
         const formData = new FormData();
         uploadedFiles.forEach(item => {
+            // Usamos 'files' como nome do campo para o download em lote
             formData.append('files', item.file, item.file.name);
         });
 
@@ -110,8 +118,15 @@ const WatermarkRemoverPage: React.FC = () => {
             });
 
             if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Erro no servidor: ${response.status} - ${errorText.substring(0, 100)}...`);
+                let errorMessage = `Erro no servidor: ${response.status}`;
+                // Tenta ler o erro como JSON se não for um 200
+                try {
+                    const errorJson = await response.json();
+                    errorMessage = errorJson.error || errorMessage;
+                } catch {
+                    errorMessage = await response.text();
+                }
+                throw new Error(errorMessage);
             }
 
             // Baixa o arquivo ZIP
@@ -131,7 +146,7 @@ const WatermarkRemoverPage: React.FC = () => {
 
         } catch (err) {
             console.error("Erro ao converter e baixar:", err);
-            setError("Falha ao processar e baixar o arquivo ZIP.");
+            setError(`Falha ao processar e baixar o arquivo ZIP: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
         } finally {
             setIsConverting(false);
         }
