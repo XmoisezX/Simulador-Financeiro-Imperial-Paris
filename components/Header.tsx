@@ -51,6 +51,9 @@ const Header: React.FC = () => {
                             <Link to="/metas-agenciamento" className={navLinkClasses('/metas-agenciamento')}>
                                 Metas Agenciamento
                             </Link>
+                            <Link to="/remover-marca-dagua" className={navLinkClasses('/remover-marca-dagua')}>
+                                Remover Marca D'água
+                            </Link>
                         </nav>
                         <span className="text-sm text-light-text hidden lg:block">{session.user.email}</span>
                         <button
