@@ -4,6 +4,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { Loader2 } from 'lucide-react';
 import ClientOnly from './ClientOnly';
+import MapController from './MapController'; // Importando o novo componente
 
 // Corrige ícone padrão do Leaflet no React
 if (typeof window !== 'undefined' && L.Icon) {
@@ -15,6 +16,11 @@ if (typeof window !== 'undefined' && L.Icon) {
     });
 }
 
+// Posição padrão (Pelotas, RS)
+const DEFAULT_POSITION: [number, number] = [-31.7719, -52.3425];
+const DEFAULT_ZOOM = 12;
+const SEARCH_ZOOM = 16;
+
 // Componente principal que contém a lógica e o mapa
 const EnderecoMapContent: React.FC = () => {
     const [cep, setCep] = useState("");
@@ -23,9 +29,16 @@ const EnderecoMapContent: React.FC = () => {
     const [endereco, setEndereco] = useState("");
     const [erro, setErro] = useState("");
     const [carregando, setCarregando] = useState(false);
+    
+    // Estado para o centro e zoom do mapa (usado pelo MapController)
+    const [mapCenter, setMapCenter] = useState<[number, number]>(DEFAULT_POSITION);
+    const [mapZoom, setMapZoom] = useState(DEFAULT_ZOOM);
 
     const buscarEndereco = useCallback(async () => {
-        if (!cep || !numero) {
+        const cleanCep = cep.replace(/\D/g, '');
+        const cleanNumero = numero.replace(/\D/g, '');
+
+        if (!cleanCep || !cleanNumero) {
             setErro("Por favor, preencha o CEP e o número.");
             return;
         }
@@ -36,12 +49,9 @@ const EnderecoMapContent: React.FC = () => {
         setEndereco("");
 
         try {
-            // Remove caracteres não numéricos do CEP
-            const cleanCep = cep.replace(/\D/g, '');
+            // Query mais robusta: CEP, Número, Cidade (Pelotas), Estado (RS), Brasil
+            const query = `${cleanCep}, ${cleanNumero}, Pelotas, RS, Brasil`;
             
-            const query = `${cleanCep} ${numero} Brasil`;
-            
-            // Adicionando User-Agent conforme boas práticas do Nominatim
             const res = await fetch(
                 `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`,
                 {
@@ -58,15 +68,25 @@ const EnderecoMapContent: React.FC = () => {
             const data = await res.json();
 
             if (data.length === 0) {
-                setErro("Endereço não encontrado. Tente formatar o CEP (ex: 96010-160).");
+                setErro("Endereço não encontrado. Tente verificar o CEP e o número.");
+                setMapCenter(DEFAULT_POSITION);
+                setMapZoom(DEFAULT_ZOOM);
             } else {
                 const local = data[0];
-                setPosicao([parseFloat(local.lat), parseFloat(local.lon)]);
+                const newPosicao: [number, number] = [parseFloat(local.lat), parseFloat(local.lon)];
+                
+                setPosicao(newPosicao);
                 setEndereco(local.display_name);
+                
+                // Atualiza o centro e zoom do mapa
+                setMapCenter(newPosicao);
+                setMapZoom(SEARCH_ZOOM);
             }
         } catch (err) {
             console.error(err);
             setErro("Erro ao buscar endereço. Verifique sua conexão.");
+            setMapCenter(DEFAULT_POSITION);
+            setMapZoom(DEFAULT_ZOOM);
         } finally {
             setCarregando(false);
         }
@@ -109,24 +129,25 @@ const EnderecoMapContent: React.FC = () => {
 
             {erro && <p className="text-red-600 text-sm p-2 bg-red-50 border border-red-200 rounded-md w-full">{erro}</p>}
 
-            {posicao && (
-                <div className="w-full h-96 rounded-lg overflow-hidden border border-gray-300 shadow-inner">
-                    <MapContainer
-                        center={posicao}
-                        zoom={16}
-                        scrollWheelZoom={true}
-                        className="h-full w-full z-0"
-                    >
-                        <TileLayer
-                            attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
-                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        />
+            <div className="w-full h-96 rounded-lg overflow-hidden border border-gray-300 shadow-inner">
+                <MapContainer
+                    center={mapCenter}
+                    zoom={mapZoom}
+                    scrollWheelZoom={true}
+                    className="h-full w-full z-0"
+                >
+                    <MapController center={mapCenter} zoom={mapZoom} />
+                    <TileLayer
+                        attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    {posicao && (
                         <Marker position={posicao}>
                             <Popup>{endereco}</Popup>
                         </Marker>
-                    </MapContainer>
-                </div>
-            )}
+                    )}
+                </MapContainer>
+            </div>
         </div>
     );
 }

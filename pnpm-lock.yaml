@@ -17,9 +17,6 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.76.1
         version: 2.76.1
-      '@types/leaflet':
-        specifier: ^1.9.21
-        version: 1.9.21
       '@types/papaparse':
         specifier: ^5.3.16
         version: 5.3.16
@@ -54,6 +51,9 @@ importers:
         specifier: ^7.9.4
         version: 7.9.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     devDependencies:
+      '@types/leaflet':
+        specifier: ^1.9.21
+        version: 1.9.21
       '@types/node':
         specifier: ^22.14.0
         version: 22.18.12
