@@ -21,7 +21,7 @@ const NewImovelPage: React.FC = () => {
         <div className="flex flex-wrap gap-4">
             {options.map(option => (
                 <label key={option} className="flex items-center space-x-2 text-sm">
-                    <input type="radio" name={name} value={option} className="text-blue-600 focus:ring-blue-500" required={required} />
+                    <input type="radio" name={name} value={String(option)} className="text-blue-600 focus:ring-blue-500" required={required} />
                     <span>{option}</span>
                 </label>
             ))}
