@@ -8,7 +8,8 @@ import TextInput from '../components/TextInput';
 import NumberInput from '../components/NumberInput';
 import { Button } from '../components/ui/Button';
 import { Checkbox } from '../components/ui/Checkbox';
-import { useCepLookup } from '../../hooks/useCepLookup'; // Importando o novo hook
+import { useCepLookup } from '../../hooks/useCepLookup';
+import MapDisplay from '../components/MapDisplay'; // Importando o novo componente
 
 // --- Mock Data ---
 const propertyTypes = [
@@ -37,7 +38,7 @@ const generateRandomCode = () => String(Math.floor(10000 + Math.random() * 90000
 const getInitialState = (): ImovelInput => ({
     tipo_imovel: '',
     codigo: generateRandomCode(), // Código randômico inicial
-    venda_ativo: true,
+    venda_ativo: false, // REMOVIDA PRÉ-SELEÇÃO
     venda_disponibilidade: 'Disponível',
     venda_motivo_indisponibilidade: '',
     locacao_ativo: false,
@@ -51,7 +52,7 @@ const getInitialState = (): ImovelInput => ({
     condominio_id: '',
     bloco_torre: '',
     cep: '',
-    estado: 'Rio Grande do Sul',
+    estado: 'RS', // Usando sigla padrão
     cidade: 'Pelotas',
     bairro: '',
     logradouro: '',
@@ -512,6 +513,10 @@ const NewImovelPage: React.FC = () => {
                     </>
                 );
             case 2:
+                // Validação de endereço para o mapa
+                const isAddressValid = formData.cep.replace(/\D/g, '').length === 8 && formData.bairro && formData.logradouro && formData.numero;
+                const fullAddress = `${formData.logradouro}, ${formData.numero} - ${formData.bairro}, ${formData.cidade} - ${formData.estado}`;
+
                 return (
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -593,9 +598,11 @@ const NewImovelPage: React.FC = () => {
                             </div>
                         </div>
                         
-                        <div className="h-64 bg-gray-200 rounded-md mt-4 flex items-center justify-center text-gray-500">
-                            [Área do Mapa Mock]
-                        </div>
+                        <MapDisplay 
+                            visibilidade={formData.mapa_visibilidade as VisibilidadeMapa} 
+                            address={fullAddress}
+                            isValid={isAddressValid}
+                        />
                     </>
                 );
             case 3:
