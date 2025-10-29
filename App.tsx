@@ -11,10 +11,12 @@ import NewImovelPage from './src/pages/NewImovelPage';
 import ViewImovelPage from './src/pages/ViewImovelPage';
 import PessoasPage from './src/pages/PessoasPage';
 import MapTestPage from './src/pages/MapTestPage';
+import SystemSettingsPage from './src/pages/SystemSettingsPage'; // NOVO
+import SiteSettingsPage from './src/pages/SiteSettingsPage'; // NOVO
 import CRMLayout from './src/components/CRMLayout';
-import PublicHomePage from './src/pages/PublicHomePage'; // NOVA PÁGINA
-import PublicLayout from './src/layouts/PublicLayout'; // NOVO LAYOUT
-import PublicImovelDetailsPage from './src/pages/PublicImovelDetailsPage'; // NOVO
+import PublicHomePage from './src/pages/PublicHomePage';
+import PublicLayout from './src/layouts/PublicLayout';
+import PublicImovelDetailsPage from './src/pages/PublicImovelDetailsPage';
 
 const AppContent: React.FC = () => {
     const { session } = useAuth();
@@ -50,6 +52,12 @@ const AppContent: React.FC = () => {
                 <Route path="/crm/imoveis/novo" element={<NewImovelPage />} />
                 <Route path="/crm/imoveis/:id" element={<ViewImovelPage />} />
                 <Route path="/crm/pessoas" element={<PessoasPage />} />
+                
+                {/* Rotas de Sistema */}
+                <Route path="/crm/sistema" element={<SystemSettingsPage />} />
+                <Route path="/crm/sistema/site" element={<SiteSettingsPage />} />
+                <Route path="/crm/sistema/geral" element={<div className="p-4 text-xl">Configurações Gerais (Em construção)</div>} />
+                
                 {/* Rotas placeholder para as outras funcionalidades do CRM */}
                 <Route path="/crm/chaves" element={<div className="p-4 text-xl">Página de Chaves (Em construção)</div>} />
                 <Route path="/crm/propostas" element={<div className="p-4 text-xl">Página de Propostas (Em construção)</div>} />
