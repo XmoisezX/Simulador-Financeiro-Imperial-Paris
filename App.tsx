@@ -8,6 +8,7 @@ import ListingGoalsPage from './src/pages/ListingGoalsPage';
 import DashboardPage from './src/pages/DashboardPage'; // Novo Dashboard do CRM
 import ImoveisPage from './src/pages/ImoveisPage'; // Nova página de Imóveis
 import NewImovelPage from './src/pages/NewImovelPage'; // Nova página de Cadastro de Imóvel
+import MapTestPage from './src/pages/MapTestPage'; // Nova página de Teste de Mapa
 import CRMLayout from './src/components/CRMLayout'; // Novo Layout
 
 const AppContent: React.FC = () => {
@@ -39,6 +40,9 @@ const AppContent: React.FC = () => {
                 <Route path="/simulador" element={<HomePage />} />
                 <Route path="/analise-de-mercado" element={<MarketAnalysisPage />} />
                 <Route path="/metas-agenciamento" element={<ListingGoalsPage />} />
+                
+                {/* Nova Rota de Teste */}
+                <Route path="/mapa-teste" element={<MapTestPage />} />
                 
                 <Route path="*" element={<Navigate to="/crm/dashboard" />} />
             </Routes>

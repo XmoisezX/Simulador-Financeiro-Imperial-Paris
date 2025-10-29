@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Building, Key, FileText, Users, Briefcase, CalendarCheck, Zap, DollarSign, Target } from 'lucide-react';
+import { Home, Building, Key, FileText, Users, Briefcase, CalendarCheck, Zap, DollarSign, Target, Map } from 'lucide-react';
 
 interface NavItemProps {
     to: string;
@@ -48,6 +48,7 @@ const CRMSidebar: React.FC = () => {
                 <NavItem to="/simulador" icon={<DollarSign className="w-5 h-5" />} label="Simulador Financeiro" />
                 <NavItem to="/analise-de-mercado" icon={<Building className="w-5 h-5" />} label="Análise de Mercado" />
                 <NavItem to="/metas-agenciamento" icon={<Target className="w-5 h-5" />} label="Metas Agenciamento" />
+                <NavItem to="/mapa-teste" icon={<Map className="w-5 h-5" />} label="Teste de Mapa" />
             </div>
         </aside>
     );
