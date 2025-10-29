@@ -145,6 +145,7 @@ export type SimNaoSemimobiliado = 'Não' | 'Sim' | 'Semimobiliado';
 export type Financiavel = 'Sim' | 'Não' | 'MCMV';
 export type VisibilidadeMapa = 'Exata' | 'Aproximada' | 'Não mostrar';
 export type StatusAprovacao = 'Aprovado' | 'Não aprovado' | 'Aguardando';
+export type Ocupacao = 'Desocupado' | 'Ocupado' | 'Locado'; // NOVO TIPO
 
 export interface ImovelInput {
   // Step 1: Dados do Imóvel
@@ -212,7 +213,7 @@ export interface ImovelInput {
   nao_possui_matricula: boolean;
   numero_iptu: string;
   vencimento_exclusividade: string;
-  ocupacao: string;
+  ocupacao: Ocupacao; // USANDO NOVO TIPO
   exclusivo: SimNao;
   placa: SimNao;
   medidor_energia: string;

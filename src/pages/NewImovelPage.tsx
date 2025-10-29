@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Home, MapPin, DollarSign, Eye, Lock, Key, FileText, Image, List, CheckCircle, Zap, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { ImovelInput, SimNao, Disponibilidade, SimNaoSemimobiliado, Financiavel, VisibilidadeMapa, StatusAprovacao } from '../../types';
+import { ImovelInput, SimNao, Disponibilidade, SimNaoSemimobiliado, Financiavel, VisibilidadeMapa, StatusAprovacao, Ocupacao } from '../../types';
 import { useAuth } from '../contexts/AuthContext';
 import ImovelStep from '../components/ImovelStep';
 import TextInput from '../components/TextInput';
@@ -11,7 +11,7 @@ import { Checkbox } from '../components/ui/Checkbox'; // Mantendo o import para 
 import { useCepLookup } from '../../hooks/useCepLookup';
 import { useNominatimLookup } from '../../hooks/useNominatimLookup'; // NOVO HOOK
 import MapDisplay from '../components/MapDisplay'; // USANDO IMPORT DIRETO
-// import ClientOnly from '../components/ClientOnly'; // REMOVIDO
+import ToggleSwitch from '../components/ToggleSwitch'; // NOVO COMPONENTE
 
 // --- Mock Data ---
 const propertyTypes = [
@@ -25,13 +25,25 @@ const propertyTypes = [
 const neighborhoods = ['Centro', 'Laranjal', 'Areal', 'Porto', 'Fragata', 'Três Vendas'];
 const motives = ['Vendido', 'Alugado', 'Retirado pelo proprietário'];
 const indexOptions = ['IGP-M', 'IPCA', 'FIPE'];
-const occupationOptions = ['Desocupado', 'Ocupado', 'Em reforma'];
+const occupationOptions: Ocupacao[] = ['Desocupado', 'Ocupado', 'Locado']; // ATUALIZADO
 const floorOptions = ['Nenhum', 'Térreo', '1º Andar', '2º Andar', '3º Andar'];
 const orientationOptions = ['Norte', 'Sul', 'Leste', 'Oeste'];
 const floorTypes = ['Aquecido', 'Carpete', 'Laminado', 'Tabuão', 'Ardósia', 'Cerâmico', 'Mármore', 'Usina', 'Associado', 'Flutuante', 'Parquet', 'Vinílico', 'Granito', 'Bruto', 'Porcelanato'];
 const booleanOptions = ['Sim', 'Não'];
 const conditionOptions = ['Em construção', 'Na planta', 'Novo', 'Usado'];
 const approvalOptions = ['Aprovado', 'Não aprovado', 'Aguardando'];
+
+// Opções de visibilidade de endereço (Passo 4)
+const visibilidadeEnderecoOptions = [
+    'Apenas estado',
+    'Apenas o estado e a cidade',
+    'Todas acima incluindo o bairro',
+    'Todas acima incluindo logradouro',
+    'Todas acima incluindo condomínio e subcondomínio',
+    'Todos acima incluindo o número',
+    'Todos acima incluindo o andar',
+    'Todos acima incluindo o complemento',
+];
 
 // Helper para gerar código randômico de 5 dígitos
 const generateRandomCode = () => String(Math.floor(10000 + Math.random() * 90000));
@@ -81,9 +93,9 @@ const getInitialState = (): ImovelInput => ({
 
     // Step 4: Visibilidade
     vis_endereco: 'Todas acima incluindo logradouro',
-    vis_venda: 'Visível',
-    vis_locacao: 'Invisível',
-    vis_temporada: 'Invisível',
+    vis_venda: 'Invisível', // Padrão para ToggleSwitch
+    vis_locacao: 'Invisível', // Padrão para ToggleSwitch
+    vis_temporada: 'Invisível', // Padrão para ToggleSwitch
     vis_iptu: 'Invisível',
     vis_condominio: 'Invisível',
 
@@ -219,7 +231,12 @@ const NewImovelPage: React.FC = () => {
     }, []);
     
     const handleRadioChange = useCallback((name: keyof ImovelInput, value: string) => {
-        setFormData(prev => ({ ...prev, [name]: value }));
+        setFormData(prev => ({ ...prev, [name]: value as any }));
+        setValidationError(null);
+    }, []);
+    
+    const handleToggleChange = useCallback((name: 'vis_venda' | 'vis_locacao' | 'vis_temporada', checked: boolean) => {
+        setFormData(prev => ({ ...prev, [name]: checked ? 'Visível' : 'Invisível' }));
         setValidationError(null);
     }, []);
     
@@ -289,12 +306,14 @@ const NewImovelPage: React.FC = () => {
             case 3: // Valores
                 if (currentData.venda_ativo && currentData.valor_venda <= 0) errors.push('O valor de venda deve ser maior que zero se a venda estiver ativa.');
                 if (currentData.locacao_ativo && currentData.valor_locacao <= 0) errors.push('O valor de locação deve ser maior que zero se a locação estiver ativa.');
+                if (!currentData.financiavel) errors.push('O campo Financiável é obrigatório.');
                 break;
             case 5: // Dados não visíveis no site
                 if (!currentData.proprietario_id) errors.push('O proprietário é obrigatório.');
                 if (!currentData.agenciador_id) errors.push('O agenciador é obrigatório.');
                 if (!currentData.responsavel_id) errors.push('O responsável é obrigatório.');
                 if (!currentData.data_agenciamento) errors.push('A data de agenciamento é obrigatória.');
+                if (!currentData.ocupacao) errors.push('O campo Ocupação é obrigatório.');
                 break;
             case 9: // Características
                 if (currentData.dormitorios === undefined || currentData.dormitorios < 0) errors.push('O número de dormitórios é obrigatório.');
@@ -435,6 +454,8 @@ const NewImovelPage: React.FC = () => {
             ))}
         </div>
     );
+    
+    const RequiredAsterisk = () => <span className="text-red-500 ml-1">*</span>;
 
     const renderStepContent = (currentStep: number) => {
         switch (currentStep) {
@@ -443,7 +464,7 @@ const NewImovelPage: React.FC = () => {
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-light-text">Tipo do imóvel *</label>
+                                <label className="block text-sm font-medium text-light-text">Tipo do imóvel <RequiredAsterisk /></label>
                                 <select 
                                     id="tipo_imovel"
                                     value={formData.tipo_imovel}
@@ -454,7 +475,7 @@ const NewImovelPage: React.FC = () => {
                                     {propertyTypes.map(t => <option key={t} value={t}>{t}</option>)}
                                 </select>
                             </div>
-                            <TextInput label="Código *" id="codigo" value={formData.codigo} onChange={handleInputChange} placeholder="52564" />
+                            <TextInput label={<span>Código <RequiredAsterisk /></span>} id="codigo" value={formData.codigo} onChange={handleInputChange} placeholder="52564" />
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
@@ -566,7 +587,7 @@ const NewImovelPage: React.FC = () => {
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
                             <div className="relative">
                                 <TextInput 
-                                    label="CEP *" 
+                                    label={<span>CEP <RequiredAsterisk /></span>} 
                                     id="cep" 
                                     value={formData.cep} 
                                     onChange={handleCepChange} 
@@ -582,19 +603,19 @@ const NewImovelPage: React.FC = () => {
                             </div>
                             
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-light-text">Estado *</label>
+                                <label className="block text-sm font-medium text-light-text">Estado <RequiredAsterisk /></label>
                                 <select id="estado" value={formData.estado} onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100" disabled={cepLoading || !!cepData}>
                                     <option value={formData.estado}>{formData.estado}</option>
                                 </select>
                             </div>
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-light-text">Cidade *</label>
+                                <label className="block text-sm font-medium text-light-text">Cidade <RequiredAsterisk /></label>
                                 <select id="cidade" value={formData.cidade} onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100" disabled={cepLoading || !!cepData}>
                                     <option value={formData.cidade}>{formData.cidade}</option>
                                 </select>
                             </div>
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-light-text">Bairro *</label>
+                                <label className="block text-sm font-medium text-light-text">Bairro <RequiredAsterisk /></label>
                                 <select id="bairro" value={formData.bairro} onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100" disabled={cepLoading || !!cepData}>
                                     <option value={formData.bairro}>{formData.bairro}</option>
                                     {/* Mock de bairros se não houver CEP data */}
@@ -604,8 +625,8 @@ const NewImovelPage: React.FC = () => {
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
-                            <TextInput label="Logradouro *" id="logradouro" value={formData.logradouro} onChange={handleInputChange} placeholder="Informe o logradouro" disabled={cepLoading || !!cepData} />
-                            <TextInput label="Número *" id="numero" value={formData.numero} onChange={handleInputChange} placeholder="Informe o número" />
+                            <TextInput label={<span>Logradouro <RequiredAsterisk /></span>} id="logradouro" value={formData.logradouro} onChange={handleInputChange} placeholder="Informe o logradouro" disabled={cepLoading || !!cepData} />
+                            <TextInput label={<span>Número <RequiredAsterisk /></span>} id="numero" value={formData.numero} onChange={handleInputChange} placeholder="Informe o número" />
                             <TextInput label="Complemento" id="complemento" value={formData.complemento} onChange={handleInputChange} placeholder="Informe o complemento" disabled={cepLoading || !!cepData} />
                             <TextInput label="Ponto de referência" id="referencia" value={formData.referencia} onChange={handleInputChange} placeholder="Ex: Ao lado da igreja" />
                         </div>
@@ -641,7 +662,7 @@ const NewImovelPage: React.FC = () => {
                 return (
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <NumberInput label="Valor de venda" id="valor_venda" isCurrency value={formData.valor_venda} onChange={handleInputChange} placeholder="R$ 0,00" />
+                            <NumberInput label={<span>Valor de venda <RequiredAsterisk /></span>} id="valor_venda" isCurrency value={formData.valor_venda} onChange={handleInputChange} placeholder="R$ 0,00" />
                             <NumberInput label="Valor de locação" id="valor_locacao" isCurrency value={formData.valor_locacao} onChange={handleInputChange} placeholder="R$ 0,00" />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -682,7 +703,7 @@ const NewImovelPage: React.FC = () => {
                                 {renderRadioGroup('iptu_periodo', ['Mensal', 'Anual'])}
                             </div>
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-light-text">Financiável</label>
+                                <label className="block text-sm font-medium text-light-text">Financiável <RequiredAsterisk /></label>
                                 {renderRadioGroup('financiavel', ['Sim', 'Não', 'MCMV'])}
                             </div>
                         </div>
@@ -696,17 +717,32 @@ const NewImovelPage: React.FC = () => {
                         </div>
                         
                         <div className="space-y-2">
-                            <label className="block text-sm font-medium text-light-text">Endereço *</label>
+                            <label className="block text-sm font-medium text-light-text">Endereço <RequiredAsterisk /></label>
                             <select id="vis_endereco" value={formData.vis_endereco} onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text">
-                                <option>Todas acima incluindo logradouro</option>
+                                {visibilidadeEnderecoOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                             </select>
                         </div>
                         
                         <h3 className="text-sm font-medium text-light-text mt-4">Valores</h3>
-                        <div className="grid grid-cols-3 gap-4">
-                            <TextInput label="Venda" id="vis_venda" value={formData.vis_venda} onChange={handleInputChange} placeholder="Invisível" />
-                            <TextInput label="Locação" id="vis_locacao" value={formData.vis_locacao} onChange={handleInputChange} placeholder="Invisível" />
-                            <TextInput label="Temporada" id="vis_temporada" value={formData.vis_temporada} onChange={handleInputChange} placeholder="Invisível" />
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <ToggleSwitch 
+                                label="Venda" 
+                                id="vis_venda" 
+                                checked={formData.vis_venda === 'Visível'} 
+                                onChange={(checked) => handleToggleChange('vis_venda', checked)}
+                            />
+                            <ToggleSwitch 
+                                label="Locação" 
+                                id="vis_locacao" 
+                                checked={formData.vis_locacao === 'Visível'} 
+                                onChange={(checked) => handleToggleChange('vis_locacao', checked)}
+                            />
+                            <ToggleSwitch 
+                                label="Temporada" 
+                                id="vis_temporada" 
+                                checked={formData.vis_temporada === 'Visível'} 
+                                onChange={(checked) => handleToggleChange('vis_temporada', checked)}
+                            />
                         </div>
                         
                         <div className="grid grid-cols-3 gap-4 mt-4">
@@ -719,7 +755,7 @@ const NewImovelPage: React.FC = () => {
                 return (
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <TextInput label="Proprietário *" id="proprietario_id" value={formData.proprietario_id} onChange={handleInputChange} placeholder="Pesquise por: Nome, CPF, Telefone (Mock)" />
+                            <TextInput label={<span>Proprietário <RequiredAsterisk /></span>} id="proprietario_id" value={formData.proprietario_id} onChange={handleInputChange} placeholder="Pesquise por: Nome, CPF, Telefone (Mock)" />
                             <NumberInput label="Comissão (%)" id="comissao_proprietario_percent" value={formData.comissao_proprietario_percent} onChange={handleInputChange} placeholder="100%" />
                         </div>
                         <Button variant="outline" className="mt-2">+ Mais um proprietário (Mock)</Button>
@@ -733,15 +769,15 @@ const NewImovelPage: React.FC = () => {
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                            <TextInput label="Agenciador / Captador *" id="agenciador_id" value={formData.agenciador_id} onChange={handleInputChange} placeholder="Moisez Torres (Mock)" />
-                            <TextInput label="Responsável / Corretor *" id="responsavel_id" value={formData.responsavel_id} onChange={handleInputChange} placeholder="Alessandro Gomes (Mock)" />
+                            <TextInput label={<span>Agenciador / Captador <RequiredAsterisk /></span>} id="agenciador_id" value={formData.agenciador_id} onChange={handleInputChange} placeholder="Moisez Torres (Mock)" />
+                            <TextInput label={<span>Responsável / Corretor <RequiredAsterisk /></span>} id="responsavel_id" value={formData.responsavel_id} onChange={handleInputChange} placeholder="Alessandro Gomes (Mock)" />
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
                             <NumberInput label="Honorários Venda (%)" id="honorarios_venda_percent" value={formData.honorarios_venda_percent} onChange={handleInputChange} placeholder="0%" />
                             <NumberInput label="Honorários Locação (%)" id="honorarios_locacao_percent" value={formData.honorarios_locacao_percent} onChange={handleInputChange} placeholder="0%" />
                             <NumberInput label="Honorários Temporada (%)" id="honorarios_temporada_percent" value={formData.honorarios_temporada_percent} onChange={handleInputChange} placeholder="0%" />
-                            <TextInput label="Data agenciamento *" id="data_agenciamento" type="date" value={formData.data_agenciamento} onChange={handleInputChange} />
+                            <TextInput label={<span>Data agenciamento <RequiredAsterisk /></span>} id="data_agenciamento" type="date" value={formData.data_agenciamento} onChange={handleInputChange} />
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
@@ -756,7 +792,7 @@ const NewImovelPage: React.FC = () => {
                         
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-light-text">Ocupação *</label>
+                                <label className="block text-sm font-medium text-light-text">Ocupação <RequiredAsterisk /></label>
                                 <select id="ocupacao" value={formData.ocupacao} onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text">
                                     {occupationOptions.map(o => <option key={o} value={o}>{o}</option>)}
                                 </select>
@@ -828,26 +864,26 @@ const NewImovelPage: React.FC = () => {
                         
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-light-text">Dormitórios *</label>
+                                <label className="block text-sm font-medium text-light-text">Dormitórios <RequiredAsterisk /></label>
                                 {renderRadioGroup('dormitorios', [0, 1, 2, 3, 4, 5])}
                             </div>
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-light-text">Quantos são suítes? *</label>
+                                <label className="block text-sm font-medium text-light-text">Quantos são suítes? <RequiredAsterisk /></label>
                                 {renderRadioGroup('suites', [0, 1, 2, 3, 4, 5])}
                             </div>
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-light-text">Banheiros *</label>
+                                <label className="block text-sm font-medium text-light-text">Banheiros <RequiredAsterisk /></label>
                                 {renderRadioGroup('banheiros', [0, 1, 2, 3, 4, 5])}
                             </div>
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-light-text">Vagas de garagem *</label>
+                                <label className="block text-sm font-medium text-light-text">Vagas de garagem <RequiredAsterisk /></label>
                                 {renderRadioGroup('vagas_garagem', [0, 1, 2, 3, 4, 5])}
                             </div>
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-light-text">Condição *</label>
+                                <label className="block text-sm font-medium text-light-text">Condição <RequiredAsterisk /></label>
                                 {renderRadioGroup('condicao', conditionOptions)}
                             </div>
                             <div className="space-y-2">
@@ -934,7 +970,7 @@ const NewImovelPage: React.FC = () => {
                 return (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-3">
-                            <h3 className="text-sm font-medium text-light-text">Status de aprovação *</h3>
+                            <h3 className="text-sm font-medium text-light-text">Status de aprovação <RequiredAsterisk /></h3>
                             {renderRadioGroup('status_aprovacao', approvalOptions)}
                         </div>
                         <div className="space-y-2">
