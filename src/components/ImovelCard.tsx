@@ -115,7 +115,7 @@ const ImovelCard: React.FC<ImovelCardProps> = ({ imovel, onViewDetails }) => {
                 </div>
                 
                 {/* 2. Detalhes e Características */}
-                <div className="flex-1 grid grid-cols-3 gap-x-4">
+                <div className="flex-1 grid grid-cols-3 gap-x-6">
                     
                     {/* Coluna 1: Endereço */}
                     <div className="col-span-1 flex flex-col justify-center">
@@ -126,7 +126,7 @@ const ImovelCard: React.FC<ImovelCardProps> = ({ imovel, onViewDetails }) => {
                         <p className="text-xs text-light-text leading-tight">{imovel.dados_localizacao.cidade} - {imovel.dados_localizacao.estado}</p>
                     </div>
                     
-                    {/* Coluna 2: Características com Ícones */}
+                    {/* Coluna 2: Características com Ícones (Mais espaço) */}
                     <div className="col-span-1 grid grid-cols-2 gap-y-1 text-sm text-dark-text">
                         <div className="flex items-center space-x-2">
                             <Bed className="w-4 h-4 text-gray-500" />
@@ -158,10 +158,10 @@ const ImovelCard: React.FC<ImovelCardProps> = ({ imovel, onViewDetails }) => {
                             </>
                         )}
                         
-                        {/* Botão de Detalhes (seta) */}
+                        {/* Botão de Detalhes (seta) - Hover Laranja */}
                         <button 
                             onClick={() => onViewDetails(imovel.id)}
-                            className="absolute right-0 top-1/2 transform -translate-y-1/2 p-2 text-blue-600 hover:text-primary-orange transition-colors group"
+                            className="absolute right-0 top-1/2 transform -translate-y-1/2 p-2 text-blue-600 hover:text-primary-orange transition-colors"
                             title="Ver Detalhes"
                         >
                             <ChevronRight className="w-6 h-6" />
