@@ -16,12 +16,17 @@ const MapDisplay: React.FC<MapDisplayProps> = ({ visibilidade, address, isValid 
     const { loaded: scriptLoaded, error: scriptError } = useGoogleMapsScript();
     const [isGeocoding, setIsGeocoding] = useState(false);
     const [location, setLocation] = useState<{ lat: number, lng: number } | null>(null);
+    const [geocodingError, setGeocodingError] = useState<string | null>(null); // Novo estado de erro
 
     // Função para geocodificar o endereço
     const geocodeAddress = async (addr: string) => {
-        if (!window.google || !window.google.maps || !window.google.maps.Geocoder) return;
+        if (!window.google || !window.google.maps || !window.google.maps.Geocoder) {
+            setGeocodingError("Google Maps Geocoder não disponível. Verifique a chave de API.");
+            return;
+        }
 
         setIsGeocoding(true);
+        setGeocodingError(null);
         const geocoder = new google.maps.Geocoder();
         
         try {
@@ -31,10 +36,12 @@ const MapDisplay: React.FC<MapDisplayProps> = ({ visibilidade, address, isValid 
                 setLocation({ lat: loc.lat(), lng: loc.lng() });
             } else {
                 setLocation(null);
+                setGeocodingError("Endereço não encontrado pelo Google Maps.");
             }
-        } catch (e) {
+        } catch (e: any) {
             console.error("Geocoding failed:", e);
             setLocation(null);
+            setGeocodingError(`Falha na Geocodificação: ${e.message || 'Erro desconhecido'}`);
         } finally {
             setIsGeocoding(false);
         }
@@ -46,6 +53,7 @@ const MapDisplay: React.FC<MapDisplayProps> = ({ visibilidade, address, isValid 
             geocodeAddress(address);
         } else if (!isValid) {
             setLocation(null);
+            setGeocodingError(null);
         }
     }, [scriptLoaded, isValid, address]);
 
@@ -115,14 +123,14 @@ const MapDisplay: React.FC<MapDisplayProps> = ({ visibilidade, address, isValid 
             <div className="text-center text-red-500 p-4">
                 <XCircle className="w-8 h-8 mx-auto mb-2" />
                 <p className="font-semibold">Erro ao carregar o Google Maps.</p>
-                <p className="text-sm">Verifique se a chave de API está configurada corretamente em `src/config/apiKeys.ts`.</p>
+                <p className="text-sm">Verifique se a chave de API está configurada corretamente e se o serviço Maps JavaScript API está ativado.</p>
             </div>
         );
     } else if (!scriptLoaded || isGeocoding) {
         mapContent = (
             <div className="text-center text-gray-500">
                 <Loader2 className="w-8 h-8 mx-auto mb-2 animate-spin" />
-                <p>Carregando mapa...</p>
+                <p>{isGeocoding ? 'Buscando endereço no mapa...' : 'Carregando script do mapa...'}</p>
             </div>
         );
     } else if (!isValid) {
@@ -141,12 +149,12 @@ const MapDisplay: React.FC<MapDisplayProps> = ({ visibilidade, address, isValid 
                 <p className="text-xs">Endereço não será exibido no mapa do site.</p>
             </div>
         );
-    } else if (!location) {
+    } else if (geocodingError) {
          mapContent = (
             <div className="flex flex-col items-center justify-center text-gray-500 p-4">
                 <XCircle className="w-8 h-8 text-red-500 mb-2" />
-                <p className="text-center font-semibold">Endereço não encontrado</p>
-                <p className="text-sm text-center">Não foi possível geocodificar o endereço fornecido.</p>
+                <p className="text-center font-semibold">Erro de Geocodificação</p>
+                <p className="text-sm text-center">{geocodingError}</p>
             </div>
         );
     }
@@ -157,7 +165,7 @@ const MapDisplay: React.FC<MapDisplayProps> = ({ visibilidade, address, isValid 
             <div ref={mapRef} className="w-full h-full" style={{ display: (scriptLoaded && location && visibilidade !== 'Não mostrar') ? 'block' : 'none' }}></div>
             
             {/* Overlay para estados de carregamento/erro/não mostrar */}
-            {(!scriptLoaded || isGeocoding || !isValid || visibilidade === 'Não mostrar' || !location || scriptError) && (
+            {(!scriptLoaded || isGeocoding || !isValid || visibilidade === 'Não mostrar' || geocodingError || scriptError) && (
                 <div className="absolute inset-0 bg-gray-100 flex items-center justify-center z-10">
                     {mapContent}
                 </div>
