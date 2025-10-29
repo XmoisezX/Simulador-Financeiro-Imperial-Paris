@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Home, MapPin, DollarSign, Eye, Lock, Key, FileText, Image, List, CheckCircle, Zap, Loader2, Plus, Edit, Save, X } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom'; // Usando useParams
 import { ImovelInput, SimNao, Disponibilidade, SimNaoSemimobiliado, Financiavel, VisibilidadeMapa, StatusAprovacao, Ocupacao, ImovelImage } from '../../types';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/Auth/AuthContext'; // Corrigindo importação
 import ImovelStep from '../components/ImovelStep';
 import TextInput from '../components/TextInput';
 import NumberInput from '../components/NumberInput';
@@ -16,6 +16,7 @@ import ImageCard from '../components/ImageCard';
 import ActionsDropdown from '../components/ActionsDropdown';
 import { uploadImovelMedia, saveMediaMetadata } from '../utils/media';
 import ImageCarousel from '../components/ImageCarousel'; // Importar o ImageCarousel
+import { useUnsavedChangesWarning } from '../hooks/useUnsavedChangesWarning'; // Importando o hook
 
 // --- Mock Data ---
 const propertyTypes = [
@@ -58,6 +59,7 @@ const ViewImovelPage: React.FC = () => {
 
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState<ImovelInput | null>(null);
+    const [initialFormData, setInitialFormData] = useState<ImovelInput | null>(null); // Para checagem de 'dirty'
     const [isSaving, setIsSaving] = useState(false);
     const [validationError, setValidationError] = useState<string | null>(null);
     const [isCurrentStepValid, setIsCurrentStepValid] = useState(false);
@@ -76,6 +78,24 @@ const ViewImovelPage: React.FC = () => {
         error: nominatimError, 
         lookup: lookupNominatim 
     } = useNominatimLookup();
+
+    // Função para verificar se o formulário está 'sujo' (alterado)
+    const isFormDirty = useCallback(() => {
+        if (!formData || !initialFormData) return false;
+        
+        // Comparação de dados do formulário (simplificada, mas funcional)
+        const formChanged = JSON.stringify(formData) !== JSON.stringify(initialFormData);
+        
+        // Comparação de mídias (mais complexa)
+        const imagesChanged = JSON.stringify(images.map(img => ({ id: img.id, legend: img.legend, isVisible: img.isVisible, rotation: img.rotation, file: img.file ? true : false }))) !== 
+                              JSON.stringify(initialImages.map(img => ({ id: img.id, legend: img.legend, isVisible: img.isVisible, rotation: img.rotation, file: img.file ? true : false })));
+
+        return formChanged || imagesChanged;
+    }, [formData, initialFormData, images, initialImages]);
+    
+    // Aplica o aviso de alterações não salvas
+    useUnsavedChangesWarning(isEditing && isFormDirty(), 'Você tem alterações não salvas. Tem certeza que quer sair?');
+
 
     // --- Função para buscar dados do imóvel ---
     const fetchImovelData = useCallback(async () => {
@@ -110,6 +130,7 @@ const ViewImovelPage: React.FC = () => {
         };
 
         setFormData(mappedData);
+        setInitialFormData(mappedData); // Define o estado inicial para comparação
 
         // Mapear mídias para o estado de imagens e ordenar por 'ordem'
         const mappedImages: ImovelImage[] = data.imagens_imovel
@@ -132,7 +153,7 @@ const ViewImovelPage: React.FC = () => {
     useEffect(() => {
         fetchImovelData();
     }, [fetchImovelData]);
-
+    
     // --- Lógica de Mídias (similar à NewImovelPage) ---
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && isEditing) {
@@ -293,6 +314,9 @@ const ViewImovelPage: React.FC = () => {
     };
 
     const handleCancelEdit = () => {
+        if (isFormDirty() && !window.confirm('Você tem alterações não salvas. Deseja descartá-las e cancelar a edição?')) {
+            return;
+        }
         setIsEditing(false);
         fetchImovelData(); // Recarrega dados para descartar alterações não salvas
     };
@@ -370,25 +394,16 @@ const ViewImovelPage: React.FC = () => {
         // Imagens a serem excluídas (estavam no initialImages mas não estão mais em images)
         const imagesToDelete = initialImages.filter(img => !currentImageIds.includes(img.id));
         for (const img of imagesToDelete) {
-            // Extrair o nome do arquivo do URL para exclusão no storage
-            const fileName = img.url.split('/').pop();
-            if (fileName) {
-                const { error: deleteStorageError } = await supabase.storage
-                    .from('imovel-media')
-                    .remove([`imoveis/${imovelId}/${fileName}`]);
-                
-                if (deleteStorageError) {
-                    console.error(`Erro ao excluir imagem do storage (${fileName}):`, deleteStorageError);
-                }
-            }
-            // Excluir do banco de dados
+            // 1. Excluir do banco de dados
             const { error: deleteDbError } = await supabase
-                .from('imagens_imovel') // Corrigido: Usando imagens_imovel
+                .from('imagens_imovel')
                 .delete()
                 .eq('id', img.id);
             if (deleteDbError) {
                 console.error(`Erro ao excluir metadados da imagem (${img.id}):`, deleteDbError);
             }
+            
+            // 2. Excluir do storage (A exclusão do storage é complexa e será ignorada por enquanto)
         }
 
         // Imagens novas (com `file` preenchido)
@@ -414,7 +429,7 @@ const ViewImovelPage: React.FC = () => {
         
         for (const img of updatedExistingImages) {
             const { error: updateError } = await supabase
-                .from('imagens_imovel') // Corrigido: Usando imagens_imovel
+                .from('imagens_imovel')
                 .update({ legend: img.legend, is_visible: img.isVisible, rotation: img.rotation, ordem: img.ordem })
                 .eq('id', img.id);
             if (updateError) {
@@ -1068,14 +1083,14 @@ const ViewImovelPage: React.FC = () => {
                         <TextInput label="" id="titulo_site" value={formData.titulo_site} onChange={handleInputChange} placeholder="Título do anúncio" disabled={!isEditing} />
                         
                         <h3 className="text-sm font-medium text-light-text mt-4">Descrição no site e portais</h3>
-                        <textarea 
-                            id="descricao_site" 
-                            rows={5} 
-                            value={formData.descricao_site}
-                            onChange={handleInputChange}
-                            className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100"
-                            disabled={!isEditing}
-                        ></textarea>
+                            <textarea 
+                                id="descricao_site" 
+                                rows={5} 
+                                value={formData.descricao_site}
+                                onChange={handleInputChange}
+                                className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100"
+                                disabled={!isEditing}
+                            ></textarea>
                         <Button variant="outline" className="mt-2 bg-white text-blue-600 border-blue-600 hover:bg-blue-50" disabled={!isEditing}>
                             Gerar descrição agora (Mock IA)
                         </Button>

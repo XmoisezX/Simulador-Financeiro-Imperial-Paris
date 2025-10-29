@@ -18,12 +18,14 @@ const Header: React.FC = () => {
         <header className="bg-white shadow-md sticky top-0 z-20">
             <div className="container mx-auto p-4 flex items-center justify-between">
                 <div className="flex items-center">
-                    <img
-                        src="/LOGO LARANJA.png"
-                        alt="Imperial Paris Imóveis Logo"
-                        className="h-16 header-logo"
-                        onError={handleImageError}
-                    />
+                    <Link to="/crm/dashboard" className="cursor-pointer">
+                        <img
+                            src="/LOGO LARANJA.png"
+                            alt="Imperial Paris Imóveis Logo"
+                            className="h-16 header-logo"
+                            onError={handleImageError}
+                        />
+                    </Link>
                     {/* Texto removido conforme solicitação */}
                 </div>
                 

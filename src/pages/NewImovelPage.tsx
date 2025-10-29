@@ -15,6 +15,7 @@ import ToggleSwitch from '../components/ToggleSwitch';
 import ImageCard from '../components/ImageCard';
 import ActionsDropdown from '../components/ActionsDropdown';
 import { uploadImovelMedia, saveMediaMetadata } from '../utils/media'; // Importando utilitários
+import { useUnsavedChangesWarning } from '../hooks/useUnsavedChangesWarning'; // Importando o hook
 
 // --- Mock Data ---
 const propertyTypes = [
@@ -173,6 +174,24 @@ const NewImovelPage: React.FC = () => {
         error: nominatimError, 
         lookup: lookupNominatim 
     } = useNominatimLookup();
+    
+    // Estado inicial para comparação (usamos uma cópia do estado inicial)
+    const initialFormState = useRef(getInitialState());
+    
+    // Função para verificar se o formulário está 'sujo' (alterado)
+    const isFormDirty = useCallback(() => {
+        // Comparação de dados do formulário
+        const formChanged = JSON.stringify(formData) !== JSON.stringify(initialFormState.current);
+        
+        // Comparação de mídias (se houver imagens, o formulário é considerado sujo)
+        const imagesChanged = images.length > 0;
+
+        return formChanged || imagesChanged;
+    }, [formData, images]);
+    
+    // Aplica o aviso de alterações não salvas
+    useUnsavedChangesWarning(isFormDirty(), 'Você tem alterações não salvas. Tem certeza que quer sair?');
+
 
     // --- Lógica de Mídias ---
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
