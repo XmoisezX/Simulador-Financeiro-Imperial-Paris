@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Home, MapPin, DollarSign, Eye, Lock, Key, FileText, Image, List, CheckCircle, Zap, Loader2, Plus, Edit, Save, X } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ImovelInput, SimNao, Disponibilidade, SimNaoSemimobiliado, Financiavel, VisibilidadeMapa, StatusAprovacao, Ocupacao } from '../../types';
+import { ImovelInput, SimNao, Disponibilidade, SimNaoSemimobiliado, Financiavel, VisibilidadeMapa, StatusAprovacao, Ocupacao, ImovelImage } from '../../types';
 import { useAuth } from '../contexts/AuthContext';
 import ImovelStep from '../components/ImovelStep';
 import TextInput from '../components/TextInput';
@@ -15,16 +15,6 @@ import ToggleSwitch from '../components/ToggleSwitch';
 import ImageCard from '../components/ImageCard';
 import ActionsDropdown from '../components/ActionsDropdown';
 import { uploadImovelMedia, saveMediaMetadata } from '../utils/media';
-
-// --- Tipos para Mídias ---
-export interface ImovelImage {
-    id: string;
-    url: string;
-    file: File | null; // Pode ser null se a imagem já existir
-    legend: string;
-    isVisible: boolean;
-    rotation: number;
-}
 
 // --- Mock Data ---
 const propertyTypes = [

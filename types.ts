@@ -245,3 +245,13 @@ export interface ImovelInput {
   status_aprovacao: StatusAprovacao;
   observacoes_aprovacao: string;
 }
+
+// --- Tipos para Mídias ---
+export interface ImovelImage {
+    id: string;
+    url: string;
+    file: File | null; // Pode ser null se a imagem já existir
+    legend: string;
+    isVisible: boolean;
+    rotation: number;
+}

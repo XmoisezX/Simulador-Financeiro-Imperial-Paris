@@ -1,5 +1,5 @@
 import { supabase } from '../integrations/supabase/client';
-import { ImovelImage } from '../pages/NewImovelPage'; // Importando o tipo de imagem
+import { ImovelImage } from '../../types'; // Importando o tipo de imagem
 
 // Simula a otimização e retorna um novo nome de arquivo (simulando WebP)
 const simulateOptimization = (file: File): File => {
