@@ -98,7 +98,7 @@ const ImovelCard: React.FC<ImovelCardProps> = ({ imovel, onViewDetails }) => {
             <div className="flex p-3">
                 
                 {/* 1. Imagem e Código */}
-                <div className="flex-shrink-0 w-48 h-36 relative mr-4 rounded-md overflow-hidden">
+                <div className="flex-shrink-0 w-56 h-36 relative mr-4 rounded-md overflow-hidden">
                     <ImageCarousel 
                         media={mediaForCarousel}
                         defaultImageUrl={defaultImage}
