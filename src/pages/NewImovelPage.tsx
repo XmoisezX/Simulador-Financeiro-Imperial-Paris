@@ -139,6 +139,7 @@ const NewImovelPage: React.FC = () => {
     const [formData, setFormData] = useState<ImovelInput>(getInitialState());
     const [isSaving, setIsSaving] = useState(false);
     const [validationError, setValidationError] = useState<string | null>(null);
+    const [isCurrentStepValid, setIsCurrentStepValid] = useState(false); // Novo estado para validade do passo atual
 
     // Scroll to the active step whenever it changes
     useEffect(() => {
@@ -147,6 +148,13 @@ const NewImovelPage: React.FC = () => {
             activeStepElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     }, [step]);
+
+    // Efeito para revalidar o passo atual sempre que o formData mudar
+    useEffect(() => {
+        // A validação é executada aqui para atualizar o botão 'Próximo'
+        const isValid = validateStep(formData, step, false);
+        setIsCurrentStepValid(isValid);
+    }, [formData, step]); // Depende de formData e step
 
     const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { id, value, type, checked } = e.target as HTMLInputElement;
@@ -166,7 +174,7 @@ const NewImovelPage: React.FC = () => {
             
             return { ...prev, [id]: newValue };
         });
-        setValidationError(null);
+        setValidationError(null); // Limpa o erro ao digitar
     }, []);
     
     const handleRadioChange = useCallback((name: keyof ImovelInput, value: string) => {
@@ -204,7 +212,7 @@ const NewImovelPage: React.FC = () => {
     }, []);
 
 
-    const validateStep = useCallback((currentData: ImovelInput, currentStep: number): boolean => {
+    const validateStep = useCallback((currentData: ImovelInput, currentStep: number, shouldSetError: boolean = true): boolean => {
         let errors: string[] = [];
 
         switch (currentStep) {
@@ -251,24 +259,30 @@ const NewImovelPage: React.FC = () => {
         }
 
         if (errors.length > 0) {
-            setValidationError(errors.join(' '));
+            if (shouldSetError) {
+                setValidationError(errors.join(' '));
+            }
             return false;
+        }
+        if (shouldSetError) {
+            setValidationError(null);
         }
         return true;
     }, []);
 
     const handleNext = () => {
-        if (validateStep(formData, step)) {
+        if (validateStep(formData, step, true)) {
             setStep(prev => Math.min(prev + 1, TOTAL_STEPS));
         }
     };
 
     const handleBack = () => {
         setStep(prev => Math.max(prev - 1, 1));
+        setValidationError(null); // Limpa o erro ao voltar
     };
     
     const handleSubmit = async () => {
-        if (!validateStep(formData, TOTAL_STEPS)) return;
+        if (!validateStep(formData, TOTAL_STEPS, true)) return;
         if (!session) {
             alert('Você precisa estar logado para salvar o imóvel.');
             return;
@@ -884,6 +898,7 @@ const NewImovelPage: React.FC = () => {
                 <div 
                     key={currentStep} 
                     id={`imovel-step-${currentStep}`}
+                    // Aplica opacidade e desativa cliques se não for o passo ativo
                     className={`transition-opacity duration-500 ${currentStep === step ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}
                 >
                     <ImovelStep
@@ -895,7 +910,7 @@ const NewImovelPage: React.FC = () => {
                         onSave={handleSubmit}
                         isLastStep={currentStep === TOTAL_STEPS}
                         isFirstStep={currentStep === 1}
-                        isStepValid={validateStep(formData, currentStep)}
+                        isStepValid={currentStep === step ? isCurrentStepValid : true} // Apenas o passo atual precisa ser validado
                         isSaving={isSaving}
                     >
                         {renderStepContent(currentStep)}
