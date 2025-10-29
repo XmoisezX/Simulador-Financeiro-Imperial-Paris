@@ -42,7 +42,8 @@ export const useProfile = () => {
 
         if (error) {
             console.error('Error fetching profile:', error);
-            setError('Não foi possível carregar o perfil.');
+            // Se o erro for "Row not found", pode ser que o trigger não tenha rodado.
+            // Não definimos um erro fatal aqui para permitir que o usuário continue.
             setProfile(null);
         } else {
             setProfile(data as Profile);
@@ -62,14 +63,20 @@ export const useProfile = () => {
 
         setError(null);
         
+        // Adiciona updated_at para garantir que o registro seja atualizado
+        const updatesWithTimestamp = {
+            ...updates,
+            updated_at: new Date().toISOString(),
+        };
+
         const { error } = await supabase
             .from('profiles')
-            .update(updates)
+            .update(updatesWithTimestamp)
             .eq('id', session.user.id);
 
         if (error) {
             console.error('Error updating profile:', error);
-            setError('Erro ao atualizar o perfil.');
+            setError(`Erro ao atualizar o perfil: ${error.message}`);
             return false;
         }
 
@@ -77,7 +84,6 @@ export const useProfile = () => {
         setProfile(prev => ({
             ...(prev as Profile),
             ...updates,
-            updated_at: new Date().toISOString(),
         }));
         return true;
     }, [session?.user.id]);

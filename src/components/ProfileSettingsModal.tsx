@@ -58,7 +58,6 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
     }, [fullName, role, companyName, updateProfile, fetchProfile]);
     
     const handleAvatarUpdate = useCallback(async (newUrl: string) => {
-        // Esta função é chamada pelo AvatarUploader quando o upload é concluído
         const success = await updateProfile({ avatar_url: newUrl });
         if (success) {
             fetchProfile(); // Recarrega o perfil para garantir a URL atualizada
