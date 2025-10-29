@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Home, MapPin, DollarSign, Eye, Lock, Key, FileText, Image, List, CheckCircle, Zap, Loader2, Plus, Edit, Save, X } from 'lucide-react';
-import { useNavigate, useParams } from 'react-router-dom'; // Usando useParams
+import { useNavigate, useParams } from 'react-router-dom';
 import { ImovelInput, SimNao, Disponibilidade, SimNaoSemimobiliado, Financiavel, VisibilidadeMapa, StatusAprovacao, Ocupacao, ImovelImage } from '../../types';
 import { useAuth } from '../contexts/AuthContext';
 import ImovelStep from '../components/ImovelStep';
@@ -15,15 +15,16 @@ import ToggleSwitch from '../components/ToggleSwitch';
 import ImageCard from '../components/ImageCard';
 import ActionsDropdown from '../components/ActionsDropdown';
 import { uploadImovelMedia, saveMediaMetadata } from '../utils/media';
-import ImageCarousel from '../components/ImageCarousel'; // Importar o ImageCarousel
-import { useUnsavedChangesWarning } from '../hooks/useUnsavedChangesWarning'; // Importando o hook
+import ImageCarousel from '../components/ImageCarousel';
+import { useUnsavedChangesWarning } from '../hooks/useUnsavedChangesWarning';
+import { supabase } from '../integrations/supabase/client'; // Importar supabase
 
 // --- Mock Data ---
 const propertyTypes = [
     'Apartamento', 'Apartamento Garden', 'Box', 'Campo', 'Casa', 'Casa Comercial', 
     'Casa de Condomínio', 'Chácara', 'Cobertura', 'Conjunto Comercial', 'Duplex', 
     'Fazenda', 'Flat', 'Galpão', 'Geminado', 'Haras', 'Hotel', 'Kitnet', 'Loft', 
-    'Loja', 'Ponto Comercial', 'Pousada', 'Prédio Comercial', 
+    'Loja', 'Pavilhão', 'Ponto Comercial', 'Pousada', 'Prédio Comercial', 
     'Prédio Residencial', 'Sala Comercial', 'Salão Comercial', 'Sobrado', 'Studio', 
     'Sítio', 'Terreno', 'Terreno Comercial', 'Triplex', 'Área Rural'
 ];
@@ -50,24 +51,23 @@ const visibilidadeEnderecoOptions = [
     'Todos acima incluindo o complemento',
 ];
 
-const TOTAL_STEPS = 11;
+const TOTAL_STEPS = 11; // Mantemos a contagem para referência
 
 const ViewImovelPage: React.FC = () => {
-    const { supabase, session } = useAuth();
+    const { session } = useAuth();
     const navigate = useNavigate();
-    const { id: imovelId } = useParams<{ id: string }>(); // Usando useParams
+    const { id: imovelId } = useParams<{ id: string }>();
 
-    const [step, setStep] = useState(1);
     const [formData, setFormData] = useState<ImovelInput | null>(null);
-    const [initialFormData, setInitialFormData] = useState<ImovelInput | null>(null); // Para checagem de 'dirty'
+    const [initialFormData, setInitialFormData] = useState<ImovelInput | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [validationError, setValidationError] = useState<string | null>(null);
-    const [isCurrentStepValid, setIsCurrentStepValid] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
+    const [isLoadingData, setIsLoadingData] = useState(true);
     
     // --- Estado de Mídias ---
     const [images, setImages] = useState<ImovelImage[]>([]);
-    const [initialImages, setInitialImages] = useState<ImovelImage[]>([]); // Para comparar e detectar exclusões
+    const [initialImages, setInitialImages] = useState<ImovelImage[]>([]);
     const [selectedImageIds, setSelectedImageIds] = useState<string[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
     
@@ -87,8 +87,8 @@ const ViewImovelPage: React.FC = () => {
         const formChanged = JSON.stringify(formData) !== JSON.stringify(initialFormData);
         
         // Comparação de mídias (mais complexa)
-        const imagesChanged = JSON.stringify(images.map(img => ({ id: img.id, legend: img.legend, isVisible: img.isVisible, rotation: img.rotation, file: img.file ? true : false }))) !== 
-                              JSON.stringify(initialImages.map(img => ({ id: img.id, legend: img.legend, isVisible: img.isVisible, rotation: img.rotation, file: img.file ? true : false })));
+        const imagesChanged = JSON.stringify(images.map(img => ({ id: img.id, legend: img.legend, isVisible: img.isVisible, rotation: img.rotation, ordem: img.ordem, file: img.file ? true : false }))) !== 
+                              JSON.stringify(initialImages.map(img => ({ id: img.id, legend: img.legend, isVisible: img.isVisible, rotation: img.rotation, ordem: img.ordem, file: img.file ? true : false })));
 
         return formChanged || imagesChanged;
     }, [formData, initialFormData, images, initialImages]);
@@ -100,6 +100,8 @@ const ViewImovelPage: React.FC = () => {
     // --- Função para buscar dados do imóvel ---
     const fetchImovelData = useCallback(async () => {
         if (!imovelId || !session) return;
+
+        setIsLoadingData(true);
 
         const { data, error } = await supabase
             .from('imoveis')
@@ -135,18 +137,19 @@ const ViewImovelPage: React.FC = () => {
         // Mapear mídias para o estado de imagens e ordenar por 'ordem'
         const mappedImages: ImovelImage[] = data.imagens_imovel
             .map((media: any) => ({
-                id: media.id, // Usar o ID do Supabase para imagens existentes
+                id: media.id,
                 url: media.url,
-                file: null, // Imagem existente não tem arquivo
+                file: null,
                 legend: media.legend,
                 isVisible: media.is_visible,
                 rotation: media.rotation,
                 ordem: media.ordem,
             }))
-            .sort((a: ImovelImage, b: ImovelImage) => a.ordem - b.ordem); // Ordenar aqui
+            .sort((a: ImovelImage, b: ImovelImage) => a.ordem - b.ordem);
 
         setImages(mappedImages);
-        setInitialImages(mappedImages); // Salvar estado inicial das imagens para comparação
+        setInitialImages(mappedImages);
+        setIsLoadingData(false);
 
     }, [imovelId, session, navigate]);
 
@@ -154,7 +157,7 @@ const ViewImovelPage: React.FC = () => {
         fetchImovelData();
     }, [fetchImovelData]);
     
-    // --- Lógica de Mídias (similar à NewImovelPage) ---
+    // --- Lógica de Mídias ---
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && isEditing) {
             const newFiles = Array.from(e.target.files);
@@ -165,7 +168,7 @@ const ViewImovelPage: React.FC = () => {
                 legend: '',
                 isVisible: true,
                 rotation: 0,
-                ordem: images.length > 0 ? Math.max(...images.map(img => img.ordem)) + 1 : 0, // Atribui a próxima ordem disponível
+                ordem: images.length > 0 ? Math.max(...images.map(img => img.ordem)) + 1 : 0,
             }));
             setImages(prev => [...prev, ...newImages]);
         }
@@ -222,7 +225,7 @@ const ViewImovelPage: React.FC = () => {
         }
     };
 
-    // --- Handlers de Formulário (similar à NewImovelPage) ---
+    // --- Handlers de Formulário ---
     const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         if (!formData || !isEditing) return;
         
@@ -297,18 +300,21 @@ const ViewImovelPage: React.FC = () => {
             lookupCep(cep);
         }
     }, [handleInputChange, lookupCep, isEditing]);
+    
+    // Efeito para geocodificar o endereço completo
+    useEffect(() => {
+        if (formData) {
+            const fullAddress = `${formData.logradouro}, ${formData.numero} - ${formData.bairro}, ${formData.cidade} - ${formData.estado}`;
+            const isAddressValid = formData.cep.replace(/\D/g, '').length === 8 && formData.bairro && formData.logradouro && formData.numero;
+            
+            if (isAddressValid) {
+                lookupNominatim(fullAddress);
+            }
+        }
+    }, [formData?.logradouro, formData?.numero, formData?.bairro, formData?.cidade, formData?.estado, formData?.cep, lookupNominatim]);
 
-    // --- Handlers de Navegação e Salvamento ---
-    const handleNext = () => {
-        if (!validateStep(formData, step, true)) return;
-        setStep(prev => Math.min(prev + 1, TOTAL_STEPS));
-    };
 
-    const handleBack = () => {
-        setStep(prev => Math.max(prev - 1, 1));
-        setValidationError(null);
-    };
-
+    // --- Handlers de Ação ---
     const handleEdit = () => {
         setIsEditing(true);
     };
@@ -321,27 +327,41 @@ const ViewImovelPage: React.FC = () => {
         fetchImovelData(); // Recarrega dados para descartar alterações não salvas
     };
 
+    const validateAllSteps = useCallback((currentData: ImovelInput | null, shouldSetError: boolean = true): boolean => {
+        if (!currentData) return false;
+        
+        let errors: string[] = [];
+        
+        // Validação de todos os passos (usando a lógica de validação por passo)
+        for (let i = 1; i <= TOTAL_STEPS; i++) {
+            if (!validateStep(currentData, i, false)) {
+                errors.push(`Erro no Passo ${i}.`);
+            }
+        }
+
+        if (errors.length > 0) {
+            if (shouldSetError) setValidationError(errors.join(' '));
+            return false;
+        }
+        if (shouldSetError) setValidationError(null);
+        return true;
+    }, []);
+    
     const handleSave = async () => {
-        if (!formData || !validateStep(formData, TOTAL_STEPS, true) || !session || !imovelId) return;
+        if (!formData || !validateAllSteps(formData, true) || !session || !imovelId) return;
 
         setIsSaving(true);
         
-        // 1. Estruturar dados para o Supabase (similar à NewImovelPage)
+        // 1. Estruturar dados para o Supabase
         const { 
             tipo_imovel, codigo, bairro, logradouro, numero, status_aprovacao,
-            // Dados de Contrato
             venda_ativo, venda_disponibilidade, venda_motivo_indisponibilidade,
             locacao_ativo, locacao_disponibilidade, locacao_motivo_indisponibilidade,
             temporada_ativo, temporada_disponibilidade, temporada_motivo_indisponibilidade,
-            // Dados de Localização
             cep, estado, cidade, condominio_id, bloco_torre, complemento, referencia, andar, ultimo_andar, mapa_visibilidade,
-            // Dados de Valores
             valor_venda, valor_locacao, valor_condominio, condominio_isento, valor_iptu, iptu_isento, seguro_incendio, taxa_limpeza, indice_reajuste, valor_base, iptu_periodo, financiavel,
-            // Dados Internos (inclui Visibilidade e Dados não visíveis)
             proprietario_id, comissao_proprietario_percent, periodo_email_atualizacao, enviar_email_atualizacao, agenciador_id, responsavel_id, honorarios_venda_percent, honorarios_locacao_percent, honorarios_temporada_percent, data_agenciamento, numero_matricula, nao_possui_matricula, numero_iptu, vencimento_exclusividade, ocupacao, exclusivo, placa, medidor_energia, medidor_agua, medidor_gas, observacoes_internas,
-            // Dados de Características (inclui Visibilidade de Site)
             etiquetas, dormitorios, suites, banheiros, vagas_garagem, area_privativa_m2, condicao, mobiliado, orientacao_solar, posicao, entrega_obra, pessoas_acomodacoes, distancia_mar_m, tipos_piso, titulo_site, descricao_site, meta_title, meta_description, vis_endereco, vis_venda, vis_locacao, vis_temporada, vis_iptu, vis_condominio,
-            // Observações de Aprovação
             observacoes_aprovacao,
         } = formData;
 
@@ -394,7 +414,6 @@ const ViewImovelPage: React.FC = () => {
         // Imagens a serem excluídas (estavam no initialImages mas não estão mais em images)
         const imagesToDelete = initialImages.filter(img => !currentImageIds.includes(img.id));
         for (const img of imagesToDelete) {
-            // 1. Excluir do banco de dados
             const { error: deleteDbError } = await supabase
                 .from('imagens_imovel')
                 .delete()
@@ -402,8 +421,6 @@ const ViewImovelPage: React.FC = () => {
             if (deleteDbError) {
                 console.error(`Erro ao excluir metadados da imagem (${img.id}):`, deleteDbError);
             }
-            
-            // 2. Excluir do storage (A exclusão do storage é complexa e será ignorada por enquanto)
         }
 
         // Imagens novas (com `file` preenchido)
@@ -438,12 +455,12 @@ const ViewImovelPage: React.FC = () => {
         }
 
         setIsSaving(false);
-        setIsEditing(false); // Sai do modo de edição
+        setIsEditing(false);
         alert('Imóvel atualizado com sucesso!');
-        fetchImovelData(); // Recarrega os dados para refletir todas as mudanças
+        fetchImovelData();
     };
 
-    // --- Validação e Efeitos (similar à NewImovelPage) ---
+    // --- Validação (Mantida para o botão Salvar) ---
     const validateStep = useCallback((currentData: ImovelInput | null, currentStep: number, shouldSetError: boolean = true): boolean => {
         if (!currentData) return false;
         
@@ -505,31 +522,14 @@ const ViewImovelPage: React.FC = () => {
         return true;
     }, []);
 
-    useEffect(() => {
-        if (formData) {
-            const isValid = validateStep(formData, step, false);
-            setIsCurrentStepValid(isValid);
-        }
-    }, [formData, step, validateStep]);
 
-    useEffect(() => {
-        if (step === 2 && formData) {
-            const fullAddress = `${formData.logradouro}, ${formData.numero} - ${formData.bairro}, ${formData.cidade} - ${formData.estado}`;
-            const isAddressValid = formData.cep.replace(/\D/g, '').length === 8 && formData.bairro && formData.logradouro && formData.numero;
-            
-            if (isAddressValid) {
-                lookupNominatim(fullAddress);
-            }
-        }
-    }, [step, formData, lookupNominatim]);
-
-    // --- Renderização (similar à NewImovelPage, mas com controles de edição) ---
-    if (!formData) {
-        return <div className="flex items-center justify-center h-full"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>;
+    // --- Renderização ---
+    if (isLoadingData || !formData) {
+        return <div className="flex items-center justify-center h-full min-h-[500px]"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>;
     }
 
-    const renderRadioGroup = (name: keyof ImovelInput, options: (string | number)[], required = false) => (
-        <div className="flex flex-wrap gap-4">
+    const renderRadioGroup = (name: keyof ImovelInput, options: (string | number)[], required = false, disabled = false) => (
+        <div className={`flex flex-wrap gap-4 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
             {options.map((option, index) => (
                 <label key={`${name}-${option}-${index}`} className="flex items-center space-x-2 text-sm">
                     <input 
@@ -589,7 +589,7 @@ const ViewImovelPage: React.FC = () => {
                                     {propertyTypes.map(t => <option key={t} value={t}>{t}</option>)}
                                 </select>
                             </div>
-                            <TextInput label={<span>Código <RequiredAsterisk /></span>} id="codigo" value={formData.codigo} onChange={handleInputChange} placeholder="52564" disabled />
+                            <TextInput label={<span>Código <RequiredAsterisk /></span>} id="codigo" value={formData.codigo} onChange={handleInputChange} placeholder="52564" disabled={!isEditing} />
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
@@ -606,7 +606,7 @@ const ViewImovelPage: React.FC = () => {
                                     <span>Venda</span>
                                 </label>
                                 <h4 className="text-sm font-medium text-light-text">Disponibilidade</h4>
-                                {renderRadioGroup('venda_disponibilidade', ['Disponível', 'Indisponível'], false)}
+                                {renderRadioGroup('venda_disponibilidade', ['Disponível', 'Indisponível'], false, !isVendaActive)}
                                 <h4 className="text-sm font-medium text-light-text">Motivo indisponibilidade</h4>
                                 <select 
                                     id="venda_motivo_indisponibilidade"
@@ -633,7 +633,7 @@ const ViewImovelPage: React.FC = () => {
                                     <span>Locação</span>
                                 </label>
                                 <h4 className="text-sm font-medium text-light-text">Disponibilidade</h4>
-                                {renderRadioGroup('locacao_disponibilidade', ['Disponível', 'Indisponível'], false)}
+                                {renderRadioGroup('locacao_disponibilidade', ['Disponível', 'Indisponível'], false, !isLocacaoActive)}
                                 <h4 className="text-sm font-medium text-light-text">Motivo indisponibilidade</h4>
                                 <select 
                                     id="locacao_motivo_indisponibilidade"
@@ -660,7 +660,7 @@ const ViewImovelPage: React.FC = () => {
                                     <span>Temporada</span>
                                 </label>
                                 <h4 className="text-sm font-medium text-light-text">Disponibilidade</h4>
-                                {renderRadioGroup('temporada_disponibilidade', ['Disponível', 'Indisponível'], false)}
+                                {renderRadioGroup('temporada_disponibilidade', ['Disponível', 'Indisponível'], false, !isTemporadaActive)}
                                 <h4 className="text-sm font-medium text-light-text">Motivo indisponibilidade</h4>
                                 <select 
                                     id="temporada_motivo_indisponibilidade"
@@ -1196,7 +1196,7 @@ const ViewImovelPage: React.FC = () => {
             <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
                 <div className="relative h-64">
                     <ImageCarousel 
-                        media={images.filter(img => img.isVisible)} // Apenas imagens visíveis no carrossel principal
+                        media={images.filter(img => img.isVisible)}
                         defaultImageUrl="/LOGO LARANJA.png"
                         altText={`Imóvel ${formData.codigo}`}
                     />
@@ -1225,7 +1225,7 @@ const ViewImovelPage: React.FC = () => {
                         <Button 
                             onClick={handleSave}
                             className="bg-primary-orange hover:bg-secondary-orange"
-                            disabled={!isCurrentStepValid || isSaving}
+                            disabled={isSaving || !isFormDirty()} // Desabilita se não houver alterações ou estiver salvando
                         >
                             {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                             Salvar Alterações
@@ -1234,27 +1234,26 @@ const ViewImovelPage: React.FC = () => {
                 )}
             </div>
 
-            {/* Renderiza todos os passos */}
+            {/* Renderiza todos os passos em sequência */}
             {allSteps.map(currentStep => (
                 <div 
                     key={currentStep} 
                     id={`imovel-step-${currentStep}`}
-                    // Aplica opacidade e desativa cliques se não for o passo ativo E não estiver editando
-                    className={`transition-opacity duration-500 ${currentStep === step ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}
+                    // Remove a lógica de opacidade e pointer-events-none
                 >
                     <ImovelStep
                         title={getStepTitle(currentStep)}
                         step={currentStep}
                         totalSteps={TOTAL_STEPS}
-                        onNext={handleNext}
-                        onBack={handleBack}
-                        onSave={handleSave} // O botão 'Finalizar Cadastro' agora chama handleSave
-                        isLastStep={currentStep === TOTAL_STEPS}
-                        isFirstStep={currentStep === 1}
-                        isStepValid={currentStep === step ? isCurrentStepValid : true} // Apenas o passo atual precisa ser validado
+                        // Remove botões de navegação
+                        onNext={() => {}} 
+                        onBack={() => {}}
+                        onSave={handleSave}
+                        isLastStep={false} // Não é mais o último passo de navegação
+                        isFirstStep={false}
+                        isStepValid={true} // A validação é feita no botão Salvar
                         isSaving={isSaving}
-                        // Desabilita navegação se não estiver editando
-                        disabled={!isEditing} 
+                        disabled={!isEditing} // Desabilita todos os campos se não estiver editando
                     >
                         {renderStepContent(currentStep)}
                     </ImovelStep>
