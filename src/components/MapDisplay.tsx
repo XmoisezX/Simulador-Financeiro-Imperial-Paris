@@ -70,7 +70,8 @@ const MapController: React.FC<{ location: { lat: number, lng: number } | null, v
 const MapDisplay: React.FC<MapDisplayProps> = ({ visibilidade, address, isValid, location, isGeocoding, geocodingError }) => {
     
     const defaultCenter: [number, number] = [-31.7719, -52.3425]; // Centro de Pelotas, RS
-    const defaultZoom = 12;
+    const center = location ? [location.lat, location.lng] as [number, number] : defaultCenter;
+    const zoom = location ? (visibilidade === 'Aproximada' ? 13 : 16) : 12;
 
     let mapContent;
     let mapClasses = "relative h-64 bg-gray-200 rounded-md mt-4 flex items-center justify-center overflow-hidden";
@@ -108,27 +109,27 @@ const MapDisplay: React.FC<MapDisplayProps> = ({ visibilidade, address, isValid,
         );
     }
 
-    // Se houver localização e não houver erro/carregamento, renderiza o mapa
-    if (location && !isGeocoding && !geocodingError && visibilidade !== 'Não mostrar') {
+    // Se a visibilidade for 'Não mostrar' ou se houver um erro/carregamento, mostramos o placeholder.
+    if (mapContent) {
         return (
-            <div className="relative h-64 rounded-md mt-4">
-                <MapContainer 
-                    // Usa a localização encontrada ou o centro padrão como fallback inicial
-                    center={[location.lat, location.lng]} 
-                    zoom={visibilidade === 'Aproximada' ? 13 : 16} 
-                    scrollWheelZoom={false}
-                    className="w-full h-full rounded-md z-0"
-                >
-                    <MapController location={location} visibilidade={visibilidade} />
-                </MapContainer>
+            <div className={mapClasses}>
+                {mapContent}
             </div>
         );
     }
 
-    // Renderiza o placeholder/erro
+    // Se houver localização (ou centro padrão) e não houver erro/carregamento, renderiza o mapa
     return (
-        <div className={mapClasses}>
-            {mapContent}
+        <div className="relative h-64 rounded-md mt-4">
+            <MapContainer 
+                center={center} 
+                zoom={zoom} 
+                scrollWheelZoom={false}
+                className="w-full h-full rounded-md z-0"
+            >
+                {/* O MapController renderiza o TileLayer e os Marcadores/Círculos */}
+                <MapController location={location} visibilidade={visibilidade} />
+            </MapContainer>
         </div>
     );
 };
