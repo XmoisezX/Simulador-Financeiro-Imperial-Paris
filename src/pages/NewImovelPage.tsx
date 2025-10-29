@@ -189,7 +189,7 @@ const NewImovelPage: React.FC = () => {
         if (e.target.files) {
             const newFiles = Array.from(e.target.files);
             const newImages: ImovelImage[] = newFiles.map(file => ({
-                id: crypto.randomUUID(),
+                id: crypto.randomUUID(), // Gerar ID único para cada nova imagem
                 url: URL.createObjectURL(file),
                 file: file,
                 legend: '',
@@ -381,6 +381,12 @@ const NewImovelPage: React.FC = () => {
                     errors.push('O motivo de indisponibilidade de venda é obrigatório.');
                 }
                 // Adicionar validações para locação e temporada se ativos
+                if (currentData.locacao_ativo && currentData.locacao_disponibilidade === 'Indisponível' && !currentData.locacao_motivo_indisponibilidade) {
+                    errors.push('O motivo de indisponibilidade de locação é obrigatório.');
+                }
+                if (currentData.temporada_ativo && currentData.temporada_disponibilidade === 'Indisponível' && !currentData.temporada_motivo_indisponibilidade) {
+                    errors.push('O motivo de indisponibilidade de temporada é obrigatório.');
+                }
                 break;
             case 2: // Localização
                 if (!currentData.cep || currentData.cep.replace(/\D/g, '').length !== 8) errors.push('O CEP é obrigatório e deve ter 8 dígitos.');
@@ -490,6 +496,7 @@ const NewImovelPage: React.FC = () => {
             dados_caracteristicas: {
                 etiquetas, dormitorios, suites, banheiros, vagas_garagem, area_privativa_m2, condicao, mobiliado, orientacao_solar, posicao, entrega_obra, pessoas_acomodacoes, distancia_mar_m, tipos_piso, titulo_site, descricao_site, meta_title, meta_description, vis_endereco, vis_venda, vis_locacao, vis_temporada, vis_iptu, vis_condominio,
             },
+            observacoes_aprovacao,
         };
 
         // 2. Inserir Imóvel no Banco de Dados
@@ -1176,7 +1183,7 @@ const NewImovelPage: React.FC = () => {
     return (
         <div className="p-4 sm:p-6 lg:p-8 animate-fade-in space-y-6">
             <h1 className="text-2xl font-bold text-dark-text flex items-center">
-                <Home className="w-6 h-6 mr-2 text-blue-600" /> INÍCIO &gt; IMÓVEIS &gt; NOVO
+                <Home className="w-6 h-6 mr-2 text-blue-600" /> INÍCIO &gt; IMÓVEIS &gt; {imovelId ? `EDITAR (${formData.codigo})` : 'NOVO'}
             </h1>
             
             {validationError && (
@@ -1186,12 +1193,43 @@ const NewImovelPage: React.FC = () => {
                 </div>
             )}
 
+            {/* Botões de Ação Global (Editar/Salvar/Cancelar) */}
+            <div className="flex justify-end space-x-3 mb-6 max-w-4xl mx-auto">
+                {!isEditing ? (
+                    <Button 
+                        onClick={handleEdit}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                        <Edit className="w-4 h-4 mr-2" /> Editar Imóvel
+                    </Button>
+                ) : (
+                    <>
+                        <Button 
+                            onClick={handleCancelEdit}
+                            variant="outline"
+                            className="text-gray-700 border-gray-300 hover:bg-gray-100"
+                            disabled={isSaving}
+                        >
+                            <X className="w-4 h-4 mr-2" /> Cancelar Edição
+                        </Button>
+                        <Button 
+                            onClick={handleSave}
+                            className="bg-primary-orange hover:bg-secondary-orange"
+                            disabled={!isCurrentStepValid || isSaving}
+                        >
+                            {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                            Salvar Alterações
+                        </Button>
+                    </>
+                )}
+            </div>
+
             {/* Renderiza todos os passos */}
             {allSteps.map(currentStep => (
                 <div 
                     key={currentStep} 
                     id={`imovel-step-${currentStep}`}
-                    // Aplica opacidade e desativa cliques se não for o passo ativo
+                    // Aplica opacidade e desativa cliques se não for o passo ativo E não estiver editando
                     className={`transition-opacity duration-500 ${currentStep === step ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}
                 >
                     <ImovelStep
@@ -1200,11 +1238,13 @@ const NewImovelPage: React.FC = () => {
                         totalSteps={TOTAL_STEPS}
                         onNext={handleNext}
                         onBack={handleBack}
-                        onSave={handleSubmit}
+                        onSave={handleSave} // O botão 'Finalizar Cadastro' agora chama handleSave
                         isLastStep={currentStep === TOTAL_STEPS}
                         isFirstStep={currentStep === 1}
                         isStepValid={currentStep === step ? isCurrentStepValid : true} // Apenas o passo atual precisa ser validado
                         isSaving={isSaving}
+                        // Desabilita navegação se não estiver editando
+                        disabled={!isEditing} 
                     >
                         {renderStepContent(currentStep)}
                     </ImovelStep>
@@ -1214,4 +1254,4 @@ const NewImovelPage: React.FC = () => {
     );
 };
 
-export default NewImovelPage;
+export default ViewImovelPage;

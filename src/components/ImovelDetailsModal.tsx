@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 interface ImovelDetails extends ImovelInput {
     id: string;
     created_at: string;
-    imovel_media: { url: string, legend: string, is_visible: boolean, rotation: number }[];
+    imovel_media: { id: string, url: string, legend: string, is_visible: boolean, rotation: number }[];
 }
 
 interface ImovelDetailsModalProps {
@@ -52,7 +52,7 @@ const ImovelDetailsModal: React.FC<ImovelDetailsModalProps> = ({ isOpen, onClose
     const handleEdit = () => {
         onClose();
         // Redireciona para a página de novo imóvel, passando o ID para edição
-        navigate(`/crm/imoveis/novo?id=${imovel.id}`);
+        navigate(`/crm/imoveis/${imovel.id}`);
     };
 
     return (
@@ -79,7 +79,7 @@ const ImovelDetailsModal: React.FC<ImovelDetailsModalProps> = ({ isOpen, onClose
                         <h3 className="text-lg font-semibold text-primary-orange mb-3 flex items-center"><Image className="w-5 h-5 mr-2" /> Mídias ({imovel.imovel_media.length})</h3>
                         <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 max-h-64 overflow-y-auto p-2">
                             {imovel.imovel_media.map((media, index) => (
-                                <div key={index} className="relative h-24 w-full rounded-md overflow-hidden shadow-md border border-gray-200">
+                                <div key={media.id} className="relative h-24 w-full rounded-md overflow-hidden shadow-md border border-gray-200">
                                     <img 
                                         src={media.url} 
                                         alt={media.legend || `Imagem ${index + 1}`} 

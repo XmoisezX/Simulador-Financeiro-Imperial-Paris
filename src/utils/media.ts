@@ -21,11 +21,11 @@ const simulateOptimization = (file: File): File => {
  * @returns Lista de metadados das imagens salvas.
  */
 export const uploadImovelMedia = async (images: ImovelImage[], userId: string, imovelId: string) => {
-    const uploadedMedia: { url: string, legend: string, is_visible: boolean, rotation: number }[] = [];
+    const uploadedMedia: { id: string, url: string, legend: string, is_visible: boolean, rotation: number }[] = [];
 
     for (const image of images) {
         // 1. Simular Otimização (WebP)
-        const optimizedFile = simulateOptimization(image.file);
+        const optimizedFile = simulateOptimization(image.file as File); // 'file' não será nulo para novas imagens
         
         // 2. Definir o caminho no Storage
         const filePath = `imoveis/${imovelId}/${image.id}-${optimizedFile.name}`;
@@ -51,6 +51,7 @@ export const uploadImovelMedia = async (images: ImovelImage[], userId: string, i
             
         // 5. Adicionar metadados
         uploadedMedia.push({
+            id: image.id, // Incluir o ID gerado no cliente
             url: publicUrl,
             legend: image.legend,
             is_visible: image.isVisible,
@@ -64,10 +65,11 @@ export const uploadImovelMedia = async (images: ImovelImage[], userId: string, i
 /**
  * Salva os metadados das mídias na tabela imovel_media.
  */
-export const saveMediaMetadata = async (imovelId: string, userId: string, media: { url: string, legend: string, is_visible: boolean, rotation: number }[]) => {
+export const saveMediaMetadata = async (imovelId: string, userId: string, media: { id: string, url: string, legend: string, is_visible: boolean, rotation: number }[]) => {
     if (media.length === 0) return { error: null };
     
     const dataToInsert = media.map(m => ({
+        id: m.id, // Usar o ID gerado no cliente
         imovel_id: imovelId,
         user_id: userId,
         url: m.url,

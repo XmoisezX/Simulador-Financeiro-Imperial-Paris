@@ -21,14 +21,14 @@ interface Imovel {
     dados_valores: any;
     dados_localizacao: any;
     dados_caracteristicas: any;
-    imovel_media: { url: string, rotation: number }[]; // Alterado para lista completa
+    imovel_media: { id: string, url: string, rotation: number }[]; // Alterado para lista completa com ID
 }
 
 // Interface para os detalhes completos (para o modal)
 interface ImovelDetails extends ImovelInput {
     id: string;
     created_at: string;
-    imovel_media: { url: string, legend: string, is_visible: boolean, rotation: number }[];
+    imovel_media: { id: string, url: string, legend: string, is_visible: boolean, rotation: number }[];
 }
 
 const ImoveisPage: React.FC = () => {
@@ -54,7 +54,7 @@ const ImoveisPage: React.FC = () => {
             .select(`
                 id, codigo, bairro, logradouro, numero, status_aprovacao,
                 dados_contrato, dados_valores, dados_localizacao, dados_caracteristicas,
-                imovel_media(url, rotation)
+                imovel_media(id, url, rotation)
             `)
             .eq('user_id', session.user.id)
             .order('created_at', { ascending: false });
@@ -70,7 +70,7 @@ const ImoveisPage: React.FC = () => {
         const formattedImoveis: Imovel[] = imoveisData.map((imovel: any) => {
             
             // Filtra apenas URL e rotation para o carrossel
-            const mediaForCard = imovel.imovel_media.map((m: any) => ({ url: m.url, rotation: m.rotation }));
+            const mediaForCard = imovel.imovel_media.map((m: any) => ({ id: m.id, url: m.url, rotation: m.rotation }));
             
             return {
                 id: imovel.id,
@@ -102,7 +102,7 @@ const ImoveisPage: React.FC = () => {
             .from('imoveis')
             .select(`
                 *,
-                imovel_media(url, legend, is_visible, rotation)
+                imovel_media(id, url, legend, is_visible, rotation)
             `)
             .eq('id', imovelId)
             .eq('user_id', session.user.id)

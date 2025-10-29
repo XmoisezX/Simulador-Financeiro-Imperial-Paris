@@ -71,10 +71,11 @@ const ViewImovelPage: React.FC = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [validationError, setValidationError] = useState<string | null>(null);
     const [isCurrentStepValid, setIsCurrentStepValid] = useState(false);
-    const [isEditing, setIsEditing] = useState(false); // NOVO ESTADO
+    const [isEditing, setIsEditing] = useState(false);
     
     // --- Estado de Mídias ---
     const [images, setImages] = useState<ImovelImage[]>([]);
+    const [initialImages, setInitialImages] = useState<ImovelImage[]>([]); // Para comparar e detectar exclusões
     const [selectedImageIds, setSelectedImageIds] = useState<string[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
     
@@ -94,7 +95,7 @@ const ViewImovelPage: React.FC = () => {
             .from('imoveis')
             .select(`
                 *,
-                imovel_media(url, legend, is_visible, rotation)
+                imovel_media(id, url, legend, is_visible, rotation)
             `)
             .eq('id', imovelId)
             .eq('user_id', session.user.id)
@@ -122,7 +123,7 @@ const ViewImovelPage: React.FC = () => {
 
         // Mapear mídias para o estado de imagens
         const mappedImages: ImovelImage[] = data.imovel_media.map((media: any) => ({
-            id: crypto.randomUUID(), // Gerar um ID único para o componente
+            id: media.id, // Usar o ID do Supabase para imagens existentes
             url: media.url,
             file: null, // Imagem existente não tem arquivo
             legend: media.legend,
@@ -130,6 +131,7 @@ const ViewImovelPage: React.FC = () => {
             rotation: media.rotation,
         }));
         setImages(mappedImages);
+        setInitialImages(mappedImages); // Salvar estado inicial das imagens para comparação
 
     }, [imovelId, session, navigate]);
 
@@ -139,7 +141,7 @@ const ViewImovelPage: React.FC = () => {
 
     // --- Lógica de Mídias (similar à NewImovelPage) ---
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && isEditing) { // Só permite adicionar se estiver editando
+        if (e.target.files && isEditing) {
             const newFiles = Array.from(e.target.files);
             const newImages: ImovelImage[] = newFiles.map(file => ({
                 id: crypto.randomUUID(),
@@ -164,7 +166,7 @@ const ViewImovelPage: React.FC = () => {
     };
 
     const handleAction = (action: string) => {
-        if (selectedImageIds.length === 0 || !isEditing) { // Só permite ações se estiver editando
+        if (selectedImageIds.length === 0 || !isEditing) {
             alert('Selecione pelo menos uma imagem para realizar esta ação.');
             return;
         }
@@ -174,7 +176,6 @@ const ViewImovelPage: React.FC = () => {
             
             if (action === 'delete') {
                 newImages = newImages.filter(img => !selectedImageIds.includes(img.id));
-                // Limpar URLs de objeto para evitar vazamento de memória
                 selectedImageIds.forEach(id => {
                     const img = prev.find(i => i.id === id);
                     if (img && img.url.startsWith('blob:')) {
@@ -207,7 +208,7 @@ const ViewImovelPage: React.FC = () => {
 
     // --- Handlers de Formulário (similar à NewImovelPage) ---
     const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-        if (!formData || !isEditing) return; // Só permite mudanças se estiver editando
+        if (!formData || !isEditing) return;
         
         const { id, value, type, checked } = e.target as HTMLInputElement;
 
@@ -298,8 +299,7 @@ const ViewImovelPage: React.FC = () => {
 
     const handleCancelEdit = () => {
         setIsEditing(false);
-        // Opcional: recarregar dados para descartar alterações não salvas
-        fetchImovelData();
+        fetchImovelData(); // Recarrega dados para descartar alterações não salvas
     };
 
     const handleSave = async () => {
@@ -328,7 +328,7 @@ const ViewImovelPage: React.FC = () => {
 
         const imovelData = {
             user_id: session.user.id,
-            codigo, // Código não pode ser editado, mas é enviado para garantir consistência
+            codigo,
             tipo_imovel,
             bairro,
             logradouro,
@@ -352,6 +352,7 @@ const ViewImovelPage: React.FC = () => {
             dados_caracteristicas: {
                 etiquetas, dormitorios, suites, banheiros, vagas_garagem, area_privativa_m2, condicao, mobiliado, orientacao_solar, posicao, entrega_obra, pessoas_acomodacoes, distancia_mar_m, tipos_piso, titulo_site, descricao_site, meta_title, meta_description, vis_endereco, vis_venda, vis_locacao, vis_temporada, vis_iptu, vis_condominio,
             },
+            observacoes_aprovacao,
         };
 
         // 2. Atualizar Imóvel no Banco de Dados
@@ -367,24 +368,68 @@ const ViewImovelPage: React.FC = () => {
             return;
         }
         
-        // 3. Upload de Mídias e Salvamento de Metadados (se houver novos arquivos)
-        const newImages = images.filter(img => img.file !== null);
-        if (newImages.length > 0) {
-            const uploadedMedia = await uploadImovelMedia(newImages, session.user.id, imovelId);
-            
+        // --- Gerenciamento de Mídias ---
+        const existingImageIds = initialImages.map(img => img.id);
+        const currentImageIds = images.map(img => img.id);
+
+        // Imagens a serem excluídas (estavam no initialImages mas não estão mais em images)
+        const imagesToDelete = initialImages.filter(img => !currentImageIds.includes(img.id));
+        for (const img of imagesToDelete) {
+            // Extrair o nome do arquivo do URL para exclusão no storage
+            const fileName = img.url.split('/').pop();
+            if (fileName) {
+                const { error: deleteStorageError } = await supabase.storage
+                    .from('imovel-media')
+                    .remove([`imoveis/${imovelId}/${fileName}`]);
+                
+                if (deleteStorageError) {
+                    console.error(`Erro ao excluir imagem do storage (${fileName}):`, deleteStorageError);
+                }
+            }
+            // Excluir do banco de dados
+            const { error: deleteDbError } = await supabase
+                .from('imovel_media')
+                .delete()
+                .eq('id', img.id);
+            if (deleteDbError) {
+                console.error(`Erro ao excluir metadados da imagem (${img.id}):`, deleteDbError);
+            }
+        }
+
+        // Imagens novas (com `file` preenchido)
+        const newImagesToUpload = images.filter(img => img.file !== null);
+        if (newImagesToUpload.length > 0) {
+            const uploadedMedia = await uploadImovelMedia(newImagesToUpload, session.user.id, imovelId);
             if (uploadedMedia.length > 0) {
                 const { error: mediaError } = await saveMediaMetadata(imovelId, session.user.id, uploadedMedia);
-                
                 if (mediaError) {
-                    console.error('Erro ao salvar metadados das mídias:', mediaError);
+                    console.error('Erro ao salvar metadados das novas mídias:', mediaError);
                     alert(`Atenção: Imóvel salvo, mas houve um erro ao salvar as novas mídias: ${mediaError.message}`);
                 }
+            }
+        }
+
+        // Imagens existentes que foram modificadas (sem `file`, mas com metadados alterados)
+        const updatedExistingImages = images.filter(img => img.file === null && existingImageIds.includes(img.id))
+            .filter(img => {
+                const initial = initialImages.find(i => i.id === img.id);
+                return initial && (initial.legend !== img.legend || initial.isVisible !== img.isVisible || initial.rotation !== img.rotation);
+            });
+        
+        for (const img of updatedExistingImages) {
+            const { error: updateError } = await supabase
+                .from('imovel_media')
+                .update({ legend: img.legend, is_visible: img.isVisible, rotation: img.rotation })
+                .eq('id', img.id);
+            if (updateError) {
+                console.error(`Erro ao atualizar metadados da imagem (${img.id}):`, updateError);
             }
         }
 
         setIsSaving(false);
         setIsEditing(false); // Sai do modo de edição
         alert('Imóvel atualizado com sucesso!');
+        fetchImovelData(); // Recarrega os dados para refletir todas as mudanças
     };
 
     // --- Validação e Efeitos (similar à NewImovelPage) ---

@@ -37,7 +37,7 @@ interface Imovel {
     };
     
     // Mídia (lista completa de mídias)
-    imovel_media: { url: string, rotation: number }[];
+    imovel_media: { id: string, url: string, rotation: number }[]; // Adicionado 'id'
 }
 
 interface ImovelCardProps {
