@@ -1,20 +1,85 @@
-import React from 'react';
-import { Plus, RefreshCw, List, Map } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Plus, RefreshCw, List, Map, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import FilterSidebar from '../components/FilterSidebar';
 import ImovelCard from '../components/ImovelCard';
 import { Button } from '../components/ui/Button';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../integrations/supabase/client';
 
-// Mock Data
-const mockImoveis = [
-    { id: 1, code: '51704', address: 'Rua Coronel Alberto Rosa, 362', neighborhood: 'Centro', city: 'Pelotas - RS', type: 'Apartamento', bedrooms: 3, bathrooms: 2, area: 97, price: 245000, condoFee: 245, iptu: 80, status: 'Venda', isAvailable: false, imageUrl: '/LOGO LARANJA.png' },
-    { id: 2, code: '40242', address: 'Rua Três de Maio, 1379', neighborhood: 'Centro', city: 'Pelotas - RS', type: 'Apartamento, 401', bedrooms: 3, bathrooms: 2, area: 84, price: 230000, condoFee: 210, iptu: 0, status: 'Venda', isAvailable: true, imageUrl: '/LOGO LARANJA.png' },
-    { id: 3, code: '58559', address: 'Rua Leonardo Colares, 360', neighborhood: 'Centro', city: 'Pelotas - RS', type: 'Apartamento, 41', bedrooms: 3, bathrooms: 1, area: 71.97, price: 165000, condoFee: 250, iptu: 22, status: 'Venda', isAvailable: true, imageUrl: '/LOGO LARANJA.png' },
-    { id: 4, code: '27778', address: 'Avenida São Francisco de Paula, 3691', neighborhood: 'Areal', city: 'Pelotas - RS', type: 'Apartamento', bedrooms: 3, bathrooms: 2, area: 90, price: 485000, condoFee: 0, iptu: 0, status: 'Venda', isAvailable: true, imageUrl: '/LOGO LARANJA.png' },
-    { id: 5, code: '7244', address: 'Rua Andrade Neves, 3446', neighborhood: 'Centro', city: 'Pelotas - RS', type: 'Apartamento, 3º andar', bedrooms: 3, bathrooms: 2, area: 90, price: 300000, condoFee: 0, iptu: 0, status: 'Venda', isAvailable: true, imageUrl: '/LOGO LARANJA.png' },
-];
+// Interface para o Imóvel (deve ser a mesma usada no ImovelCard)
+interface Imovel {
+    id: string;
+    codigo: string;
+    bairro: string;
+    logradouro: string;
+    numero: string;
+    status_aprovacao: 'Aprovado' | 'Não aprovado' | 'Aguardando';
+    dados_contrato: any;
+    dados_valores: any;
+    dados_localizacao: any;
+    dados_caracteristicas: any;
+    first_image_url: string | null;
+}
 
 const ImoveisPage: React.FC = () => {
+    const { session } = useAuth();
+    const [imoveis, setImoveis] = useState<Imovel[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const fetchImoveis = useCallback(async () => {
+        if (!session) return;
+
+        setIsLoading(true);
+        setError(null);
+
+        // 1. Buscar Imóveis
+        const { data: imoveisData, error: imovelError } = await supabase
+            .from('imoveis')
+            .select(`
+                id, codigo, bairro, logradouro, numero, status_aprovacao,
+                dados_contrato, dados_valores, dados_localizacao, dados_caracteristicas,
+                imovel_media(url)
+            `)
+            .eq('user_id', session.user.id)
+            .order('created_at', { ascending: false });
+
+        if (imovelError) {
+            console.error('Erro ao buscar imóveis:', imovelError);
+            setError('Não foi possível carregar a lista de imóveis.');
+            setIsLoading(false);
+            return;
+        }
+        
+        // 2. Mapear e formatar os dados
+        const formattedImoveis: Imovel[] = imoveisData.map((imovel: any) => {
+            // A primeira imagem é a primeira URL da lista de mídias, se houver
+            const firstMedia = imovel.imovel_media?.[0];
+            
+            return {
+                id: imovel.id,
+                codigo: imovel.codigo,
+                bairro: imovel.bairro,
+                logradouro: imovel.logradouro,
+                numero: imovel.numero,
+                status_aprovacao: imovel.status_aprovacao,
+                dados_contrato: imovel.dados_contrato,
+                dados_valores: imovel.dados_valores,
+                dados_localizacao: imovel.dados_localizacao,
+                dados_caracteristicas: imovel.dados_caracteristicas,
+                first_image_url: firstMedia ? firstMedia.url : null,
+            };
+        });
+
+        setImoveis(formattedImoveis);
+        setIsLoading(false);
+    }, [session]);
+
+    useEffect(() => {
+        fetchImoveis();
+    }, [fetchImoveis]);
+
     return (
         <div className="flex h-full min-h-[calc(100vh-150px)]">
             {/* Barra Lateral de Filtros */}
@@ -31,8 +96,14 @@ const ImoveisPage: React.FC = () => {
                                 <Plus className="w-4 h-4 mr-2" /> Novo imóvel
                             </Button>
                         </Link>
-                        <Button variant="outline" className="text-blue-600 border-blue-600 hover:bg-blue-50">
-                            <RefreshCw className="w-4 h-4 mr-2" /> Reajustar valores
+                        <Button 
+                            variant="outline" 
+                            className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                            onClick={fetchImoveis}
+                            disabled={isLoading}
+                        >
+                            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} /> 
+                            {isLoading ? 'Atualizando...' : 'Atualizar Lista'}
                         </Button>
                     </div>
                     
@@ -44,7 +115,7 @@ const ImoveisPage: React.FC = () => {
 
                 {/* Breadcrumb e Contagem */}
                 <div className="flex justify-between items-center mb-4 border-b pb-3">
-                    <h2 className="text-xl font-semibold text-dark-text">Imóveis ({mockImoveis.length})</h2>
+                    <h2 className="text-xl font-semibold text-dark-text">Imóveis ({imoveis.length})</h2>
                     <div className="flex space-x-2">
                         {/* Mock de filtros ativos */}
                         <span className="flex items-center bg-gray-200 text-sm px-3 py-1 rounded-full">Apartamento</span>
@@ -53,8 +124,23 @@ const ImoveisPage: React.FC = () => {
                 </div>
 
                 {/* Lista de Imóveis */}
+                {error && <div className="text-red-600 p-4 bg-red-50 rounded-md">{error}</div>}
+                
+                {isLoading && (
+                    <div className="flex items-center justify-center py-10">
+                        <Loader2 className="w-6 h-6 animate-spin text-blue-600 mr-3" />
+                        <p className="text-gray-600">Carregando imóveis...</p>
+                    </div>
+                )}
+                
+                {!isLoading && imoveis.length === 0 && !error && (
+                    <div className="text-center py-10 text-gray-500">
+                        <p className="text-lg">Nenhum imóvel encontrado. Comece cadastrando um novo!</p>
+                    </div>
+                )}
+
                 <div className="space-y-4">
-                    {mockImoveis.map(imovel => (
+                    {imoveis.map(imovel => (
                         <ImovelCard key={imovel.id} imovel={imovel} />
                     ))}
                 </div>

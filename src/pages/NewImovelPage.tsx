@@ -12,11 +12,12 @@ import { useCepLookup } from '../../hooks/useCepLookup';
 import { useNominatimLookup } from '../../hooks/useNominatimLookup';
 import MapDisplay from '../components/MapDisplay';
 import ToggleSwitch from '../components/ToggleSwitch';
-import ImageCard from '../components/ImageCard'; // NOVO COMPONENTE
-import ActionsDropdown from '../components/ActionsDropdown'; // NOVO COMPONENTE
+import ImageCard from '../components/ImageCard';
+import ActionsDropdown from '../components/ActionsDropdown';
+import { uploadImovelMedia, saveMediaMetadata } from '../utils/media'; // Importando utilitários
 
 // --- Tipos para Mídias ---
-interface ImovelImage {
+export interface ImovelImage {
     id: string;
     url: string;
     file: File; // Mantemos o arquivo original em memória
@@ -442,7 +443,7 @@ const NewImovelPage: React.FC = () => {
 
         setIsSaving(true);
         
-        // Estruturando os dados para o Supabase (separando em JSONB)
+        // 1. Estruturando os dados para o Supabase
         const { 
             tipo_imovel, codigo, bairro, logradouro, numero, status_aprovacao,
             // Dados de Contrato
@@ -487,20 +488,41 @@ const NewImovelPage: React.FC = () => {
             dados_caracteristicas: {
                 etiquetas, dormitorios, suites, banheiros, vagas_garagem, condicao, mobiliado, orientacao_solar, posicao, entrega_obra, pessoas_acomodacoes, distancia_mar_m, tipos_piso, titulo_site, descricao_site, meta_title, meta_description, vis_endereco, vis_venda, vis_locacao, vis_temporada, vis_iptu, vis_condominio,
             },
-            // Nota: As imagens (files) não são salvas no banco de dados aqui, apenas a URL/metadados seriam salvos após o upload para o Storage.
         };
 
-        const { error } = await supabase.from('imoveis').insert(imovelData);
+        // 2. Inserir Imóvel no Banco de Dados
+        const { data: insertedImovel, error: imovelError } = await supabase
+            .from('imoveis')
+            .insert(imovelData)
+            .select('id')
+            .single();
+
+        if (imovelError) {
+            console.error('Erro ao salvar imóvel:', imovelError);
+            alert(`Erro ao salvar o imóvel: ${imovelError.message}`);
+            setIsSaving(false);
+            return;
+        }
+        
+        const imovelId = insertedImovel.id;
+        
+        // 3. Upload de Mídias e Salvamento de Metadados
+        if (images.length > 0) {
+            const uploadedMedia = await uploadImovelMedia(images, session.user.id, imovelId);
+            
+            if (uploadedMedia.length > 0) {
+                const { error: mediaError } = await saveMediaMetadata(imovelId, session.user.id, uploadedMedia);
+                
+                if (mediaError) {
+                    console.error('Erro ao salvar metadados das mídias:', mediaError);
+                    alert(`Atenção: Imóvel salvo, mas houve um erro ao salvar as mídias: ${mediaError.message}`);
+                }
+            }
+        }
 
         setIsSaving(false);
-
-        if (error) {
-            console.error('Erro ao salvar imóvel:', error);
-            alert(`Erro ao salvar o imóvel: ${error.message}`);
-        } else {
-            alert('Imóvel cadastrado com sucesso!');
-            navigate('/crm/imoveis'); // Redireciona para a listagem após o sucesso
-        }
+        alert('Imóvel cadastrado com sucesso!');
+        navigate('/crm/imoveis'); // Redireciona para a listagem após o sucesso
     };
 
     // Helper function to render radio groups
@@ -767,8 +789,8 @@ const NewImovelPage: React.FC = () => {
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                            <NumberInput label="Seguro Incêndio (anual)" id="seguro_incendio" isCurrency value={formData.seguro_incendio} onChange={handleInputChange} placeholder="R$ 0,00" />
-                            <NumberInput label="Taxa de limpeza" id="taxa_limpeza" isCurrency value={formData.taxa_limpeza} onChange={handleInputChange} placeholder="R$ 0,00" />
+                            <NumberInput label="Seguro Incêndio (anual)" id="seguro_incendio" value={formData.seguro_incendio} onChange={handleInputChange} placeholder="R$ 0,00" isCurrency />
+                            <NumberInput label="Taxa de limpeza" id="taxa_limpeza" value={formData.taxa_limpeza} onChange={handleInputChange} placeholder="R$ 0,00" isCurrency />
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -778,7 +800,7 @@ const NewImovelPage: React.FC = () => {
                                     {indexOptions.map(i => <option key={i} value={i}>{i}</option>)}
                                 </select>
                             </div>
-                            <NumberInput label="Valor Base" id="valor_base" isCurrency value={formData.valor_base} onChange={handleInputChange} placeholder="Informe o valor base" />
+                            <NumberInput label="Valor Base" id="valor_base" value={formData.valor_base} onChange={handleInputChange} placeholder="Informe o valor base" isCurrency />
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -1128,7 +1150,7 @@ const NewImovelPage: React.FC = () => {
             { icon: <Lock className="w-5 h-5 mr-2" />, text: 'Dados não visíveis no site' },
             { icon: <Key className="w-5 h-5 mr-2" />, text: 'Chaves (Placeholder)' },
             { icon: <FileText className="w-5 h-5 mr-2" />, text: 'Documentos Anexados (Placeholder)' },
-            { icon: <Image className="w-5 h-5 mr-2" />, text: 'Mídias (Placeholder)' },
+            { icon: <Image className="w-5 h-5 mr-2" />, text: 'Mídias' },
             { icon: <List className="w-5 h-5 mr-2" />, text: 'Características' },
             { icon: <Zap className="w-5 h-5 mr-2" />, text: 'Sites e portais (Placeholder)' },
             { icon: <CheckCircle className="w-5 h-5 mr-2" />, text: 'Aprovação do imóvel' },

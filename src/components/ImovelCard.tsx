@@ -1,22 +1,41 @@
 import React from 'react';
 import { Bed, Bath, Home, Maximize2, ChevronRight, Image, RefreshCw, Info } from 'lucide-react';
 
+// Interface baseada na estrutura de dados do Supabase (tabela imoveis + primeira midia)
 interface Imovel {
-    id: number;
-    code: string;
-    address: string;
-    neighborhood: string;
-    city: string;
-    type: string;
-    bedrooms: number;
-    bathrooms: number;
-    area: number;
-    price: number;
-    condoFee: number;
-    iptu: number;
-    status: 'Venda' | 'Aluguel';
-    isAvailable: boolean;
-    imageUrl: string;
+    id: string;
+    codigo: string;
+    bairro: string;
+    logradouro: string;
+    numero: string;
+    status_aprovacao: 'Aprovado' | 'Não aprovado' | 'Aguardando';
+    
+    // Dados JSONB
+    dados_contrato: {
+        venda_ativo: boolean;
+        locacao_ativo: boolean;
+        venda_disponibilidade: 'Disponível' | 'Indisponível';
+        locacao_disponibilidade: 'Disponível' | 'Indisponível';
+    };
+    dados_valores: {
+        valor_venda: number;
+        valor_locacao: number;
+        valor_condominio: number;
+        valor_iptu: number;
+    };
+    dados_localizacao: {
+        cidade: string;
+        estado: string;
+    };
+    dados_caracteristicas: {
+        tipo_imovel: string;
+        dormitorios: number;
+        banheiros: number;
+        vagas_garagem: number;
+    };
+    
+    // Mídia (primeira imagem)
+    first_image_url: string | null;
 }
 
 interface ImovelCardProps {
@@ -26,21 +45,34 @@ interface ImovelCardProps {
 const formatCurrency = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 const ImovelCard: React.FC<ImovelCardProps> = ({ imovel }) => {
-    const statusColor = imovel.status === 'Venda' ? 'text-red-600' : 'text-blue-600';
-    const statusBg = imovel.status === 'Venda' ? 'bg-red-50' : 'bg-blue-50';
+    
+    const isVenda = imovel.dados_contrato.venda_ativo;
+    const isLocacao = imovel.dados_contrato.locacao_ativo;
+    
+    const statusText = isVenda ? 'Venda' : (isLocacao ? 'Locação' : 'Indefinido');
+    const statusColor = isVenda ? 'text-red-600' : 'text-blue-600';
+    
+    const isAvailable = (isVenda && imovel.dados_contrato.venda_disponibilidade === 'Disponível') || 
+                        (isLocacao && imovel.dados_contrato.locacao_disponibilidade === 'Disponível');
+    
+    const price = isVenda ? imovel.dados_valores.valor_venda : imovel.dados_valores.valor_locacao;
+    const type = imovel.dados_caracteristicas.tipo_imovel;
+    
+    const defaultImage = '/LOGO LARANJA.png';
+    const imageUrl = imovel.first_image_url || defaultImage;
 
     return (
         <div className="flex border border-gray-200 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200 mb-4">
             <div className="flex-shrink-0 w-40 h-40 relative">
                 <img 
-                    src={imovel.imageUrl} 
-                    alt={`Imagem do Imóvel ${imovel.code}`} 
+                    src={imageUrl} 
+                    alt={`Imagem do Imóvel ${imovel.codigo}`} 
                     className="w-full h-full object-cover"
                 />
                 <div className="absolute bottom-0 left-0 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded-tr-lg font-semibold">
-                    {imovel.code}
+                    {imovel.codigo}
                 </div>
-                {!imovel.isAvailable && (
+                {!isAvailable && (
                     <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
                         <p className="text-white font-bold text-sm rotate-[-15deg]">Indisponível</p>
                     </div>
@@ -51,16 +83,16 @@ const ImovelCard: React.FC<ImovelCardProps> = ({ imovel }) => {
                 {/* Detalhes do Imóvel */}
                 <div className="flex flex-col justify-between">
                     <div>
-                        <p className="text-sm font-semibold text-dark-text truncate">{imovel.address}</p>
-                        <p className="text-xs text-light-text">{imovel.type}</p>
-                        <p className="text-xs font-medium text-blue-700">{imovel.neighborhood} - {imovel.city}</p>
+                        <p className="text-sm font-semibold text-dark-text truncate">{imovel.logradouro}, {imovel.numero}</p>
+                        <p className="text-xs text-light-text">{type}</p>
+                        <p className="text-xs font-medium text-blue-700">{imovel.bairro} - {imovel.dados_localizacao.cidade} - {imovel.dados_localizacao.estado}</p>
                     </div>
                     
                     {/* KPIs */}
                     <div className="flex space-x-4 text-light-text mt-2">
-                        <div className="flex items-center text-xs" title="Quartos"><Bed className="w-3 h-3 mr-1" /> {imovel.bedrooms}</div>
-                        <div className="flex items-center text-xs" title="Banheiros"><Bath className="w-3 h-3 mr-1" /> {imovel.bathrooms}</div>
-                        <div className="flex items-center text-xs" title="Área Privativa"><Maximize2 className="w-3 h-3 mr-1" /> {imovel.area} m²</div>
+                        <div className="flex items-center text-xs" title="Quartos"><Bed className="w-3 h-3 mr-1" /> {imovel.dados_caracteristicas.dormitorios}</div>
+                        <div className="flex items-center text-xs" title="Banheiros"><Bath className="w-3 h-3 mr-1" /> {imovel.dados_caracteristicas.banheiros}</div>
+                        <div className="flex items-center text-xs" title="Vagas de Garagem"><Home className="w-3 h-3 mr-1" /> {imovel.dados_caracteristicas.vagas_garagem}</div>
                     </div>
                 </div>
                 
@@ -73,10 +105,10 @@ const ImovelCard: React.FC<ImovelCardProps> = ({ imovel }) => {
                     </div>
                     
                     <div className="text-right">
-                        <p className={`text-xs font-semibold ${statusColor}`}>{imovel.status}</p>
-                        <p className="text-lg font-bold text-dark-text">{formatCurrency(imovel.price)}</p>
-                        {imovel.condoFee > 0 && <p className="text-xs text-light-text">Condomínio: {formatCurrency(imovel.condoFee)}</p>}
-                        {imovel.iptu > 0 && <p className="text-xs text-light-text">IPTU (anual): {formatCurrency(imovel.iptu)}</p>}
+                        <p className={`text-xs font-semibold ${statusColor}`}>{statusText}</p>
+                        <p className="text-lg font-bold text-dark-text">{formatCurrency(price)}</p>
+                        {imovel.dados_valores.valor_condominio > 0 && <p className="text-xs text-light-text">Condomínio: {formatCurrency(imovel.dados_valores.valor_condominio)}</p>}
+                        {imovel.dados_valores.valor_iptu > 0 && <p className="text-xs text-light-text">IPTU: {formatCurrency(imovel.dados_valores.valor_iptu)}</p>}
                         <button className="text-blue-600 hover:text-blue-800 text-sm mt-1 flex items-center">
                             Detalhes <ChevronRight className="w-4 h-4 ml-1" />
                         </button>
