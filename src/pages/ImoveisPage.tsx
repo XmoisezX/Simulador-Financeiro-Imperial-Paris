@@ -5,6 +5,7 @@ import FilterSidebar from '../components/FilterSidebar';
 import ImovelCard from '../components/ImovelCard';
 import ImovelDetailsModal from '../components/ImovelDetailsModal';
 import ActionsDropdown from '../components/ActionsDropdown'; // Importando o novo dropdown
+import ConfirmationModal from '../components/ConfirmationModal'; // NOVO: Importando o modal de confirmação
 import { Button } from '../components/ui/Button';
 import { Checkbox } from '../components/ui/Checkbox'; // Importando Checkbox
 import { useAuth } from '../contexts/AuthContext';
@@ -47,6 +48,11 @@ const ImoveisPage: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedImovelDetails, setSelectedImovelDetails] = useState<ImovelDetails | null>(null);
     const [isDetailsLoading, setIsDetailsLoading] = useState(false);
+    
+    // NOVO: Estado do Modal de Confirmação
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
 
     const fetchImoveis = useCallback(async () => {
         if (!session) return;
@@ -161,8 +167,55 @@ const ImoveisPage: React.FC = () => {
     const isAllSelected = imoveis.length > 0 && selectedImovelIds.length === imoveis.length;
     const isIndeterminate = selectedImovelIds.length > 0 && selectedImovelIds.length < imoveis.length;
     
-    // --- Lógica de Ações em Massa ---
-    const handleMassAction = async (action: string) => {
+    // --- Lógica de Exclusão (Confirmada) ---
+    const confirmDelete = async () => {
+        if (selectedImovelIds.length === 0) return;
+
+        setIsDeleting(true);
+        
+        let successCount = 0;
+        let errorCount = 0;
+        
+        // 1. Excluir metadados das imagens (para evitar órfãos)
+        const { error: mediaError } = await supabase
+            .from('imagens_imovel')
+            .delete()
+            .in('imovel_id', selectedImovelIds);
+            
+        if (mediaError) {
+            console.error('Erro ao excluir mídias:', mediaError);
+            // Continuamos, mas registramos o erro
+        }
+        
+        // 2. Excluir os imóveis principais
+        const { error: imovelDeleteError } = await supabase
+            .from('imoveis')
+            .delete()
+            .in('id', selectedImovelIds);
+            
+        if (imovelDeleteError) {
+            console.error('Erro ao excluir imóveis:', imovelDeleteError);
+            alert(`Erro ao excluir imóveis: ${imovelDeleteError.message}`);
+            errorCount = selectedImovelIds.length;
+        } else {
+            successCount = selectedImovelIds.length;
+        }
+        
+        setIsDeleting(false);
+        setIsConfirmModalOpen(false);
+        
+        if (successCount > 0) {
+            alert(`${successCount} imóvel(is) excluído(s) com sucesso.`);
+        } else if (errorCount > 0) {
+            alert(`Falha ao excluir ${errorCount} imóvel(is).`);
+        }
+        
+        // 3. Recarregar a lista e limpar a seleção
+        fetchImoveis();
+    };
+    
+    // --- Lógica de Ações em Massa (Inicia o modal de confirmação) ---
+    const handleMassAction = (action: string) => {
         if (selectedImovelIds.length === 0) return;
         
         switch (action) {
@@ -186,45 +239,7 @@ const ImoveisPage: React.FC = () => {
                 alert(`Ação: Exportar (Mock) para ${selectedImovelIds.length} imóveis.`);
                 break;
             case 'delete':
-                if (window.confirm(`Tem certeza que deseja excluir ${selectedImovelIds.length} imóvel(is)? Esta ação é irreversível.`)) {
-                    setIsLoading(true);
-                    let successCount = 0;
-                    let errorCount = 0;
-                    
-                    // 1. Excluir metadados das imagens (para evitar órfãos)
-                    const { error: mediaError } = await supabase
-                        .from('imagens_imovel')
-                        .delete()
-                        .in('imovel_id', selectedImovelIds);
-                        
-                    if (mediaError) {
-                        console.error('Erro ao excluir mídias:', mediaError);
-                        // Continuamos, mas alertamos sobre o erro de mídias
-                    }
-                    
-                    // 2. Excluir os imóveis principais
-                    const { error: imovelDeleteError, count } = await supabase
-                        .from('imoveis')
-                        .delete()
-                        .in('id', selectedImovelIds);
-                        
-                    if (imovelDeleteError) {
-                        console.error('Erro ao excluir imóveis:', imovelDeleteError);
-                        alert(`Erro ao excluir imóveis: ${imovelDeleteError.message}`);
-                        errorCount = selectedImovelIds.length;
-                    } else {
-                        successCount = selectedImovelIds.length;
-                    }
-                    
-                    if (successCount > 0) {
-                        alert(`${successCount} imóvel(is) excluído(s) com sucesso.`);
-                    } else if (errorCount > 0) {
-                        alert(`Falha ao excluir ${errorCount} imóvel(is).`);
-                    }
-                    
-                    // 3. Recarregar a lista e limpar a seleção
-                    fetchImoveis();
-                }
+                setIsConfirmModalOpen(true); // Abre o modal de confirmação
                 break;
             default:
                 console.warn(`Ação desconhecida: ${action}`);
@@ -332,6 +347,17 @@ const ImoveisPage: React.FC = () => {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 imovel={selectedImovelDetails}
+            />
+            
+            {/* Modal de Confirmação de Exclusão */}
+            <ConfirmationModal
+                isOpen={isConfirmModalOpen}
+                onClose={() => setIsConfirmModalOpen(false)}
+                onConfirm={confirmDelete}
+                title="Confirmação de Exclusão"
+                message={`Você está prestes a excluir ${selectedImovelIds.length} imóvel(is) selecionado(s).`}
+                confirmText={`Excluir ${selectedImovelIds.length} Imóvel(is)`}
+                isConfirming={isDeleting}
             />
         </div>
     );
