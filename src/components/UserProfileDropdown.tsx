@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Settings, Bell, Mail, Rocket, Monitor, LogOut, User, ExternalLink } from 'lucide-react';
+import { Settings, Bell, Mail, LogOut, User } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useProfile } from '../hooks/useProfile';
 import ProfileSettingsModal from './ProfileSettingsModal';
@@ -41,8 +41,6 @@ const UserProfileDropdown: React.FC = () => {
         { icon: <Settings className="w-5 h-5" />, label: 'Configurações da conta', action: handleOpenModal },
         { icon: <Bell className="w-5 h-5" />, label: 'Configurações de notificações', action: () => alert('Abrir página de notificações (Mock)') },
         { icon: <Mail className="w-5 h-5" />, label: 'E-mail empresarial', action: () => window.open('https://webmail.imperialparis.com.br', '_blank') },
-        { icon: <Rocket className="w-5 h-5" />, label: 'Meu plano', action: () => alert('Abrir modal/página de planos (Mock)') },
-        { icon: <Monitor className="w-5 h-5" />, label: 'Acesso remoto', action: () => window.open('https://acessoremoto.imperialparis.com.br', '_blank') },
     ];
 
     if (isLoading) {
@@ -88,21 +86,6 @@ const UserProfileDropdown: React.FC = () => {
                             </button>
                         ))}
                         
-                        {/* Item especial: Acesse o Jetlar */}
-                        <div className="flex items-center justify-between px-4 py-2 text-sm text-dark-text hover:bg-gray-100 transition-colors">
-                            <div className="flex items-center">
-                                <ExternalLink className="w-5 h-5" />
-                                <span className="ml-3">Acesse o Jetlar</span>
-                            </div>
-                            <Button 
-                                size="sm" 
-                                className="bg-green-600 hover:bg-green-700 text-white text-xs h-7"
-                                onClick={() => window.open('https://jetlar.com.br', '_blank')}
-                            >
-                                Conheça!
-                            </Button>
-                        </div>
-
                         {/* Sair */}
                         <button
                             onClick={handleSignOut}
