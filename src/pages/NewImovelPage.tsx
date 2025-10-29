@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Home, MapPin, DollarSign, Eye, Lock, Key, FileText, Image, List, CheckCircle, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ImovelInput, SimNao, Disponibilidade, SimNaoSemimobiliado, Financiavel, VisibilidadeMapa, StatusAprovacao } from '../../types';
@@ -10,7 +10,14 @@ import { Button } from '../components/ui/Button';
 import { Checkbox } from '../components/ui/Checkbox';
 
 // --- Mock Data ---
-const propertyTypes = ['Apartamento', 'Casa', 'Terreno', 'Comercial'];
+const propertyTypes = [
+    'Apartamento', 'Apartamento Garden', 'Box', 'Campo', 'Casa', 'Casa Comercial', 
+    'Casa de Condomínio', 'Chácara', 'Cobertura', 'Conjunto Comercial', 'Duplex', 
+    'Fazenda', 'Flat', 'Galpão', 'Geminado', 'Haras', 'Hotel', 'Kitnet', 'Loft', 
+    'Loja', 'Pavilhão', 'Ponto Comercial', 'Pousada', 'Prédio Comercial', 
+    'Prédio Residencial', 'Sala Comercial', 'Salão Comercial', 'Sobrado', 'Studio', 
+    'Sítio', 'Terreno', 'Terreno Comercial', 'Triplex', 'Área Rural'
+];
 const neighborhoods = ['Centro', 'Laranjal', 'Areal', 'Porto', 'Fragata', 'Três Vendas'];
 const motives = ['Vendido', 'Alugado', 'Retirado pelo proprietário'];
 const indexOptions = ['IGP-M', 'IPCA', 'FIPE'];
@@ -22,10 +29,13 @@ const booleanOptions = ['Sim', 'Não'];
 const conditionOptions = ['Em construção', 'Na planta', 'Novo', 'Usado'];
 const approvalOptions = ['Aprovado', 'Não aprovado', 'Aguardando'];
 
+// Helper para gerar código randômico de 5 dígitos
+const generateRandomCode = () => String(Math.floor(10000 + Math.random() * 90000));
+
 // --- Initial State ---
-const initialImovelState: ImovelInput = {
+const getInitialState = (): ImovelInput => ({
     tipo_imovel: '',
-    codigo: '',
+    codigo: generateRandomCode(), // Código randômico inicial
     venda_ativo: true,
     venda_disponibilidade: 'Disponível',
     venda_motivo_indisponibilidade: '',
@@ -118,7 +128,7 @@ const initialImovelState: ImovelInput = {
     // Step 11: Aprovação do imóvel
     status_aprovacao: 'Aguardando',
     observacoes_aprovacao: '',
-};
+});
 
 const TOTAL_STEPS = 11;
 
@@ -126,9 +136,17 @@ const NewImovelPage: React.FC = () => {
     const { supabase, session } = useAuth();
     const navigate = useNavigate();
     const [step, setStep] = useState(1);
-    const [formData, setFormData] = useState<ImovelInput>(initialImovelState);
+    const [formData, setFormData] = useState<ImovelInput>(getInitialState());
     const [isSaving, setIsSaving] = useState(false);
     const [validationError, setValidationError] = useState<string | null>(null);
+
+    // Scroll to the active step whenever it changes
+    useEffect(() => {
+        const activeStepElement = document.getElementById(`imovel-step-${step}`);
+        if (activeStepElement) {
+            activeStepElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, [step]);
 
     const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { id, value, type, checked } = e.target as HTMLInputElement;
@@ -166,6 +184,25 @@ const NewImovelPage: React.FC = () => {
         });
         setValidationError(null);
     }, []);
+    
+    const handleFinalidadeToggle = useCallback((field: 'venda_ativo' | 'locacao_ativo' | 'temporada_ativo', checked: boolean) => {
+        setFormData(prev => {
+            const newState = { ...prev, [field]: checked };
+            
+            // Validação: Garante que pelo menos uma finalidade esteja ativa
+            const activeCount = (newState.venda_ativo ? 1 : 0) + (newState.locacao_ativo ? 1 : 0) + (newState.temporada_ativo ? 1 : 0);
+            
+            if (activeCount === 0) {
+                // Se tentar desativar a última, impede a ação e define um erro
+                setValidationError('Pelo menos uma finalidade (Venda, Locação ou Temporada) deve estar ativa.');
+                return prev;
+            }
+            
+            setValidationError(null);
+            return newState;
+        });
+    }, []);
+
 
     const validateStep = useCallback((currentData: ImovelInput, currentStep: number): boolean => {
         let errors: string[] = [];
@@ -174,6 +211,12 @@ const NewImovelPage: React.FC = () => {
             case 1: // Dados do Imóvel
                 if (!currentData.tipo_imovel) errors.push('O tipo do imóvel é obrigatório.');
                 if (!currentData.codigo) errors.push('O código do imóvel é obrigatório.');
+                
+                const activeCount = (currentData.venda_ativo ? 1 : 0) + (currentData.locacao_ativo ? 1 : 0) + (currentData.temporada_ativo ? 1 : 0);
+                if (activeCount === 0) {
+                    errors.push('Pelo menos uma finalidade deve estar ativa.');
+                }
+                
                 if (currentData.venda_ativo && currentData.venda_disponibilidade === 'Indisponível' && !currentData.venda_motivo_indisponibilidade) {
                     errors.push('O motivo de indisponibilidade de venda é obrigatório.');
                 }
@@ -247,8 +290,7 @@ const NewImovelPage: React.FC = () => {
             // Dados Internos (inclui Visibilidade e Dados não visíveis)
             proprietario_id, comissao_proprietario_percent, periodo_email_atualizacao, enviar_email_atualizacao, agenciador_id, responsavel_id, honorarios_venda_percent, honorarios_locacao_percent, honorarios_temporada_percent, data_agenciamento, numero_matricula, nao_possui_matricula, numero_iptu, vencimento_exclusividade, ocupacao, exclusivo, placa, medidor_energia, medidor_agua, medidor_gas, observacoes_internas,
             // Dados de Características (inclui Visibilidade de Site)
-            etiquetas, dormitorios, suites, banheiros, vagas_garagem, condicao, mobiliado, orientacao_solar, posicao, entrega_obra, pessoas_acomodacoes, distancia_mar_m, tipos_piso, titulo_site, descricao_site, meta_title, meta_description,
-            vis_endereco, vis_venda, vis_locacao, vis_temporada, vis_iptu, vis_condominio,
+            etiquetas, dormitorios, suites, banheiros, vagas_garagem, condicao, mobiliado, orientacao_solar, posicao, entrega_obra, pessoas_acomodacoes, distancia_mar_m, tipos_piso, titulo_site, descricao_site, meta_title, meta_description, vis_endereco, vis_venda, vis_locacao, vis_temporada, vis_iptu, vis_condominio,
             // Observações de Aprovação
             observacoes_aprovacao,
         } = formData;
@@ -330,8 +372,8 @@ const NewImovelPage: React.FC = () => {
         </div>
     );
 
-    const renderStepContent = () => {
-        switch (step) {
+    const renderStepContent = (currentStep: number) => {
+        switch (currentStep) {
             case 1:
                 return (
                     <>
@@ -342,12 +384,11 @@ const NewImovelPage: React.FC = () => {
                                     id="tipo_imovel"
                                     value={formData.tipo_imovel}
                                     onChange={handleInputChange}
-                                    className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text"
+                                    className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-secondary-orange focus:border-primary-orange sm:text-sm transition duration-150 ease-in-out placeholder:text-gray-400"
                                 >
                                     <option value="">Escolha o tipo do imóvel</option>
                                     {propertyTypes.map(t => <option key={t} value={t}>{t}</option>)}
                                 </select>
-                                {validationError && !formData.tipo_imovel && <p className="text-xs text-red-600">O tipo do imóvel é obrigatório.</p>}
                             </div>
                             <TextInput label="Código *" id="codigo" value={formData.codigo} onChange={handleInputChange} placeholder="52564" />
                         </div>
@@ -356,7 +397,7 @@ const NewImovelPage: React.FC = () => {
                             {/* Venda */}
                             <div className="p-3 border rounded-lg space-y-2">
                                 <label className="flex items-center space-x-2 font-semibold text-dark-text">
-                                    <Checkbox id="venda_ativo" checked={formData.venda_ativo} onCheckedChange={(checked) => setFormData(p => ({ ...p, venda_ativo: checked as boolean }))} />
+                                    <Checkbox id="venda_ativo" checked={formData.venda_ativo} onCheckedChange={(checked) => handleFinalidadeToggle('venda_ativo', checked as boolean)} />
                                     <span>Venda</span>
                                 </label>
                                 <h4 className="text-sm font-medium text-light-text">Disponibilidade</h4>
@@ -366,19 +407,18 @@ const NewImovelPage: React.FC = () => {
                                     id="venda_motivo_indisponibilidade"
                                     value={formData.venda_motivo_indisponibilidade}
                                     onChange={handleInputChange}
-                                    disabled={formData.venda_disponibilidade === 'Disponível'}
+                                    disabled={formData.venda_disponibilidade === 'Disponível' || !formData.venda_ativo}
                                     className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100"
                                 >
                                     <option value="">Escolha o motivo da indisponibilidade</option>
                                     {motives.map(m => <option key={m} value={m}>{m}</option>)}
                                 </select>
-                                {validationError && formData.venda_ativo && formData.venda_disponibilidade === 'Indisponível' && !formData.venda_motivo_indisponibilidade && <p className="text-xs text-red-600">Motivo obrigatório.</p>}
                             </div>
                             
                             {/* Locação */}
                             <div className="p-3 border rounded-lg space-y-2">
                                 <label className="flex items-center space-x-2 font-semibold text-dark-text">
-                                    <Checkbox id="locacao_ativo" checked={formData.locacao_ativo} onCheckedChange={(checked) => setFormData(p => ({ ...p, locacao_ativo: checked as boolean }))} />
+                                    <Checkbox id="locacao_ativo" checked={formData.locacao_ativo} onCheckedChange={(checked) => handleFinalidadeToggle('locacao_ativo', checked as boolean)} />
                                     <span>Locação</span>
                                 </label>
                                 <h4 className="text-sm font-medium text-light-text">Disponibilidade</h4>
@@ -388,7 +428,7 @@ const NewImovelPage: React.FC = () => {
                                     id="locacao_motivo_indisponibilidade"
                                     value={formData.locacao_motivo_indisponibilidade}
                                     onChange={handleInputChange}
-                                    disabled={formData.locacao_disponibilidade === 'Disponível'}
+                                    disabled={formData.locacao_disponibilidade === 'Disponível' || !formData.locacao_ativo}
                                     className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100"
                                 >
                                     <option value="">Escolha o motivo da indisponibilidade</option>
@@ -399,7 +439,7 @@ const NewImovelPage: React.FC = () => {
                             {/* Temporada */}
                             <div className="p-3 border rounded-lg space-y-2">
                                 <label className="flex items-center space-x-2 font-semibold text-dark-text">
-                                    <Checkbox id="temporada_ativo" checked={formData.temporada_ativo} onCheckedChange={(checked) => setFormData(p => ({ ...p, temporada_ativo: checked as boolean }))} />
+                                    <Checkbox id="temporada_ativo" checked={formData.temporada_ativo} onCheckedChange={(checked) => handleFinalidadeToggle('temporada_ativo', checked as boolean)} />
                                     <span>Temporada</span>
                                 </label>
                                 <h4 className="text-sm font-medium text-light-text">Disponibilidade</h4>
@@ -409,7 +449,7 @@ const NewImovelPage: React.FC = () => {
                                     id="temporada_motivo_indisponibilidade"
                                     value={formData.temporada_motivo_indisponibilidade}
                                     onChange={handleInputChange}
-                                    disabled={formData.temporada_disponibilidade === 'Disponível'}
+                                    disabled={formData.temporada_disponibilidade === 'Disponível' || !formData.temporada_ativo}
                                     className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100"
                                 >
                                     <option value="">Escolha o motivo da indisponibilidade</option>
@@ -563,7 +603,7 @@ const NewImovelPage: React.FC = () => {
                         
                         <div className="grid grid-cols-3 gap-4 mt-4">
                             <TextInput label="IPTU" id="vis_iptu" value={formData.vis_iptu} onChange={handleInputChange} placeholder="Invisível" />
-                            <TextInput label="Condomínio" id="vis_condo" value={formData.vis_condo} onChange={handleInputChange} placeholder="Invisível" />
+                            <TextInput label="Condomínio" id="vis_condominio" value={formData.vis_condominio} onChange={handleInputChange} placeholder="Invisível" />
                         </div>
                     </>
                 );
@@ -824,6 +864,8 @@ const NewImovelPage: React.FC = () => {
         return <span className="flex items-center">{titleData.icon} {titleData.text}</span>;
     };
 
+    const allSteps = Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1);
+
     return (
         <div className="p-4 sm:p-6 lg:p-8 animate-fade-in space-y-6">
             <h1 className="text-2xl font-bold text-dark-text flex items-center">
@@ -837,20 +879,29 @@ const NewImovelPage: React.FC = () => {
                 </div>
             )}
 
-            <ImovelStep
-                title={getStepTitle(step)}
-                step={step}
-                totalSteps={TOTAL_STEPS}
-                onNext={handleNext}
-                onBack={handleBack}
-                onSave={handleSubmit}
-                isLastStep={step === TOTAL_STEPS}
-                isFirstStep={step === 1}
-                isStepValid={!validationError} // Validation is checked on Next/Save click
-                isSaving={isSaving}
-            >
-                {renderStepContent()}
-            </ImovelStep>
+            {/* Renderiza todos os passos */}
+            {allSteps.map(currentStep => (
+                <div 
+                    key={currentStep} 
+                    id={`imovel-step-${currentStep}`}
+                    className={`transition-opacity duration-500 ${currentStep === step ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}
+                >
+                    <ImovelStep
+                        title={getStepTitle(currentStep)}
+                        step={currentStep}
+                        totalSteps={TOTAL_STEPS}
+                        onNext={handleNext}
+                        onBack={handleBack}
+                        onSave={handleSubmit}
+                        isLastStep={currentStep === TOTAL_STEPS}
+                        isFirstStep={currentStep === 1}
+                        isStepValid={validateStep(formData, currentStep)}
+                        isSaving={isSaving}
+                    >
+                        {renderStepContent(currentStep)}
+                    </ImovelStep>
+                </div>
+            ))}
         </div>
     );
 };
