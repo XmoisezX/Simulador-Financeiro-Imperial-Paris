@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { MapPin, XCircle, Loader2 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Circle, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -22,14 +22,20 @@ interface MapDisplayProps {
 }
 
 // Componente interno para controlar o mapa e marcadores
-const MapController: React.FC<{ location: { lat: number, lng: number }, visibilidade: 'Exata' | 'Aproximada' | 'Não mostrar' }> = ({ location, visibilidade }) => {
+const MapController: React.FC<{ location: { lat: number, lng: number } | null, visibilidade: 'Exata' | 'Aproximada' | 'Não mostrar' }> = ({ location, visibilidade }) => {
     const map = useMap();
     
     useEffect(() => {
         if (location) {
-            map.setView([location.lat, location.lng], visibilidade === 'Aproximada' ? 13 : 16);
+            // Ajusta a visualização do mapa
+            const zoomLevel = visibilidade === 'Aproximada' ? 13 : 16;
+            map.setView([location.lat, location.lng], zoomLevel);
         }
     }, [location, visibilidade, map]);
+
+    if (!location) {
+        return null; // Não renderiza marcadores se não houver localização
+    }
 
     return (
         <>
@@ -38,11 +44,11 @@ const MapController: React.FC<{ location: { lat: number, lng: number }, visibili
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             
-            {visibilidade === 'Exata' && location && (
+            {visibilidade === 'Exata' && (
                 <Marker position={[location.lat, location.lng]} />
             )}
             
-            {visibilidade === 'Aproximada' && location && (
+            {visibilidade === 'Aproximada' && (
                 <Circle 
                     center={[location.lat, location.lng]} 
                     radius={1000} // 1 km
@@ -104,8 +110,9 @@ const MapDisplay: React.FC<MapDisplayProps> = ({ visibilidade, address, isValid,
         return (
             <div className="relative h-64 rounded-md mt-4">
                 <MapContainer 
+                    // Usa a localização encontrada ou o centro padrão como fallback inicial
                     center={[location.lat, location.lng]} 
-                    zoom={defaultZoom} 
+                    zoom={visibilidade === 'Aproximada' ? 13 : 16} 
                     scrollWheelZoom={false}
                     className="w-full h-full rounded-md z-0"
                 >
