@@ -12,12 +12,13 @@ const Header: React.FC = () => {
         console.error("Erro ao carregar logo. Verifique se o arquivo 'LOGO LARANJA.png' está na pasta public.");
     };
 
-    const navLinkClasses = (path: string) => 
-        `py-2 px-3 rounded-md text-sm font-medium transition-colors ${
-            location.pathname === path 
-            ? 'bg-orange-100 text-primary-orange' 
-            : 'text-light-text hover:bg-gray-100'
-        }`;
+    // A função navLinkClasses não é mais necessária, mas a mantenho por enquanto se for usada em outro lugar.
+    // const navLinkClasses = (path: string) => 
+    //     `py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+    //         location.pathname === path 
+    //         ? 'bg-orange-100 text-primary-orange' 
+    //         : 'text-light-text hover:bg-gray-100'
+    //     }`;
 
     return (
         <header className="bg-white shadow-md sticky top-0 z-20">
@@ -41,17 +42,7 @@ const Header: React.FC = () => {
                 
                 {session && (
                     <div className="flex items-center space-x-4">
-                        <nav className="hidden md:flex items-center space-x-2 bg-white p-1 rounded-lg">
-                            <Link to="/simulador" className={navLinkClasses('/simulador')}>
-                                Simulador
-                            </Link>
-                            <Link to="/analise-de-mercado" className={navLinkClasses('/analise-de-mercado')}>
-                                Análise de Mercado
-                            </Link>
-                            <Link to="/metas-agenciamento" className={navLinkClasses('/metas-agenciamento')}>
-                                Metas Agenciamento
-                            </Link>
-                        </nav>
+                        {/* Navegação superior removida conforme solicitado */}
                         <span className="text-sm text-light-text hidden lg:block">{session.user.email}</span>
                         <button
                             onClick={() => supabase.auth.signOut()}
