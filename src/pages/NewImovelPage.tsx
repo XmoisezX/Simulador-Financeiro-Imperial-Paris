@@ -139,7 +139,7 @@ const NewImovelPage: React.FC = () => {
     const [formData, setFormData] = useState<ImovelInput>(getInitialState());
     const [isSaving, setIsSaving] = useState(false);
     const [validationError, setValidationError] = useState<string | null>(null);
-    const [isCurrentStepValid, setIsCurrentStepValid] = useState(false); // Novo estado para validade do passo atual
+    const [isCurrentStepValid, setIsCurrentStepValid] = useState(false);
 
     // Scroll to the active step whenever it changes
     useEffect(() => {
@@ -154,7 +154,7 @@ const NewImovelPage: React.FC = () => {
         // A validação é executada aqui para atualizar o botão 'Próximo'
         const isValid = validateStep(formData, step, false);
         setIsCurrentStepValid(isValid);
-    }, [formData, step]); // Depende de formData e step
+    }, [formData, step]);
 
     const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { id, value, type, checked } = e.target as HTMLInputElement;
@@ -197,17 +197,17 @@ const NewImovelPage: React.FC = () => {
         setFormData(prev => {
             const newState = { ...prev, [field]: checked };
             
-            // Validação: Garante que pelo menos uma finalidade esteja ativa
+            // Verifica quantas finalidades estariam ativas APÓS a mudança
             const activeCount = (newState.venda_ativo ? 1 : 0) + (newState.locacao_ativo ? 1 : 0) + (newState.temporada_ativo ? 1 : 0);
             
             if (activeCount === 0) {
                 // Se tentar desativar a última, impede a ação e define um erro
                 setValidationError('Pelo menos uma finalidade (Venda, Locação ou Temporada) deve estar ativa.');
-                return prev;
+                return prev; // Retorna o estado anterior
             }
             
             setValidationError(null);
-            return newState;
+            return newState; // Retorna o novo estado
         });
     }, []);
 
@@ -786,13 +786,13 @@ const NewImovelPage: React.FC = () => {
                         <TextInput label="" id="titulo_site" value={formData.titulo_site} onChange={handleInputChange} placeholder="Título do anúncio" />
                         
                         <h3 className="text-sm font-medium text-light-text mt-4">Descrição no site e portais</h3>
-                        <textarea 
-                            id="descricao_site" 
-                            rows={5} 
-                            value={formData.descricao_site}
-                            onChange={handleInputChange}
-                            className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text"
-                        ></textarea>
+                            <textarea 
+                                id="descricao_site" 
+                                rows={5} 
+                                value={formData.descricao_site}
+                                onChange={handleInputChange}
+                                className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text"
+                            ></textarea>
                         <Button variant="outline" className="mt-2 bg-white text-blue-600 border-blue-600 hover:bg-blue-50">
                             Gerar descrição agora (Mock IA)
                         </Button>
