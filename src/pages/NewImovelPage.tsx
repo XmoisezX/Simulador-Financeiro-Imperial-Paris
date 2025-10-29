@@ -7,7 +7,7 @@ import ImovelStep from '../components/ImovelStep';
 import TextInput from '../components/TextInput';
 import NumberInput from '../components/NumberInput';
 import { Button } from '../components/ui/Button';
-import { Checkbox } from '../components/ui/Checkbox';
+import { Checkbox } from '../components/ui/Checkbox'; // Importação correta
 
 // --- Mock Data ---
 const propertyTypes = [
@@ -163,6 +163,7 @@ const NewImovelPage: React.FC = () => {
             let newValue: any = value;
 
             if (type === 'checkbox') {
+                // Checkboxes que não são de finalidade (como isento, enviar_email_atualizacao)
                 newValue = checked;
             } else if (type === 'number' || id.includes('valor') || id.includes('percent') || id.includes('periodo') || id.includes('acomodacoes') || id.includes('distancia')) {
                 // Handle numeric inputs, including those using NumberInput (which passes clean numeric string)
@@ -378,7 +379,7 @@ const NewImovelPage: React.FC = () => {
                     <Checkbox 
                         id={`piso-${type}`} 
                         checked={formData.tipos_piso.includes(type)}
-                        onCheckedChange={() => handleCheckboxGroupChange('tipos_piso', type)}
+                        onCheckedChange={(checked) => handleCheckboxGroupChange('tipos_piso', type)}
                     />
                     <span>{type}</span>
                 </label>
@@ -411,7 +412,11 @@ const NewImovelPage: React.FC = () => {
                             {/* Venda */}
                             <div className="p-3 border rounded-lg space-y-2">
                                 <label className="flex items-center space-x-2 font-semibold text-dark-text">
-                                    <Checkbox id="venda_ativo" checked={formData.venda_ativo} onCheckedChange={(checked) => handleFinalidadeToggle('venda_ativo', checked as boolean)} />
+                                    <Checkbox 
+                                        id="venda_ativo" 
+                                        checked={formData.venda_ativo} 
+                                        onCheckedChange={(checked) => handleFinalidadeToggle('venda_ativo', checked as boolean)} 
+                                    />
                                     <span>Venda</span>
                                 </label>
                                 <h4 className="text-sm font-medium text-light-text">Disponibilidade</h4>
@@ -432,7 +437,11 @@ const NewImovelPage: React.FC = () => {
                             {/* Locação */}
                             <div className="p-3 border rounded-lg space-y-2">
                                 <label className="flex items-center space-x-2 font-semibold text-dark-text">
-                                    <Checkbox id="locacao_ativo" checked={formData.locacao_ativo} onCheckedChange={(checked) => handleFinalidadeToggle('locacao_ativo', checked as boolean)} />
+                                    <Checkbox 
+                                        id="locacao_ativo" 
+                                        checked={formData.locacao_ativo} 
+                                        onCheckedChange={(checked) => handleFinalidadeToggle('locacao_ativo', checked as boolean)} 
+                                    />
                                     <span>Locação</span>
                                 </label>
                                 <h4 className="text-sm font-medium text-light-text">Disponibilidade</h4>
@@ -453,7 +462,11 @@ const NewImovelPage: React.FC = () => {
                             {/* Temporada */}
                             <div className="p-3 border rounded-lg space-y-2">
                                 <label className="flex items-center space-x-2 font-semibold text-dark-text">
-                                    <Checkbox id="temporada_ativo" checked={formData.temporada_ativo} onCheckedChange={(checked) => handleFinalidadeToggle('temporada_ativo', checked as boolean)} />
+                                    <Checkbox 
+                                        id="temporada_ativo" 
+                                        checked={formData.temporada_ativo} 
+                                        onCheckedChange={(checked) => handleFinalidadeToggle('temporada_ativo', checked as boolean)} 
+                                    />
                                     <span>Temporada</span>
                                 </label>
                                 <h4 className="text-sm font-medium text-light-text">Disponibilidade</h4>
@@ -786,13 +799,13 @@ const NewImovelPage: React.FC = () => {
                         <TextInput label="" id="titulo_site" value={formData.titulo_site} onChange={handleInputChange} placeholder="Título do anúncio" />
                         
                         <h3 className="text-sm font-medium text-light-text mt-4">Descrição no site e portais</h3>
-                            <textarea 
-                                id="descricao_site" 
-                                rows={5} 
-                                value={formData.descricao_site}
-                                onChange={handleInputChange}
-                                className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text"
-                            ></textarea>
+                        <textarea 
+                            id="descricao_site" 
+                            rows={5} 
+                            value={formData.descricao_site}
+                            onChange={handleInputChange}
+                            className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text"
+                        ></textarea>
                         <Button variant="outline" className="mt-2 bg-white text-blue-600 border-blue-600 hover:bg-blue-50">
                             Gerar descrição agora (Mock IA)
                         </Button>
