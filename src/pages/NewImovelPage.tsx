@@ -19,8 +19,8 @@ const NewImovelPage: React.FC = () => {
 
     const renderRadioGroup = (name: string, options: (string | number)[], required = false) => (
         <div className="flex flex-wrap gap-4">
-            {options.map(option => (
-                <label key={option} className="flex items-center space-x-2 text-sm">
+            {options.map((option, index) => (
+                <label key={`${name}-${option}-${index}`} className="flex items-center space-x-2 text-sm">
                     <input type="radio" name={name} value={String(option)} className="text-blue-600 focus:ring-blue-500" required={required} />
                     <span>{option}</span>
                 </label>
