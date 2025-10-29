@@ -2,6 +2,7 @@ import React from 'react';
 import { Bed, Bath, Car, Maximize2, ChevronRight, Image, RefreshCw, Info, Square as CheckboxIcon } from 'lucide-react';
 import ImageCarousel from './ImageCarousel'; // Importando o carrossel
 import { Link } from 'react-router-dom'; // Importando Link
+import { Checkbox } from './ui/Checkbox'; // Importando Checkbox shadcn/ui
 
 // Interface baseada na estrutura de dados do Supabase (tabela imoveis + primeira midia)
 interface Imovel {
@@ -46,11 +47,13 @@ interface Imovel {
 interface ImovelCardProps {
     imovel: Imovel;
     onViewDetails: (imovelId: string) => void;
+    isSelected: boolean; // Nova prop
+    onSelect: (imovelId: string, isSelected: boolean) => void; // Nova prop
 }
 
 const formatCurrency = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-const ImovelCard: React.FC<ImovelCardProps> = ({ imovel, onViewDetails }) => {
+const ImovelCard: React.FC<ImovelCardProps> = ({ imovel, onViewDetails, isSelected, onSelect }) => {
     
     const isVenda = imovel.dados_contrato.venda_ativo;
     const isLocacao = imovel.dados_contrato.locacao_ativo;
@@ -79,12 +82,17 @@ const ImovelCard: React.FC<ImovelCardProps> = ({ imovel, onViewDetails }) => {
     const iptuPeriodo = imovel.dados_valores.iptu_periodo === 'Anual' ? '(anual)' : '(mensal)';
 
     return (
-        <div className="relative border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 mb-4 group">
+        <div className={`relative border rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 mb-4 group ${isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'}`}>
             
             {/* Top Bar: Checkbox e Ações */}
             <div className="flex justify-between items-center p-3 border-b border-gray-100">
                 <div className="flex items-center space-x-3">
-                    <CheckboxIcon className="w-5 h-5 text-gray-400" /> {/* Mock Checkbox */}
+                    <Checkbox 
+                        id={`select-${imovel.id}`}
+                        checked={isSelected}
+                        onCheckedChange={(checked) => onSelect(imovel.id, checked as boolean)}
+                        className="w-5 h-5 text-blue-600 border-gray-400"
+                    />
                     <div className={`w-2 h-full rounded-full ${isAvailable ? 'bg-green-500' : 'bg-red-500'}`}></div> {/* Status Bar */}
                 </div>
                 <div className="flex space-x-4 text-gray-500 text-sm font-medium">
