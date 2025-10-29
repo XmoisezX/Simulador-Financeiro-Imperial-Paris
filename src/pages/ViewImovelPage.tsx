@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Home, MapPin, DollarSign, Eye, Lock, Key, FileText, Image, List, CheckCircle, Zap, Loader2, Plus, Edit, Save, X } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom'; // Usando useParams
 import { ImovelInput, SimNao, Disponibilidade, SimNaoSemimobiliado, Financiavel, VisibilidadeMapa, StatusAprovacao, Ocupacao, ImovelImage } from '../../types';
-import { useAuth } from '../contexts/Auth/AuthContext'; // Corrigindo importação
+import { useAuth } from '../../contexts/AuthContext';
 import ImovelStep from '../components/ImovelStep';
 import TextInput from '../components/TextInput';
 import NumberInput from '../components/NumberInput';
@@ -1138,7 +1138,7 @@ const ViewImovelPage: React.FC = () => {
                 return (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-3">
-                            <h3 className="text-sm font-medium text-light-text">Status de aprovação <RequiredAsterisk /></h3>
+                            <h3 className="text-sm font-medium text-light-text">Status de aprovação <RequiredAsterisk /></label>
                             {renderRadioGroup('status_aprovacao', approvalOptions)}
                         </div>
                         <div className="space-y-2">
@@ -1182,7 +1182,7 @@ const ViewImovelPage: React.FC = () => {
     return (
         <div className="p-4 sm:p-6 lg:p-8 animate-fade-in space-y-6">
             <h1 className="text-2xl font-bold text-dark-text flex items-center">
-                <Home className="w-6 h-6 mr-2 text-blue-600" /> INÍCIO &gt; IMÓVEIS &gt; {imovelId ? `EDITAR (${formData.codigo})` : 'NOVO'}
+                <Home className="w-6 h-6 mr-2 text-blue-600" /> INÍCIO &gt; IMÓVEIS &gt; NOVO
             </h1>
             
             {validationError && (
@@ -1192,54 +1192,11 @@ const ViewImovelPage: React.FC = () => {
                 </div>
             )}
 
-            {/* Carrossel de Imagens (fora dos passos) */}
-            <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
-                <div className="relative h-64">
-                    <ImageCarousel 
-                        media={images.filter(img => img.isVisible)} // Apenas imagens visíveis no carrossel principal
-                        defaultImageUrl="/LOGO LARANJA.png"
-                        altText={`Imóvel ${formData.codigo}`}
-                    />
-                </div>
-            </div>
-
-            {/* Botões de Ação Global (Editar/Salvar/Cancelar) */}
-            <div className="flex justify-end space-x-3 mb-6 max-w-4xl mx-auto">
-                {!isEditing ? (
-                    <Button 
-                        onClick={handleEdit}
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                        <Edit className="w-4 h-4 mr-2" /> Editar Imóvel
-                    </Button>
-                ) : (
-                    <>
-                        <Button 
-                            onClick={handleCancelEdit}
-                            variant="outline"
-                            className="text-gray-700 border-gray-300 hover:bg-gray-100"
-                            disabled={isSaving}
-                        >
-                            <X className="w-4 h-4 mr-2" /> Cancelar Edição
-                        </Button>
-                        <Button 
-                            onClick={handleSave}
-                            className="bg-primary-orange hover:bg-secondary-orange"
-                            disabled={!isCurrentStepValid || isSaving}
-                        >
-                            {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                            Salvar Alterações
-                        </Button>
-                    </>
-                )}
-            </div>
-
             {/* Renderiza todos os passos */}
             {allSteps.map(currentStep => (
                 <div 
                     key={currentStep} 
                     id={`imovel-step-${currentStep}`}
-                    // Aplica opacidade e desativa cliques se não for o passo ativo E não estiver editando
                     className={`transition-opacity duration-500 ${currentStep === step ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}
                 >
                     <ImovelStep
@@ -1248,13 +1205,11 @@ const ViewImovelPage: React.FC = () => {
                         totalSteps={TOTAL_STEPS}
                         onNext={handleNext}
                         onBack={handleBack}
-                        onSave={handleSave} // O botão 'Finalizar Cadastro' agora chama handleSave
+                        onSave={handleSubmit}
                         isLastStep={currentStep === TOTAL_STEPS}
                         isFirstStep={currentStep === 1}
-                        isStepValid={currentStep === step ? isCurrentStepValid : true} // Apenas o passo atual precisa ser validado
+                        isStepValid={currentStep === step ? isCurrentStepValid : true}
                         isSaving={isSaving}
-                        // Desabilita navegação se não estiver editando
-                        disabled={!isEditing} 
                     >
                         {renderStepContent(currentStep)}
                     </ImovelStep>
@@ -1264,4 +1219,4 @@ const ViewImovelPage: React.FC = () => {
     );
 };
 
-export default ViewImovelPage;
+export default NewImovelPage;
