@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { Home, MapPin, DollarSign, Eye, Lock, Key, FileText, Image, List, CheckCircle, Zap, Loader2 } from 'lucide-react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { Home, MapPin, DollarSign, Eye, Lock, Key, FileText, Image, List, CheckCircle, Zap, Loader2, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ImovelInput, SimNao, Disponibilidade, SimNaoSemimobiliado, Financiavel, VisibilidadeMapa, StatusAprovacao, Ocupacao } from '../../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,11 +7,23 @@ import ImovelStep from '../components/ImovelStep';
 import TextInput from '../components/TextInput';
 import NumberInput from '../components/NumberInput';
 import { Button } from '../components/ui/Button';
-import { Checkbox } from '../components/ui/Checkbox'; // Mantendo o import para outros usos
+import { Checkbox } from '../components/ui/Checkbox';
 import { useCepLookup } from '../../hooks/useCepLookup';
-import { useNominatimLookup } from '../../hooks/useNominatimLookup'; // NOVO HOOK
-import MapDisplay from '../components/MapDisplay'; // USANDO IMPORT DIRETO
-import ToggleSwitch from '../components/ToggleSwitch'; // NOVO COMPONENTE
+import { useNominatimLookup } from '../../hooks/useNominatimLookup';
+import MapDisplay from '../components/MapDisplay';
+import ToggleSwitch from '../components/ToggleSwitch';
+import ImageCard from '../components/ImageCard'; // NOVO COMPONENTE
+import ActionsDropdown from '../components/ActionsDropdown'; // NOVO COMPONENTE
+
+// --- Tipos para Mídias ---
+interface ImovelImage {
+    id: string;
+    url: string;
+    file: File; // Mantemos o arquivo original em memória
+    legend: string;
+    isVisible: boolean;
+    rotation: number;
+}
 
 // --- Mock Data ---
 const propertyTypes = [
@@ -25,7 +37,7 @@ const propertyTypes = [
 const neighborhoods = ['Centro', 'Laranjal', 'Areal', 'Porto', 'Fragata', 'Três Vendas'];
 const motives = ['Vendido', 'Alugado', 'Retirado pelo proprietário'];
 const indexOptions = ['IGP-M', 'IPCA', 'FIPE'];
-const occupationOptions: Ocupacao[] = ['Desocupado', 'Ocupado', 'Locado']; // ATUALIZADO
+const occupationOptions: Ocupacao[] = ['Desocupado', 'Ocupado', 'Locado'];
 const floorOptions = ['Nenhum', 'Térreo', '1º Andar', '2º Andar', '3º Andar'];
 const orientationOptions = ['Norte', 'Sul', 'Leste', 'Oeste'];
 const floorTypes = ['Aquecido', 'Carpete', 'Laminado', 'Tabuão', 'Ardósia', 'Cerâmico', 'Mármore', 'Usina', 'Associado', 'Flutuante', 'Parquet', 'Vinílico', 'Granito', 'Bruto', 'Porcelanato'];
@@ -93,9 +105,9 @@ const getInitialState = (): ImovelInput => ({
 
     // Step 4: Visibilidade
     vis_endereco: 'Todas acima incluindo logradouro',
-    vis_venda: 'Invisível', // Padrão para ToggleSwitch
-    vis_locacao: 'Invisível', // Padrão para ToggleSwitch
-    vis_temporada: 'Invisível', // Padrão para ToggleSwitch
+    vis_venda: 'Invisível',
+    vis_locacao: 'Invisível',
+    vis_temporada: 'Invisível',
     vis_iptu: 'Invisível',
     vis_condominio: 'Invisível',
 
@@ -157,15 +169,86 @@ const NewImovelPage: React.FC = () => {
     const [validationError, setValidationError] = useState<string | null>(null);
     const [isCurrentStepValid, setIsCurrentStepValid] = useState(false);
     
-    const { data: cepData, loading: cepLoading, error: cepError, lookup: lookupCep } = useCepLookup();
+    // --- Estado de Mídias ---
+    const [images, setImages] = useState<ImovelImage[]>([]);
+    const [selectedImageIds, setSelectedImageIds] = useState<string[]>([]);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     
-    // NOVO: Hook para geocodificação de endereço completo
+    const { data: cepData, loading: cepLoading, error: cepError, lookup: lookupCep } = useCepLookup();
     const { 
         location: nominatimLocation, 
         loading: nominatimLoading, 
         error: nominatimError, 
         lookup: lookupNominatim 
     } = useNominatimLookup();
+
+    // --- Lógica de Mídias ---
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            const newFiles = Array.from(e.target.files);
+            const newImages: ImovelImage[] = newFiles.map(file => ({
+                id: crypto.randomUUID(),
+                url: URL.createObjectURL(file),
+                file: file,
+                legend: '',
+                isVisible: true,
+                rotation: 0,
+            }));
+            setImages(prev => [...prev, ...newImages]);
+        }
+    };
+
+    const handleImageSelect = (id: string, isSelected: boolean) => {
+        setSelectedImageIds(prev => 
+            isSelected ? [...prev, id] : prev.filter(imgId => imgId !== id)
+        );
+    };
+    
+    const handleLegendUpdate = (id: string, legend: string) => {
+        setImages(prev => prev.map(img => img.id === id ? { ...img, legend } : img));
+    };
+
+    const handleAction = (action: string) => {
+        if (selectedImageIds.length === 0) {
+            alert('Selecione pelo menos uma imagem para realizar esta ação.');
+            return;
+        }
+
+        setImages(prev => {
+            let newImages = [...prev];
+            
+            if (action === 'delete') {
+                newImages = newImages.filter(img => !selectedImageIds.includes(img.id));
+                // Limpar URLs de objeto para evitar vazamento de memória
+                selectedImageIds.forEach(id => {
+                    const img = prev.find(i => i.id === id);
+                    if (img) URL.revokeObjectURL(img.url);
+                });
+                setSelectedImageIds([]);
+                alert(`${selectedImageIds.length} imagem(ns) excluída(s).`);
+            } else if (action === 'show') {
+                newImages = newImages.map(img => selectedImageIds.includes(img.id) ? { ...img, isVisible: true } : img);
+            } else if (action === 'hide') {
+                newImages = newImages.map(img => selectedImageIds.includes(img.id) ? { ...img, isVisible: false } : img);
+            } else if (action === 'rotate90') {
+                newImages = newImages.map(img => selectedImageIds.includes(img.id) ? { ...img, rotation: (img.rotation + 90) % 360 } : img);
+            } else if (action === 'rotate180') {
+                newImages = newImages.map(img => selectedImageIds.includes(img.id) ? { ...img, rotation: (img.rotation + 180) % 360 } : img);
+            }
+            
+            return newImages;
+        });
+    };
+    
+    const handleSelectAll = (checked: boolean) => {
+        if (checked) {
+            setSelectedImageIds(images.map(img => img.id));
+        } else {
+            setSelectedImageIds([]);
+        }
+    };
+    
+    // --- Fim Lógica de Mídias ---
 
     // Scroll to the active step whenever it changes
     useEffect(() => {
@@ -404,6 +487,7 @@ const NewImovelPage: React.FC = () => {
             dados_caracteristicas: {
                 etiquetas, dormitorios, suites, banheiros, vagas_garagem, condicao, mobiliado, orientacao_solar, posicao, entrega_obra, pessoas_acomodacoes, distancia_mar_m, tipos_piso, titulo_site, descricao_site, meta_title, meta_description, vis_endereco, vis_venda, vis_locacao, vis_temporada, vis_iptu, vis_condominio,
             },
+            // Nota: As imagens (files) não são salvas no banco de dados aqui, apenas a URL/metadados seriam salvos após o upload para o Storage.
         };
 
         const { error } = await supabase.from('imoveis').insert(imovelData);
@@ -847,14 +931,59 @@ const NewImovelPage: React.FC = () => {
                 return (
                     <>
                         <div className="flex border-b border-gray-200 mb-4">
-                            <button className="py-2 px-4 border-b-2 border-blue-600 text-blue-600 font-medium flex items-center"><Image className="w-4 h-4 mr-1" /> Imagens (0)</button>
+                            <button className="py-2 px-4 border-b-2 border-blue-600 text-blue-600 font-medium flex items-center"><Image className="w-4 h-4 mr-1" /> Imagens ({images.length})</button>
                             <button className="py-2 px-4 text-gray-500 hover:text-blue-600 flex items-center"><List className="w-4 h-4 mr-1" /> Plantas (0)</button>
                             <button className="py-2 px-4 text-gray-500 hover:text-blue-600 flex items-center">Tour 360 (0)</button>
                             <button className="py-2 px-4 text-gray-500 hover:text-blue-600 flex items-center">Vídeos (0)</button>
                         </div>
-                        <Button variant="outline" className="bg-white text-blue-600 border-blue-600 hover:bg-blue-50">
-                            + Adicionar Imagem
+                        
+                        <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            multiple 
+                            accept="image/*" 
+                            onChange={handleFileSelect} 
+                            className="hidden" 
+                        />
+                        
+                        <Button 
+                            onClick={() => fileInputRef.current?.click()}
+                            variant="outline" 
+                            className="bg-white text-blue-600 border-blue-600 hover:bg-blue-50 flex items-center"
+                        >
+                            <Plus className="w-4 h-4 mr-2" /> Adicionar imagem
                         </Button>
+                        
+                        {images.length > 0 && (
+                            <div className="mt-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                                <div className="flex items-center space-x-4 mb-4">
+                                    <label className="flex items-center space-x-2 text-sm font-medium">
+                                        <Checkbox 
+                                            id="select-all" 
+                                            checked={selectedImageIds.length === images.length && images.length > 0}
+                                            onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
+                                        />
+                                        <span>Selecionar ({selectedImageIds.length})</span>
+                                    </label>
+                                    <ActionsDropdown 
+                                        onAction={handleAction} 
+                                        disabled={selectedImageIds.length === 0} 
+                                    />
+                                </div>
+                                
+                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                                    {images.map(img => (
+                                        <ImageCard 
+                                            key={img.id}
+                                            image={img}
+                                            onSelect={handleImageSelect}
+                                            onLegendChange={handleLegendUpdate}
+                                            isSelected={selectedImageIds.includes(img.id)}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </>
                 );
             case 9:
@@ -865,26 +994,26 @@ const NewImovelPage: React.FC = () => {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
                             <div className="space-y-2">
                                 <label className="block text-sm font-medium text-light-text">Dormitórios <RequiredAsterisk /></label>
-                                {renderRadioGroup('dormitorios', [0, 1, 2, 3, 4, 5])}
+                                {renderRadioGroup('dormitorios', [0, 1, 2, 3, 4, 5], true)}
                             </div>
                             <div className="space-y-2">
                                 <label className="block text-sm font-medium text-light-text">Quantos são suítes? <RequiredAsterisk /></label>
-                                {renderRadioGroup('suites', [0, 1, 2, 3, 4, 5])}
+                                {renderRadioGroup('suites', [0, 1, 2, 3, 4, 5], true)}
                             </div>
                             <div className="space-y-2">
                                 <label className="block text-sm font-medium text-light-text">Banheiros <RequiredAsterisk /></label>
-                                {renderRadioGroup('banheiros', [0, 1, 2, 3, 4, 5])}
+                                {renderRadioGroup('banheiros', [0, 1, 2, 3, 4, 5], true)}
                             </div>
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
                             <div className="space-y-2">
                                 <label className="block text-sm font-medium text-light-text">Vagas de garagem <RequiredAsterisk /></label>
-                                {renderRadioGroup('vagas_garagem', [0, 1, 2, 3, 4, 5])}
+                                {renderRadioGroup('vagas_garagem', [0, 1, 2, 3, 4, 5], true)}
                             </div>
                             <div className="space-y-2">
                                 <label className="block text-sm font-medium text-light-text">Condição <RequiredAsterisk /></label>
-                                {renderRadioGroup('condicao', conditionOptions)}
+                                {renderRadioGroup('condicao', conditionOptions, true)}
                             </div>
                             <div className="space-y-2">
                                 <label className="block text-sm font-medium text-light-text">Mobiliado</label>
