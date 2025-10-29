@@ -10,7 +10,7 @@ import { Button } from '../components/ui/Button';
 import { Checkbox } from '../components/ui/Checkbox'; // Mantendo o import para outros usos
 import { useCepLookup } from '../../hooks/useCepLookup';
 import { useNominatimLookup } from '../../hooks/useNominatimLookup'; // NOVO HOOK
-import MapDisplayWrapper from '../components/MapDisplayWrapper'; // USANDO O WRAPPER
+import MapDisplay from '../components/MapDisplay'; // USANDO IMPORT DIRETO
 
 // --- Mock Data ---
 const propertyTypes = [
@@ -626,7 +626,7 @@ const NewImovelPage: React.FC = () => {
                             </div>
                         </div>
                         
-                        <MapDisplayWrapper 
+                        <MapDisplay 
                             visibilidade={formData.mapa_visibilidade as VisibilidadeMapa} 
                             address={fullAddress}
                             isValid={isAddressValid}
