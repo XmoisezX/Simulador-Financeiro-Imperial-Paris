@@ -4,7 +4,7 @@ import NumberInput from './NumberInput';
 import TextInput from './TextInput';
 import CollapsibleCard from './CollapsibleCard';
 import { useAuth } from '../contexts/AuthContext';
-import { initialSimulationInputs, INSS_PRO_LABORE_COST } from '../constants';
+import { initialSimulationInputs, INSS_PRO_LABORE_COST } from '../../constants';
 
 interface SidebarProps {
     inputs: SimulationInput;
