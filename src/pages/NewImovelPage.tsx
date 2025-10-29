@@ -7,7 +7,7 @@ import ImovelStep from '../components/ImovelStep';
 import TextInput from '../components/TextInput';
 import NumberInput from '../components/NumberInput';
 import { Button } from '../components/ui/Button';
-import { Checkbox } from '../components/ui/Checkbox';
+import { Checkbox } from '../components/ui/Checkbox'; // Mantendo o import para outros usos
 import { useCepLookup } from '../../hooks/useCepLookup';
 import MapDisplay from '../components/MapDisplay'; // Importando o novo componente
 
@@ -437,14 +437,16 @@ const NewImovelPage: React.FC = () => {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                             {/* Venda */}
                             <div className="p-3 border rounded-lg space-y-2">
-                                <div className="flex items-center space-x-2 font-semibold text-dark-text">
-                                    <Checkbox 
-                                        id="venda_ativo" 
-                                        checked={formData.venda_ativo} 
-                                        onCheckedChange={(checked) => handleFinalidadeToggle('venda_ativo', checked as boolean)} 
+                                <label htmlFor="venda_ativo" className="flex items-center space-x-2 font-semibold text-dark-text cursor-pointer">
+                                    <input 
+                                        type="checkbox"
+                                        id="venda_ativo"
+                                        checked={formData.venda_ativo}
+                                        onChange={(e) => handleFinalidadeToggle('venda_ativo', e.target.checked)}
+                                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                                     />
-                                    <label htmlFor="venda_ativo">Venda</label>
-                                </div>
+                                    <span>Venda</span>
+                                </label>
                                 <h4 className="text-sm font-medium text-light-text">Disponibilidade</h4>
                                 {renderRadioGroup('venda_disponibilidade', ['Disponível', 'Indisponível'])}
                                 <h4 className="text-sm font-medium text-light-text">Motivo indisponibilidade</h4>
@@ -462,14 +464,16 @@ const NewImovelPage: React.FC = () => {
                             
                             {/* Locação */}
                             <div className="p-3 border rounded-lg space-y-2">
-                                <div className="flex items-center space-x-2 font-semibold text-dark-text">
-                                    <Checkbox 
-                                        id="locacao_ativo" 
-                                        checked={formData.locacao_ativo} 
-                                        onCheckedChange={(checked) => handleFinalidadeToggle('locacao_ativo', checked as boolean)} 
+                                <label htmlFor="locacao_ativo" className="flex items-center space-x-2 font-semibold text-dark-text cursor-pointer">
+                                    <input 
+                                        type="checkbox"
+                                        id="locacao_ativo"
+                                        checked={formData.locacao_ativo}
+                                        onChange={(e) => handleFinalidadeToggle('locacao_ativo', e.target.checked)}
+                                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                                     />
-                                    <label htmlFor="locacao_ativo">Locação</label>
-                                </div>
+                                    <span>Locação</span>
+                                </label>
                                 <h4 className="text-sm font-medium text-light-text">Disponibilidade</h4>
                                 {renderRadioGroup('locacao_disponibilidade', ['Disponível', 'Indisponível'])}
                                 <h4 className="text-sm font-medium text-light-text">Motivo indisponibilidade</h4>
@@ -487,14 +491,16 @@ const NewImovelPage: React.FC = () => {
                             
                             {/* Temporada */}
                             <div className="p-3 border rounded-lg space-y-2">
-                                <div className="flex items-center space-x-2 font-semibold text-dark-text">
-                                    <Checkbox 
-                                        id="temporada_ativo" 
-                                        checked={formData.temporada_ativo} 
-                                        onCheckedChange={(checked) => handleFinalidadeToggle('temporada_ativo', checked as boolean)} 
+                                <label htmlFor="temporada_ativo" className="flex items-center space-x-2 font-semibold text-dark-text cursor-pointer">
+                                    <input 
+                                        type="checkbox"
+                                        id="temporada_ativo"
+                                        checked={formData.temporada_ativo}
+                                        onChange={(e) => handleFinalidadeToggle('temporada_ativo', e.target.checked)}
+                                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                                     />
-                                    <label htmlFor="temporada_ativo">Temporada</label>
-                                </div>
+                                    <span>Temporada</span>
+                                </label>
                                 <h4 className="text-sm font-medium text-light-text">Disponibilidade</h4>
                                 {renderRadioGroup('temporada_disponibilidade', ['Disponível', 'Indisponível'])}
                                 <h4 className="text-sm font-medium text-light-text">Motivo indisponibilidade</h4>
