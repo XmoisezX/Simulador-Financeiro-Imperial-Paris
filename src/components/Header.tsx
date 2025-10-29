@@ -1,9 +1,10 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import UserProfileDropdown from './UserProfileDropdown'; // Importando o novo componente
 
 const Header: React.FC = () => {
-    const { session, supabase } = useAuth();
+    const { session } = useAuth();
     const location = useLocation();
 
     const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
@@ -11,14 +12,6 @@ const Header: React.FC = () => {
         target.style.display = 'none';
         console.error("Erro ao carregar logo. Verifique se o arquivo 'LOGO LARANJA.png' está na pasta public.");
     };
-
-    // A função navLinkClasses não é mais necessária, mas a mantenho por enquanto se for usada em outro lugar.
-    // const navLinkClasses = (path: string) => 
-    //     `py-2 px-3 rounded-md text-sm font-medium transition-colors ${
-    //         location.pathname === path 
-    //         ? 'bg-orange-100 text-primary-orange' 
-    //         : 'text-light-text hover:bg-gray-100'
-    //     }`;
 
     return (
         <header className="bg-white shadow-md sticky top-0 z-20">
@@ -42,14 +35,13 @@ const Header: React.FC = () => {
                 
                 {session && (
                     <div className="flex items-center space-x-4">
-                        {/* Navegação superior removida conforme solicitado */}
-                        <span className="text-sm text-light-text hidden lg:block">{session.user.email}</span>
-                        <button
-                            onClick={() => supabase.auth.signOut()}
-                            className="px-4 py-2 text-sm font-medium text-white bg-primary-orange rounded-md hover:bg-secondary-orange transition-colors"
-                        >
-                            Sair
+                        {/* Ícone de Notificações (Mock) */}
+                        <button className="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-600">
+                            <Bell className="w-6 h-6" />
                         </button>
+                        
+                        {/* Dropdown de Perfil */}
+                        <UserProfileDropdown />
                     </div>
                 )}
             </div>
