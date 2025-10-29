@@ -79,7 +79,7 @@ const ImovelCard: React.FC<ImovelCardProps> = ({ imovel, onViewDetails }) => {
     const iptuPeriodo = imovel.dados_valores.iptu_periodo === 'Anual' ? '(anual)' : '(mensal)';
 
     return (
-        <div className="relative border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 mb-4">
+        <div className="relative border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 mb-4 group">
             
             {/* Top Bar: Checkbox e Ações */}
             <div className="flex justify-between items-center p-3 border-b border-gray-100">
@@ -147,7 +147,7 @@ const ImovelCard: React.FC<ImovelCardProps> = ({ imovel, onViewDetails }) => {
                     </div>
                     
                     {/* Coluna 3: Valores e Ação */}
-                    <div className="col-span-1 flex flex-col items-end justify-center text-right relative">
+                    <div className="col-span-1 flex flex-col items-end justify-center text-right relative pr-8">
                         <p className="text-xs text-light-text">{statusText}</p>
                         <p className="text-lg font-bold text-dark-text">{formatCurrency(price)}</p>
                         
@@ -158,10 +158,10 @@ const ImovelCard: React.FC<ImovelCardProps> = ({ imovel, onViewDetails }) => {
                             </>
                         )}
                         
-                        {/* Botão de Detalhes (seta) - Hover Laranja */}
+                        {/* Botão de Detalhes (seta) - Agora com borda vertical laranja no hover */}
                         <button 
                             onClick={() => onViewDetails(imovel.id)}
-                            className="absolute right-0 top-1/2 transform -translate-y-1/2 p-2 text-blue-600 hover:text-primary-orange transition-colors"
+                            className="absolute right-0 top-0 bottom-0 w-8 flex items-center justify-center text-blue-600 hover:text-primary-orange transition-all duration-200 hover:border-r-4 hover:border-primary-orange"
                             title="Ver Detalhes"
                         >
                             <ChevronRight className="w-6 h-6" />
