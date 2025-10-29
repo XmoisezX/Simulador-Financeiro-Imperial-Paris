@@ -9,7 +9,8 @@ interface CRMLayoutProps {
 }
 
 const CRMLayout: React.FC<CRMLayoutProps> = ({ children }) => {
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    // Começa aberto em desktop, fechado em mobile
+    const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 1024); 
 
     const toggleSidebar = () => {
         setIsSidebarOpen(prev => !prev);
@@ -17,19 +18,13 @@ const CRMLayout: React.FC<CRMLayoutProps> = ({ children }) => {
 
     return (
         <div className="flex flex-col min-h-screen bg-gray-50 font-sans">
-            <Header />
+            <Header toggleSidebar={toggleSidebar} /> {/* Passa o toggle para o Header */}
             <div className="flex flex-1 overflow-hidden">
                 {/* Sidebar do CRM */}
                 <CRMSidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
                 
                 {/* Conteúdo Principal */}
-                <main className={`flex-1 overflow-y-auto bg-gray-50 transition-all duration-300 ${isSidebarOpen ? 'ml-0' : 'ml-0'}`}>
-                    {/* Botão de Toggle no topo do conteúdo principal para telas pequenas */}
-                    <div className="lg:hidden p-4 border-b border-gray-200 bg-white">
-                        <button onClick={toggleSidebar} className="text-gray-600 hover:text-blue-600">
-                            <Menu className="w-6 h-6" />
-                        </button>
-                    </div>
+                <main className={`flex-1 overflow-y-auto bg-gray-50 transition-all duration-300`}>
                     {children}
                 </main>
             </div>
