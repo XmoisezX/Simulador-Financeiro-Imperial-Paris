@@ -18,6 +18,10 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
+      },
+      // Adicionando otimização para dependências grandes
+      optimizeDeps: {
+        include: ['react-leaflet', 'leaflet'],
       }
     };
 });
