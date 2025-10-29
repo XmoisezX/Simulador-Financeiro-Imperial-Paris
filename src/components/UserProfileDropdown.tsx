@@ -13,7 +13,22 @@ const UserProfileDropdown: React.FC = () => {
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     const handleSignOut = async () => {
-        await supabase.auth.signOut();
+        try {
+            // Fecha o dropdown imediatamente
+            setIsOpen(false); 
+            
+            // Chama a função de logout do Supabase
+            const { error } = await supabase.auth.signOut();
+            
+            if (error) {
+                console.error('Erro ao fazer logout:', error);
+                alert('Erro ao sair da conta. Tente novamente.');
+            }
+            // O redirecionamento é tratado pelo App.tsx que monitora o AuthContext
+        } catch (e) {
+            console.error('Erro inesperado durante o logout:', e);
+            alert('Ocorreu um erro inesperado ao tentar sair.');
+        }
     };
 
     const toggleDropdown = () => setIsOpen(prev => !prev);
