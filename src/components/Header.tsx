@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import UserProfileDropdown from './UserProfileDropdown';
-import { Bell } from 'lucide-react'; // Importando o ícone Bell
+import { Bell } from 'lucide-react';
 
 const Header: React.FC = () => {
     const { session } = useAuth();
@@ -24,14 +24,7 @@ const Header: React.FC = () => {
                         className="h-16 header-logo"
                         onError={handleImageError}
                     />
-                    <div className="ml-4 text-left">
-                         <h1 className="text-xl md:text-2xl font-bold text-dark-text">
-                            Simulador de Cenário Financeiro
-                        </h1>
-                        <p className="text-sm text-light-text hidden sm:block">
-                            Projeção e Análise de Mercado - Imperial Paris Imóveis
-                        </p>
-                    </div>
+                    {/* Texto removido conforme solicitação */}
                 </div>
                 
                 {session && (

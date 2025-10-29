@@ -49,13 +49,16 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
         setIsUpdating(false);
         if (success) {
             setUpdateSuccess(true);
+            // Força o refresh do perfil no dropdown após o sucesso
+            fetchProfile(); 
             setTimeout(() => setUpdateSuccess(false), 3000);
         } else {
             setUpdateError('Falha ao salvar as informações.');
         }
-    }, [fullName, role, companyName, updateProfile]);
+    }, [fullName, role, companyName, updateProfile, fetchProfile]);
     
     const handleAvatarUpdate = useCallback(async (newUrl: string) => {
+        // Esta função é chamada pelo AvatarUploader quando o upload é concluído
         const success = await updateProfile({ avatar_url: newUrl });
         if (success) {
             fetchProfile(); // Recarrega o perfil para garantir a URL atualizada
@@ -85,7 +88,7 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
                             onUploadSuccess={handleAvatarUpdate}
                             disabled={isUpdating}
                         />
-                        <p className="text-xs text-gray-500 mt-2">Formatos: JPG, PNG, WEBP. Máx: 5MB.</p>
+                        <p className="text-xs text-gray-500 mt-2">Formatos: JPG, PNG, WEBP. Máx: 5MB. (Requer bucket 'avatars' no Supabase Storage)</p>
                     </div>
 
                     {/* Informações Básicas */}
