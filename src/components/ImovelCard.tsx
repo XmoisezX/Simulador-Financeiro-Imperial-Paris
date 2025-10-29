@@ -32,6 +32,7 @@ interface Imovel {
         dormitorios: number;
         banheiros: number;
         vagas_garagem: number;
+        area_privativa_m2: number; // NOVO CAMPO
     };
     
     // Mídia (primeira imagem)
@@ -40,11 +41,12 @@ interface Imovel {
 
 interface ImovelCardProps {
     imovel: Imovel;
+    onViewDetails: (imovelId: string) => void;
 }
 
 const formatCurrency = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-const ImovelCard: React.FC<ImovelCardProps> = ({ imovel }) => {
+const ImovelCard: React.FC<ImovelCardProps> = ({ imovel, onViewDetails }) => {
     
     const isVenda = imovel.dados_contrato.venda_ativo;
     const isLocacao = imovel.dados_contrato.locacao_ativo;
@@ -62,7 +64,7 @@ const ImovelCard: React.FC<ImovelCardProps> = ({ imovel }) => {
     const imageUrl = imovel.first_image_url || defaultImage;
 
     return (
-        <div className="flex border border-gray-200 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200 mb-4">
+        <div className="flex border border-gray-200 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200 mb-4 relative">
             <div className="flex-shrink-0 w-40 h-40 relative">
                 <img 
                     src={imageUrl} 
@@ -93,6 +95,7 @@ const ImovelCard: React.FC<ImovelCardProps> = ({ imovel }) => {
                         <div className="flex items-center text-xs" title="Quartos"><Bed className="w-3 h-3 mr-1" /> {imovel.dados_caracteristicas.dormitorios}</div>
                         <div className="flex items-center text-xs" title="Banheiros"><Bath className="w-3 h-3 mr-1" /> {imovel.dados_caracteristicas.banheiros}</div>
                         <div className="flex items-center text-xs" title="Vagas de Garagem"><Home className="w-3 h-3 mr-1" /> {imovel.dados_caracteristicas.vagas_garagem}</div>
+                        <div className="flex items-center text-xs" title="Área Privativa"><Maximize2 className="w-3 h-3 mr-1" /> {imovel.dados_caracteristicas.area_privativa_m2} m²</div>
                     </div>
                 </div>
                 
@@ -109,8 +112,13 @@ const ImovelCard: React.FC<ImovelCardProps> = ({ imovel }) => {
                         <p className="text-lg font-bold text-dark-text">{formatCurrency(price)}</p>
                         {imovel.dados_valores.valor_condominio > 0 && <p className="text-xs text-light-text">Condomínio: {formatCurrency(imovel.dados_valores.valor_condominio)}</p>}
                         {imovel.dados_valores.valor_iptu > 0 && <p className="text-xs text-light-text">IPTU: {formatCurrency(imovel.dados_valores.valor_iptu)}</p>}
-                        <button className="text-blue-600 hover:text-blue-800 text-sm mt-1 flex items-center">
-                            Detalhes <ChevronRight className="w-4 h-4 ml-1" />
+                        
+                        {/* Botão de Detalhes */}
+                        <button 
+                            onClick={() => onViewDetails(imovel.id)}
+                            className="text-blue-600 hover:text-primary-orange text-sm mt-1 flex items-center transition-colors group"
+                        >
+                            Detalhes <ChevronRight className="w-4 h-4 ml-1 group-hover:text-primary-orange transition-colors" />
                         </button>
                     </div>
                 </div>

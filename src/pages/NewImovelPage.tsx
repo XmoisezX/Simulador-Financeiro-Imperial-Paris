@@ -141,6 +141,7 @@ const getInitialState = (): ImovelInput => ({
     suites: 0,
     banheiros: 0,
     vagas_garagem: 0,
+    area_privativa_m2: 0, // NOVO CAMPO
     condicao: 'Usado',
     mobiliado: 'Não',
     orientacao_solar: 'Norte',
@@ -301,7 +302,7 @@ const NewImovelPage: React.FC = () => {
             if (type === 'checkbox') {
                 // Checkboxes que não são de finalidade (como isento, enviar_email_atualizacao)
                 newValue = checked;
-            } else if (type === 'number' || id.includes('valor') || id.includes('percent') || id.includes('periodo') || id.includes('acomodacoes') || id.includes('distancia')) {
+            } else if (type === 'number' || id.includes('valor') || id.includes('percent') || id.includes('periodo') || id.includes('acomodacoes') || id.includes('distancia') || id.includes('area')) {
                 // Handle numeric inputs, including those using NumberInput (which passes clean numeric string)
                 newValue = value === '' ? 0 : parseFloat(value);
             } else if (id === 'dormitorios' || id === 'suites' || id === 'banheiros' || id === 'vagas_garagem') {
@@ -404,6 +405,7 @@ const NewImovelPage: React.FC = () => {
                 if (currentData.suites === undefined || currentData.suites < 0) errors.push('O número de suítes é obrigatório.');
                 if (currentData.banheiros === undefined || currentData.banheiros < 0) errors.push('O número de banheiros é obrigatório.');
                 if (currentData.vagas_garagem === undefined || currentData.vagas_garagem < 0) errors.push('O número de vagas de garagem é obrigatório.');
+                if (currentData.area_privativa_m2 === undefined || currentData.area_privativa_m2 <= 0) errors.push('A área privativa é obrigatória.');
                 if (!currentData.condicao) errors.push('A condição do imóvel é obrigatória.');
                 break;
             case 11: // Aprovação
@@ -457,7 +459,7 @@ const NewImovelPage: React.FC = () => {
             // Dados Internos (inclui Visibilidade e Dados não visíveis)
             proprietario_id, comissao_proprietario_percent, periodo_email_atualizacao, enviar_email_atualizacao, agenciador_id, responsavel_id, honorarios_venda_percent, honorarios_locacao_percent, honorarios_temporada_percent, data_agenciamento, numero_matricula, nao_possui_matricula, numero_iptu, vencimento_exclusividade, ocupacao, exclusivo, placa, medidor_energia, medidor_agua, medidor_gas, observacoes_internas,
             // Dados de Características (inclui Visibilidade de Site)
-            etiquetas, dormitorios, suites, banheiros, vagas_garagem, condicao, mobiliado, orientacao_solar, posicao, entrega_obra, pessoas_acomodacoes, distancia_mar_m, tipos_piso, titulo_site, descricao_site, meta_title, meta_description, vis_endereco, vis_venda, vis_locacao, vis_temporada, vis_iptu, vis_condominio,
+            etiquetas, dormitorios, suites, banheiros, vagas_garagem, area_privativa_m2, condicao, mobiliado, orientacao_solar, posicao, entrega_obra, pessoas_acomodacoes, distancia_mar_m, tipos_piso, titulo_site, descricao_site, meta_title, meta_description, vis_endereco, vis_venda, vis_locacao, vis_temporada, vis_iptu, vis_condominio,
             // Observações de Aprovação
             observacoes_aprovacao,
         } = formData;
@@ -486,7 +488,7 @@ const NewImovelPage: React.FC = () => {
                 proprietario_id, comissao_proprietario_percent, periodo_email_atualizacao, enviar_email_atualizacao, agenciador_id, responsavel_id, honorarios_venda_percent, honorarios_locacao_percent, honorarios_temporada_percent, data_agenciamento, numero_matricula, nao_possui_matricula, numero_iptu, vencimento_exclusividade, ocupacao, exclusivo, placa, medidor_energia, medidor_agua, medidor_gas, observacoes_internas,
             },
             dados_caracteristicas: {
-                etiquetas, dormitorios, suites, banheiros, vagas_garagem, condicao, mobiliado, orientacao_solar, posicao, entrega_obra, pessoas_acomodacoes, distancia_mar_m, tipos_piso, titulo_site, descricao_site, meta_title, meta_description, vis_endereco, vis_venda, vis_locacao, vis_temporada, vis_iptu, vis_condominio,
+                etiquetas, dormitorios, suites, banheiros, vagas_garagem, area_privativa_m2, condicao, mobiliado, orientacao_solar, posicao, entrega_obra, pessoas_acomodacoes, distancia_mar_m, tipos_piso, titulo_site, descricao_site, meta_title, meta_description, vis_endereco, vis_venda, vis_locacao, vis_temporada, vis_iptu, vis_condominio,
             },
         };
 
@@ -526,8 +528,8 @@ const NewImovelPage: React.FC = () => {
     };
 
     // Helper function to render radio groups
-    const renderRadioGroup = (name: keyof ImovelInput, options: (string | number)[], required = false) => (
-        <div className="flex flex-wrap gap-4">
+    const renderRadioGroup = (name: keyof ImovelInput, options: (string | number)[], required = false, disabled = false) => (
+        <div className={`flex flex-wrap gap-4 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
             {options.map((option, index) => (
                 <label key={`${name}-${option}-${index}`} className="flex items-center space-x-2 text-sm">
                     <input 
@@ -538,6 +540,7 @@ const NewImovelPage: React.FC = () => {
                         onChange={() => handleRadioChange(name, String(option))}
                         className="text-blue-600 focus:ring-blue-500" 
                         required={required} 
+                        disabled={disabled}
                     />
                     <span>{option}</span>
                 </label>
@@ -566,6 +569,10 @@ const NewImovelPage: React.FC = () => {
     const renderStepContent = (currentStep: number) => {
         switch (currentStep) {
             case 1:
+                const isVendaActive = formData.venda_ativo;
+                const isLocacaoActive = formData.locacao_ativo;
+                const isTemporadaActive = formData.temporada_ativo;
+
                 return (
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -586,25 +593,25 @@ const NewImovelPage: React.FC = () => {
                         
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                             {/* Venda */}
-                            <div className="p-3 border rounded-lg space-y-2">
+                            <div className={`p-3 border rounded-lg space-y-2 ${!isVendaActive ? 'opacity-50' : ''}`}>
                                 <label htmlFor="venda_ativo" className="flex items-center space-x-2 font-semibold text-dark-text cursor-pointer">
                                     <input 
                                         type="checkbox"
                                         id="venda_ativo"
-                                        checked={formData.venda_ativo}
+                                        checked={isVendaActive}
                                         onChange={(e) => handleFinalidadeToggle('venda_ativo', e.target.checked)}
                                         className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                                     />
                                     <span>Venda</span>
                                 </label>
                                 <h4 className="text-sm font-medium text-light-text">Disponibilidade</h4>
-                                {renderRadioGroup('venda_disponibilidade', ['Disponível', 'Indisponível'])}
+                                {renderRadioGroup('venda_disponibilidade', ['Disponível', 'Indisponível'], false, !isVendaActive)}
                                 <h4 className="text-sm font-medium text-light-text">Motivo indisponibilidade</h4>
                                 <select 
                                     id="venda_motivo_indisponibilidade"
                                     value={formData.venda_motivo_indisponibilidade}
                                     onChange={handleInputChange}
-                                    disabled={formData.venda_disponibilidade === 'Disponível' || !formData.venda_ativo}
+                                    disabled={formData.venda_disponibilidade === 'Disponível' || !isVendaActive}
                                     className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100"
                                 >
                                     <option value="">Escolha o motivo da indisponibilidade</option>
@@ -613,25 +620,25 @@ const NewImovelPage: React.FC = () => {
                             </div>
                             
                             {/* Locação */}
-                            <div className="p-3 border rounded-lg space-y-2">
+                            <div className={`p-3 border rounded-lg space-y-2 ${!isLocacaoActive ? 'opacity-50' : ''}`}>
                                 <label htmlFor="locacao_ativo" className="flex items-center space-x-2 font-semibold text-dark-text cursor-pointer">
                                     <input 
                                         type="checkbox"
                                         id="locacao_ativo"
-                                        checked={formData.locacao_ativo}
+                                        checked={isLocacaoActive}
                                         onChange={(e) => handleFinalidadeToggle('locacao_ativo', e.target.checked)}
                                         className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                                     />
                                     <span>Locação</span>
                                 </label>
                                 <h4 className="text-sm font-medium text-light-text">Disponibilidade</h4>
-                                {renderRadioGroup('locacao_disponibilidade', ['Disponível', 'Indisponível'])}
+                                {renderRadioGroup('locacao_disponibilidade', ['Disponível', 'Indisponível'], false, !isLocacaoActive)}
                                 <h4 className="text-sm font-medium text-light-text">Motivo indisponibilidade</h4>
                                 <select 
                                     id="locacao_motivo_indisponibilidade"
                                     value={formData.locacao_motivo_indisponibilidade}
                                     onChange={handleInputChange}
-                                    disabled={formData.locacao_disponibilidade === 'Disponível' || !formData.locacao_ativo}
+                                    disabled={formData.locacao_disponibilidade === 'Disponível' || !isLocacaoActive}
                                     className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100"
                                 >
                                     <option value="">Escolha o motivo da indisponibilidade</option>
@@ -640,25 +647,25 @@ const NewImovelPage: React.FC = () => {
                             </div>
                             
                             {/* Temporada */}
-                            <div className="p-3 border rounded-lg space-y-2">
+                            <div className={`p-3 border rounded-lg space-y-2 ${!isTemporadaActive ? 'opacity-50' : ''}`}>
                                 <label htmlFor="temporada_ativo" className="flex items-center space-x-2 font-semibold text-dark-text cursor-pointer">
                                     <input 
                                         type="checkbox"
                                         id="temporada_ativo"
-                                        checked={formData.temporada_ativo}
+                                        checked={isTemporadaActive}
                                         onChange={(e) => handleFinalidadeToggle('temporada_ativo', e.target.checked)}
                                         className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                                     />
                                     <span>Temporada</span>
                                 </label>
                                 <h4 className="text-sm font-medium text-light-text">Disponibilidade</h4>
-                                {renderRadioGroup('temporada_disponibilidade', ['Disponível', 'Indisponível'])}
+                                {renderRadioGroup('temporada_disponibilidade', ['Disponível', 'Indisponível'], false, !isTemporadaActive)}
                                 <h4 className="text-sm font-medium text-light-text">Motivo indisponibilidade</h4>
                                 <select 
                                     id="temporada_motivo_indisponibilidade"
                                     value={formData.temporada_motivo_indisponibilidade}
                                     onChange={handleInputChange}
-                                    disabled={formData.temporada_disponibilidade === 'Disponível' || !formData.temporada_ativo}
+                                    disabled={formData.temporada_disponibilidade === 'Disponível' || !isTemporadaActive}
                                     className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100"
                                 >
                                     <option value="">Escolha o motivo da indisponibilidade</option>
@@ -733,7 +740,8 @@ const NewImovelPage: React.FC = () => {
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
                             <TextInput label={<span>Logradouro <RequiredAsterisk /></span>} id="logradouro" value={formData.logradouro} onChange={handleInputChange} placeholder="Informe o logradouro" disabled={cepLoading || !!cepData} />
                             <TextInput label={<span>Número <RequiredAsterisk /></span>} id="numero" value={formData.numero} onChange={handleInputChange} placeholder="Informe o número" />
-                            <TextInput label="Complemento" id="complemento" value={formData.complemento} onChange={handleInputChange} placeholder="Informe o complemento" disabled={cepLoading || !!cepData} />
+                            {/* CORREÇÃO: Complemento não deve ser desabilitado pelo CEP */}
+                            <TextInput label="Complemento" id="complemento" value={formData.complemento} onChange={handleInputChange} placeholder="Informe o complemento" />
                             <TextInput label="Ponto de referência" id="referencia" value={formData.referencia} onChange={handleInputChange} placeholder="Ex: Ao lado da igreja" />
                         </div>
                         
@@ -768,8 +776,8 @@ const NewImovelPage: React.FC = () => {
                 return (
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <NumberInput label={<span>Valor de venda <RequiredAsterisk /></span>} id="valor_venda" isCurrency value={formData.valor_venda} onChange={handleInputChange} placeholder="R$ 0,00" />
-                            <NumberInput label="Valor de locação" id="valor_locacao" isCurrency value={formData.valor_locacao} onChange={handleInputChange} placeholder="R$ 0,00" />
+                            <NumberInput label={<span>Valor de venda <RequiredAsterisk /></span>} id="valor_venda" isCurrency value={formData.valor_venda} onChange={handleInputChange} placeholder="R$ 0,00" disabled={!formData.venda_ativo} />
+                            <NumberInput label="Valor de locação" id="valor_locacao" isCurrency value={formData.valor_locacao} onChange={handleInputChange} placeholder="R$ 0,00" disabled={!formData.locacao_ativo} />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                             <div className="flex space-x-2 items-center">
@@ -836,18 +844,21 @@ const NewImovelPage: React.FC = () => {
                                 id="vis_venda" 
                                 checked={formData.vis_venda === 'Visível'} 
                                 onChange={(checked) => handleToggleChange('vis_venda', checked)}
+                                disabled={!formData.venda_ativo}
                             />
                             <ToggleSwitch 
                                 label="Locação" 
                                 id="vis_locacao" 
                                 checked={formData.vis_locacao === 'Visível'} 
                                 onChange={(checked) => handleToggleChange('vis_locacao', checked)}
+                                disabled={!formData.locacao_ativo}
                             />
                             <ToggleSwitch 
                                 label="Temporada" 
                                 id="vis_temporada" 
                                 checked={formData.vis_temporada === 'Visível'} 
                                 onChange={(checked) => handleToggleChange('vis_temporada', checked)}
+                                disabled={!formData.temporada_ativo}
                             />
                         </div>
                         
@@ -880,9 +891,9 @@ const NewImovelPage: React.FC = () => {
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
-                            <NumberInput label="Honorários Venda (%)" id="honorarios_venda_percent" value={formData.honorarios_venda_percent} onChange={handleInputChange} placeholder="0%" />
-                            <NumberInput label="Honorários Locação (%)" id="honorarios_locacao_percent" value={formData.honorarios_locacao_percent} onChange={handleInputChange} placeholder="0%" />
-                            <NumberInput label="Honorários Temporada (%)" id="honorarios_temporada_percent" value={formData.honorarios_temporada_percent} onChange={handleInputChange} placeholder="0%" />
+                            <NumberInput label="Honorários Venda (%)" id="honorarios_venda_percent" value={formData.honorarios_venda_percent} onChange={handleInputChange} placeholder="0%" disabled={!formData.venda_ativo} />
+                            <NumberInput label="Honorários Locação (%)" id="honorarios_locacao_percent" value={formData.honorarios_locacao_percent} onChange={handleInputChange} placeholder="0%" disabled={!formData.locacao_ativo} />
+                            <NumberInput label="Honorários Temporada (%)" id="honorarios_temporada_percent" value={formData.honorarios_temporada_percent} onChange={handleInputChange} placeholder="0%" disabled={!formData.temporada_ativo} />
                             <TextInput label={<span>Data agenciamento <RequiredAsterisk /></span>} id="data_agenciamento" type="date" value={formData.data_agenciamento} onChange={handleInputChange} />
                         </div>
                         
@@ -1056,6 +1067,7 @@ const NewImovelPage: React.FC = () => {
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                            <NumberInput label={<span>Área Privativa (m²) <RequiredAsterisk /></span>} id="area_privativa_m2" value={formData.area_privativa_m2} onChange={handleInputChange} placeholder="0" />
                             <NumberInput label="Pessoas / Acomodações" id="pessoas_acomodacoes" value={formData.pessoas_acomodacoes} onChange={handleInputChange} placeholder="Informe o número de pessoas" />
                             <NumberInput label="Distância para o mar (m)" id="distancia_mar_m" value={formData.distancia_mar_m} onChange={handleInputChange} placeholder="0" />
                         </div>

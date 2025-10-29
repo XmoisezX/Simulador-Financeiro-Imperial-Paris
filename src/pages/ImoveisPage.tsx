@@ -3,9 +3,11 @@ import { Plus, RefreshCw, List, Map, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import FilterSidebar from '../components/FilterSidebar';
 import ImovelCard from '../components/ImovelCard';
+import ImovelDetailsModal from '../components/ImovelDetailsModal'; // Importando o modal
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../integrations/supabase/client';
+import { ImovelInput } from '../../types'; // Importando ImovelInput para o modal
 
 // Interface para o Imóvel (deve ser a mesma usada no ImovelCard)
 interface Imovel {
@@ -22,11 +24,23 @@ interface Imovel {
     first_image_url: string | null;
 }
 
+// Interface para os detalhes completos (para o modal)
+interface ImovelDetails extends ImovelInput {
+    id: string;
+    created_at: string;
+    imovel_media: { url: string, legend: string, is_visible: boolean, rotation: number }[];
+}
+
 const ImoveisPage: React.FC = () => {
     const { session } = useAuth();
     const [imoveis, setImoveis] = useState<Imovel[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    
+    // Estado do Modal de Detalhes
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedImovelDetails, setSelectedImovelDetails] = useState<ImovelDetails | null>(null);
+    const [isDetailsLoading, setIsDetailsLoading] = useState(false);
 
     const fetchImoveis = useCallback(async () => {
         if (!session) return;
@@ -34,7 +48,7 @@ const ImoveisPage: React.FC = () => {
         setIsLoading(true);
         setError(null);
 
-        // 1. Buscar Imóveis
+        // 1. Buscar Imóveis (apenas dados resumidos + primeira imagem)
         const { data: imoveisData, error: imovelError } = await supabase
             .from('imoveis')
             .select(`
@@ -74,6 +88,38 @@ const ImoveisPage: React.FC = () => {
 
         setImoveis(formattedImoveis);
         setIsLoading(false);
+    }, [session]);
+    
+    const handleViewDetails = useCallback(async (imovelId: string) => {
+        if (!session) return;
+        
+        setIsDetailsLoading(true);
+        setSelectedImovelDetails(null);
+        
+        // Buscar todos os campos do imóvel e todas as mídias
+        const { data, error } = await supabase
+            .from('imoveis')
+            .select(`
+                *,
+                imovel_media(url, legend, is_visible, rotation)
+            `)
+            .eq('id', imovelId)
+            .eq('user_id', session.user.id)
+            .single();
+            
+        setIsDetailsLoading(false);
+
+        if (error) {
+            console.error('Erro ao buscar detalhes do imóvel:', error);
+            alert('Não foi possível carregar os detalhes do imóvel.');
+            return;
+        }
+        
+        // O Supabase retorna os campos JSONB diretamente, e o '*' inclui todos os campos da tabela.
+        // O tipo ImovelDetails é compatível com o retorno.
+        setSelectedImovelDetails(data as ImovelDetails);
+        setIsModalOpen(true);
+        
     }, [session]);
 
     useEffect(() => {
@@ -126,7 +172,7 @@ const ImoveisPage: React.FC = () => {
                 {/* Lista de Imóveis */}
                 {error && <div className="text-red-600 p-4 bg-red-50 rounded-md">{error}</div>}
                 
-                {isLoading && (
+                {isLoading || isDetailsLoading && (
                     <div className="flex items-center justify-center py-10">
                         <Loader2 className="w-6 h-6 animate-spin text-blue-600 mr-3" />
                         <p className="text-gray-600">Carregando imóveis...</p>
@@ -141,7 +187,7 @@ const ImoveisPage: React.FC = () => {
 
                 <div className="space-y-4">
                     {imoveis.map(imovel => (
-                        <ImovelCard key={imovel.id} imovel={imovel} />
+                        <ImovelCard key={imovel.id} imovel={imovel} onViewDetails={handleViewDetails} />
                     ))}
                 </div>
                 
@@ -149,6 +195,13 @@ const ImoveisPage: React.FC = () => {
                     Fim da lista
                 </div>
             </div>
+            
+            {/* Modal de Detalhes */}
+            <ImovelDetailsModal 
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                imovel={selectedImovelDetails}
+            />
         </div>
     );
 };

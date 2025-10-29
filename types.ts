@@ -227,6 +227,7 @@ export interface ImovelInput {
   suites: number;
   banheiros: number;
   vagas_garagem: number;
+  area_privativa_m2: number; // NOVO CAMPO
   condicao: string;
   mobiliado: SimNaoSemimobiliado;
   orientacao_solar: string;
