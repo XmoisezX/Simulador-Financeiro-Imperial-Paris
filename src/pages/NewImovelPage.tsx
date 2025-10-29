@@ -437,14 +437,14 @@ const NewImovelPage: React.FC = () => {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                             {/* Venda */}
                             <div className="p-3 border rounded-lg space-y-2">
-                                <label className="flex items-center space-x-2 font-semibold text-dark-text">
+                                <div className="flex items-center space-x-2 font-semibold text-dark-text">
                                     <Checkbox 
                                         id="venda_ativo" 
                                         checked={formData.venda_ativo} 
                                         onCheckedChange={(checked) => handleFinalidadeToggle('venda_ativo', checked as boolean)} 
                                     />
-                                    <span>Venda</span>
-                                </label>
+                                    <label htmlFor="venda_ativo">Venda</label>
+                                </div>
                                 <h4 className="text-sm font-medium text-light-text">Disponibilidade</h4>
                                 {renderRadioGroup('venda_disponibilidade', ['Disponível', 'Indisponível'])}
                                 <h4 className="text-sm font-medium text-light-text">Motivo indisponibilidade</h4>
@@ -462,14 +462,14 @@ const NewImovelPage: React.FC = () => {
                             
                             {/* Locação */}
                             <div className="p-3 border rounded-lg space-y-2">
-                                <label className="flex items-center space-x-2 font-semibold text-dark-text">
+                                <div className="flex items-center space-x-2 font-semibold text-dark-text">
                                     <Checkbox 
                                         id="locacao_ativo" 
                                         checked={formData.locacao_ativo} 
                                         onCheckedChange={(checked) => handleFinalidadeToggle('locacao_ativo', checked as boolean)} 
                                     />
-                                    <span>Locação</span>
-                                </label>
+                                    <label htmlFor="locacao_ativo">Locação</label>
+                                </div>
                                 <h4 className="text-sm font-medium text-light-text">Disponibilidade</h4>
                                 {renderRadioGroup('locacao_disponibilidade', ['Disponível', 'Indisponível'])}
                                 <h4 className="text-sm font-medium text-light-text">Motivo indisponibilidade</h4>
@@ -487,14 +487,14 @@ const NewImovelPage: React.FC = () => {
                             
                             {/* Temporada */}
                             <div className="p-3 border rounded-lg space-y-2">
-                                <label className="flex items-center space-x-2 font-semibold text-dark-text">
+                                <div className="flex items-center space-x-2 font-semibold text-dark-text">
                                     <Checkbox 
                                         id="temporada_ativo" 
                                         checked={formData.temporada_ativo} 
                                         onCheckedChange={(checked) => handleFinalidadeToggle('temporada_ativo', checked as boolean)} 
                                     />
-                                    <span>Temporada</span>
-                                </label>
+                                    <label htmlFor="temporada_ativo">Temporada</label>
+                                </div>
                                 <h4 className="text-sm font-medium text-light-text">Disponibilidade</h4>
                                 {renderRadioGroup('temporada_disponibilidade', ['Disponível', 'Indisponível'])}
                                 <h4 className="text-sm font-medium text-light-text">Motivo indisponibilidade</h4>
