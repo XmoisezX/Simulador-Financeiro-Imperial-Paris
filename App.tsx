@@ -17,6 +17,7 @@ import CRMLayout from './src/components/CRMLayout';
 import PublicHomePage from './src/pages/PublicHomePage';
 import PublicLayout from './src/layouts/PublicLayout';
 import PublicImovelDetailsPage from './src/pages/PublicImovelDetailsPage';
+import ErrorBoundary from './src/components/ErrorBoundary'; // Importando ErrorBoundary
 
 const AppContent: React.FC = () => {
     const { session } = useAuth();
@@ -83,7 +84,9 @@ const App: React.FC = () => {
     return (
         <BrowserRouter>
             <AuthProvider>
-                <AppContent />
+                <ErrorBoundary>
+                    <AppContent />
+                </ErrorBoundary>
             </AuthProvider>
         </BrowserRouter>
     );
