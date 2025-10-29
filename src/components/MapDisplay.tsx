@@ -4,8 +4,8 @@ import { MapContainer, TileLayer, Marker, Circle, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-// Fix Leaflet default icon issue with Webpack/Vite
-// Isso garante que o código só seja executado no lado do cliente (browser)
+// A correção do ícone do Leaflet deve ser feita de forma segura.
+// O uso do ClientOnly no componente pai já deve mitigar isso, mas reforçamos a segurança aqui.
 if (typeof window !== 'undefined' && L.Icon) {
     delete (L.Icon.Default.prototype as any)._getIconUrl;
     L.Icon.Default.mergeOptions({
