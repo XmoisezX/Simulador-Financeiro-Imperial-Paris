@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface CollapsibleCardProps {
-    title: string;
+    title: React.ReactNode;
     children: React.ReactNode;
     isOpenDefault?: boolean;
 }
