@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { SimulationInput, SimulationResult, MonthlyResult } from '../../types';
 import { useFinancialSimulator } from '../../hooks/useFinancialSimulator';
 import { initialSimulationInputs } from '../../constants';
-import Footer from '../../components/Footer';
 import Sidebar from '../../components/Sidebar';
 import Dashboard from '../../components/Dashboard';
 
@@ -76,29 +75,26 @@ const HomePage: React.FC = () => {
     }, []);
     
     return (
-        <>
-            <div className="flex flex-1 flex-col lg:flex-row">
-                <Sidebar inputs={inputs} onInputChange={handleInputChange} onLoadSimulation={handleLoadSimulation} />
-                <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
-                    {results ? (
-                        <Dashboard 
-                            results={results} 
-                            inputs={inputs} 
-                            onExtend={handleExtendSimulation}
-                            onGoBack={handleGoBackSimulation}
-                            duration={duration}
-                            onActualDataChange={handleActualDataChange} // NOVO PROP
-                            actualData={actualData} // NOVO PROP
-                        />
-                    ) : (
-                        <div className="flex items-center justify-center h-full">
-                            <p className="text-xl text-gray-500">Gerando simulação...</p>
-                        </div>
-                    )}
-                </main>
-            </div>
-            <Footer />
-        </>
+        <div className="flex flex-1 flex-col lg:flex-row">
+            <Sidebar inputs={inputs} onInputChange={handleInputChange} onLoadSimulation={handleLoadSimulation} />
+            <main className="flex-1 overflow-y-auto">
+                {results ? (
+                    <Dashboard 
+                        results={results} 
+                        inputs={inputs} 
+                        onExtend={handleExtendSimulation}
+                        onGoBack={handleGoBackSimulation}
+                        duration={duration}
+                        onActualDataChange={handleActualDataChange} // NOVO PROP
+                        actualData={actualData} // NOVO PROP
+                    />
+                ) : (
+                    <div className="flex items-center justify-center h-full">
+                        <p className="text-xl text-gray-500">Gerando simulação...</p>
+                    </div>
+                )}
+            </main>
+        </div>
     );
 };
 
