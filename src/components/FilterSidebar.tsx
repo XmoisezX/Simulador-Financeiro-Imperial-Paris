@@ -15,30 +15,49 @@ const businessOptions = ['Financiável', 'MCMV', 'Aceita permuta'];
 const booleanOptions = ['Indiferente', 'Sim', 'Não'];
 const numberOptions = [0, 1, 2, 3, 4, '5 ou +'];
 
-const FilterSidebar: React.FC = () => {
-    // Mock state for filters
-    const [filters, setFilters] = React.useState({
-        contract: 'Venda',
-        type: ['Apartamento'],
-        bedrooms: [3],
-        suites: [],
-        garages: [1],
-    });
+export interface ImovelFilters {
+    contract: 'Venda' | 'Locação' | 'Temporada' | '';
+    type: string; // Tipo de imóvel (select)
+    neighborhood: string; // Bairro (select)
+    code: string; // Código (text input)
+    bedrooms: number[];
+    suites: number[];
+    garages: number[];
+    // Adicione outros filtros conforme necessário
+}
 
-    const handleClearFilters = () => {
-        setFilters({ contract: '', type: [], bedrooms: [], suites: [], garages: [] } as any);
+interface FilterSidebarProps {
+    filters: ImovelFilters;
+    onFilterChange: (newFilters: Partial<ImovelFilters>) => void;
+    onApplyFilters: () => void;
+    onClearFilters: () => void;
+}
+
+const FilterSidebar: React.FC<FilterSidebarProps> = ({ filters, onFilterChange, onApplyFilters, onClearFilters }) => {
+
+    const handleContractChange = (contract: 'Venda' | 'Locação' | 'Temporada') => {
+        onFilterChange({ contract: filters.contract === contract ? '' : contract });
+    };
+
+    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const { id, value } = e.target;
+        onFilterChange({ [id]: value });
     };
     
-    const handleCheckboxChange = (group: 'bedrooms' | 'suites' | 'garages', value: number | string) => {
+    const handleTextInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { id, value } = e.target;
+        onFilterChange({ [id]: value });
+    };
+
+    const handleCheckboxGroupChange = (group: 'bedrooms' | 'suites' | 'garages', value: number | string) => {
         const numericValue = Number(value);
-        setFilters(prev => {
-            const current = prev[group];
-            if (current.includes(numericValue)) {
-                return { ...prev, [group]: current.filter((item: number) => item !== numericValue) };
-            } else {
-                return { ...prev, [group]: [...current, numericValue] };
-            }
-        });
+        const current = filters[group];
+        
+        const newArray = current.includes(numericValue)
+            ? current.filter((item: number) => item !== numericValue)
+            : [...current, numericValue];
+            
+        onFilterChange({ [group]: newArray });
     };
 
     return (
@@ -61,6 +80,8 @@ const FilterSidebar: React.FC = () => {
             <TextInput 
                 label="Código"
                 id="code"
+                value={filters.code}
+                onChange={handleTextInputChange}
                 placeholder="Informe um código"
             />
 
@@ -71,15 +92,27 @@ const FilterSidebar: React.FC = () => {
                     <h3 className="text-sm font-medium text-light-text">Contrato</h3>
                     <div className="flex items-center space-x-4">
                         <label className="flex items-center space-x-2 text-sm">
-                            <Checkbox id="venda" checked={filters.contract === 'Venda'} />
+                            <Checkbox 
+                                id="venda" 
+                                checked={filters.contract === 'Venda'} 
+                                onCheckedChange={() => handleContractChange('Venda')}
+                            />
                             <span>Venda</span>
                         </label>
                         <label className="flex items-center space-x-2 text-sm">
-                            <Checkbox id="locacao" />
+                            <Checkbox 
+                                id="locacao" 
+                                checked={filters.contract === 'Locação'} 
+                                onCheckedChange={() => handleContractChange('Locação')}
+                            />
                             <span>Locação</span>
                         </label>
                         <label className="flex items-center space-x-2 text-sm">
-                            <Checkbox id="temporada" />
+                            <Checkbox 
+                                id="temporada" 
+                                checked={filters.contract === 'Temporada'} 
+                                onCheckedChange={() => handleContractChange('Temporada')}
+                            />
                             <span>Temporada</span>
                         </label>
                     </div>
@@ -88,26 +121,36 @@ const FilterSidebar: React.FC = () => {
                 {/* Tipo */}
                 <div className="space-y-2">
                     <h3 className="text-sm font-medium text-light-text">Tipo</h3>
-                    <select className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text">
-                        <option>Apartamento, casa, etc...</option>
-                        {propertyTypes.map(t => <option key={t}>{t}</option>)}
+                    <select 
+                        id="type" 
+                        value={filters.type}
+                        onChange={handleSelectChange}
+                        className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text"
+                    >
+                        <option value="">Todos os tipos</option>
+                        {propertyTypes.map(t => <option key={t} value={t}>{t}</option>)}
                     </select>
                 </div>
 
-                {/* Cidade - UF */}
+                {/* Cidade - UF (Fixo em Pelotas/RS por enquanto) */}
                 <div className="space-y-2">
                     <h3 className="text-sm font-medium text-light-text">Cidade - UF</h3>
-                    <select className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text">
-                        <option>Digite a cidade</option>
+                    <select className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100" disabled>
+                        <option>Pelotas - RS</option>
                     </select>
                 </div>
 
                 {/* Bairro */}
                 <div className="space-y-2">
                     <h3 className="text-sm font-medium text-light-text">Bairro</h3>
-                    <select className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text">
-                        <option>Digite o bairro</option>
-                        {neighborhoods.map(b => <option key={b}>{b}</option>)}
+                    <select 
+                        id="neighborhood" 
+                        value={filters.neighborhood}
+                        onChange={handleSelectChange}
+                        className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text"
+                    >
+                        <option value="">Todos os bairros</option>
+                        {neighborhoods.map(b => <option key={b} value={b}>{b}</option>)}
                     </select>
                 </div>
                 
@@ -125,13 +168,13 @@ const FilterSidebar: React.FC = () => {
                 </div>
             </CollapsibleCard>
 
-            {/* Seção 2: Valores e Áreas */}
+            {/* Seção 2: Valores e Áreas (Mocked for now) */}
             <CollapsibleCard title="Valores e Áreas">
                 <h3 className="text-sm font-medium text-light-text">Valores</h3>
                 <div className="flex space-x-2 items-center">
-                    <TextInput id="minPrice" placeholder="Informe um valor" />
+                    <TextInput id="minPrice" placeholder="Mínimo" />
                     <span className="text-light-text self-center text-sm">até</span>
-                    <TextInput id="maxPrice" placeholder="Informe um valor" />
+                    <TextInput id="maxPrice" placeholder="Máximo" />
                 </div>
                 
                 <h3 className="text-sm font-medium text-light-text mt-4">Área Privativa (m²)</h3>
@@ -159,7 +202,7 @@ const FilterSidebar: React.FC = () => {
                             <Checkbox 
                                 id={`bed-${num}`} 
                                 checked={filters.bedrooms.includes(Number(num))} 
-                                onCheckedChange={() => handleCheckboxChange('bedrooms', num)}
+                                onCheckedChange={() => handleCheckboxGroupChange('bedrooms', num)}
                             />
                             <span>{num}</span>
                         </label>
@@ -173,7 +216,7 @@ const FilterSidebar: React.FC = () => {
                             <Checkbox 
                                 id={`suite-${num}`} 
                                 checked={filters.suites.includes(Number(num))} 
-                                onCheckedChange={() => handleCheckboxChange('suites', num)}
+                                onCheckedChange={() => handleCheckboxGroupChange('suites', num)}
                             />
                             <span>{num}</span>
                         </label>
@@ -187,7 +230,7 @@ const FilterSidebar: React.FC = () => {
                             <Checkbox 
                                 id={`garage-${num}`} 
                                 checked={filters.garages.includes(Number(num))} 
-                                onCheckedChange={() => handleCheckboxChange('garages', num)}
+                                onCheckedChange={() => handleCheckboxGroupChange('garages', num)}
                             />
                             <span>{num}</span>
                         </label>
@@ -208,7 +251,7 @@ const FilterSidebar: React.FC = () => {
                 </div>
             </CollapsibleCard>
 
-            {/* Seção 4: Status e Condição */}
+            {/* Seção 4: Status e Condição (Mocked for now) */}
             <CollapsibleCard title="Status e Condição">
                 <div className="space-y-2">
                     <h3 className="text-sm font-medium text-light-text">Disponibilidade</h3>
@@ -248,7 +291,7 @@ const FilterSidebar: React.FC = () => {
                 </select>
             </CollapsibleCard>
 
-            {/* Seção 5: Marketing e Agenciamento */}
+            {/* Seção 5: Marketing e Agenciamento (Mocked for now) */}
             <CollapsibleCard title="Marketing e Agenciamento">
                 <h3 className="text-sm font-medium text-light-text">Anunciado</h3>
                 <select className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text">
@@ -302,7 +345,7 @@ const FilterSidebar: React.FC = () => {
                 </div>
             </CollapsibleCard>
 
-            {/* Seção 6: Pessoas */}
+            {/* Seção 6: Pessoas (Mocked for now) */}
             <CollapsibleCard title="Responsáveis">
                 <TextInput 
                     label="Responsável"
@@ -329,13 +372,14 @@ const FilterSidebar: React.FC = () => {
             {/* Ações de Filtro (Sticky Footer) */}
             <div className="pt-4 border-t border-gray-200 space-y-2 sticky bottom-0 bg-white z-10">
                 <Button 
-                    onClick={handleClearFilters}
+                    onClick={onClearFilters}
                     variant="outline"
                     className="w-full text-primary-orange border-primary-orange hover:bg-orange-50"
                 >
                     Limpar
                 </Button>
                 <Button 
+                    onClick={onApplyFilters}
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                 >
                     Filtrar

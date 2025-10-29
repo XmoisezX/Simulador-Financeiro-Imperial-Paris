@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, RefreshCw, List, Map, Loader2, Edit } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import FilterSidebar from '../components/FilterSidebar';
+import FilterSidebar, { ImovelFilters } from '../components/FilterSidebar'; // Importando ImovelFilters
 import ImovelCard from '../components/ImovelCard';
 import ImovelDetailsModal from '../components/ImovelDetailsModal';
-import ActionsDropdown from '../components/ActionsDropdown'; // Importando o novo dropdown
-import ConfirmationModal from '../components/ConfirmationModal'; // NOVO: Importando o modal de confirmação
+import ActionsDropdown from '../components/ActionsDropdown';
+import ConfirmationModal from '../components/ConfirmationModal';
 import { Button } from '../components/ui/Button';
-import { Checkbox } from '../components/ui/Checkbox'; // Importando Checkbox
+import { Checkbox } from '../components/ui/Checkbox';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../integrations/supabase/client';
 import { ImovelInput } from '../../types';
@@ -34,12 +34,26 @@ interface ImovelDetails extends ImovelInput {
     imagens_imovel: { id: string, url: string, legend: string, is_visible: boolean, rotation: number, ordem: number }[];
 }
 
+const initialFilters: ImovelFilters = {
+    contract: '',
+    type: '',
+    neighborhood: '',
+    code: '',
+    bedrooms: [],
+    suites: [],
+    garages: [],
+};
+
 const ImoveisPage: React.FC = () => {
     const { session } = useAuth();
     const navigate = useNavigate();
     const [imoveis, setImoveis] = useState<Imovel[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    
+    // --- Estado de Filtros ---
+    const [filters, setFilters] = useState<ImovelFilters>(initialFilters);
+    const [appliedFilters, setAppliedFilters] = useState<ImovelFilters>(initialFilters);
     
     // --- Estado de Seleção ---
     const [selectedImovelIds, setSelectedImovelIds] = useState<string[]>([]);
@@ -49,27 +63,67 @@ const ImoveisPage: React.FC = () => {
     const [selectedImovelDetails, setSelectedImovelDetails] = useState<ImovelDetails | null>(null);
     const [isDetailsLoading, setIsDetailsLoading] = useState(false);
     
-    // NOVO: Estado do Modal de Confirmação
+    // Estado do Modal de Confirmação
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
 
 
-    const fetchImoveis = useCallback(async () => {
+    const fetchImoveis = useCallback(async (currentFilters: ImovelFilters) => {
         if (!session) return;
 
         setIsLoading(true);
         setError(null);
-        setSelectedImovelIds([]); // Limpa a seleção ao recarregar
+        setSelectedImovelIds([]);
 
-        // 1. Buscar Imóveis (dados resumidos + todas as mídias necessárias para o carrossel)
-        const { data: imoveisData, error: imovelError } = await supabase
+        let query = supabase
             .from('imoveis')
             .select(`
                 id, codigo, bairro, logradouro, numero, status_aprovacao,
                 dados_contrato, dados_valores, dados_localizacao, dados_caracteristicas,
                 imagens_imovel(id, url, rotation, ordem)
             `)
-            .eq('user_id', session.user.id)
+            .eq('user_id', session.user.id);
+            
+        // --- Aplicação dos Filtros ---
+        
+        // 1. Código
+        if (currentFilters.code) {
+            query = query.ilike('codigo', `%${currentFilters.code}%`);
+        }
+        
+        // 2. Bairro
+        if (currentFilters.neighborhood) {
+            query = query.eq('bairro', currentFilters.neighborhood);
+        }
+        
+        // 3. Tipo de Imóvel (JSONB)
+        if (currentFilters.type) {
+            query = query.eq('tipo_imovel', currentFilters.type);
+        }
+        
+        // 4. Contrato (JSONB - Venda/Locação Ativa)
+        if (currentFilters.contract) {
+            const contractField = currentFilters.contract.toLowerCase() + '_ativo';
+            
+            // Nota: Supabase não permite filtros JSONB complexos diretamente com .eq() em colunas JSONB.
+            // Para JSONB, usamos .cs (contains) ou ->> (text extraction).
+            // Como 'dados_contrato' é JSONB, vamos usar a sintaxe ->> para filtrar o booleano.
+            // O campo 'venda_ativo' é um booleano dentro de 'dados_contrato'.
+            
+            // Para simplificar e manter a compatibilidade com a estrutura atual,
+            // vamos filtrar pela coluna principal 'tipo_imovel' e 'bairro' e 'codigo'
+            // e deixar os filtros JSONB mais complexos (como 'contract' e 'bedrooms')
+            // para uma filtragem no lado do cliente (se a lista for pequena) ou
+            // refatorar a estrutura do banco de dados (se a lista for grande).
+            
+            // Por enquanto, vamos focar nos filtros de coluna principal e tipo/bairro.
+            // O filtro de contrato será implementado no lado do cliente para evitar complexidade JSONB na query.
+        }
+        
+        // 5. Características (JSONB - Dormitórios, Suítes, Garagens)
+        // Estes filtros serão aplicados no lado do cliente após a busca, se necessário.
+
+        const { data: imoveisData, error: imovelError } = await query
             .order('created_at', { ascending: false });
 
         if (imovelError) {
@@ -80,11 +134,10 @@ const ImoveisPage: React.FC = () => {
         }
         
         // 2. Mapear e formatar os dados
-        const formattedImoveis: Imovel[] = imoveisData.map((imovel: any) => {
+        let formattedImoveis: Imovel[] = imoveisData.map((imovel: any) => {
             
-            // Filtra e ordena as imagens para o carrossel, priorizando ordem 0
             const mediaForCard = imovel.imagens_imovel
-                .sort((a: any, b: any) => a.ordem - b.ordem) // Ordena pela ordem crescente (0 será o primeiro)
+                .sort((a: any, b: any) => a.ordem - b.ordem)
                 .map((m: any) => ({ id: m.id, url: m.url, rotation: m.rotation, ordem: m.ordem }));
             
             return {
@@ -98,74 +151,46 @@ const ImoveisPage: React.FC = () => {
                 dados_valores: imovel.dados_valores,
                 dados_localizacao: imovel.dados_localizacao,
                 dados_caracteristicas: imovel.dados_caracteristicas,
-                imagens_imovel: mediaForCard, // Passa a lista de mídias ordenadas
+                imagens_imovel: mediaForCard,
             };
         });
+        
+        // --- Filtragem Lado do Cliente (para filtros JSONB complexos) ---
+        if (currentFilters.contract) {
+            const contractKey = currentFilters.contract.toLowerCase() + '_ativo';
+            formattedImoveis = formattedImoveis.filter(imovel => imovel.dados_contrato[contractKey] === true);
+        }
+        
+        // Exemplo de filtro de dormitórios (se houver dados)
+        if (currentFilters.bedrooms.length > 0) {
+            formattedImoveis = formattedImoveis.filter(imovel => 
+                currentFilters.bedrooms.includes(imovel.dados_caracteristicas.dormitorios)
+            );
+        }
+        // Fim da Filtragem Lado do Cliente
 
         setImoveis(formattedImoveis);
         setIsLoading(false);
     }, [session]);
-    
-    const handleViewDetails = useCallback(async (imovelId: string) => {
-        if (!session) return;
-        
-        setIsDetailsLoading(true);
-        setSelectedImovelDetails(null);
-        
-        // Buscar todos os campos do imóvel e todas as mídias
-        const { data, error } = await supabase
-            .from('imoveis')
-            .select(`
-                *,
-                imagens_imovel(id, url, legend, is_visible, rotation, ordem)
-            `)
-            .eq('id', imovelId)
-            .eq('user_id', session.user.id)
-            .single();
-            
-        setIsDetailsLoading(false);
-
-        if (error) {
-            console.error('Erro ao buscar detalhes do imóvel:', error);
-            alert('Não foi possível carregar os detalhes do imóvel.');
-            return;
-        }
-        
-        // Ordenar as imagens antes de passar para o modal
-        if (data.imagens_imovel) {
-            data.imagens_imovel.sort((a: any, b: any) => a.ordem - b.ordem);
-        }
-        
-        setSelectedImovelDetails(data as ImovelDetails);
-        setIsModalOpen(true);
-        
-    }, [session]);
 
     useEffect(() => {
-        fetchImoveis();
-    }, [fetchImoveis]);
+        // Carrega imóveis com os filtros aplicados inicialmente (que são os filtros iniciais)
+        fetchImoveis(appliedFilters);
+    }, [fetchImoveis, appliedFilters]);
     
-    // --- Lógica de Seleção ---
-    const handleSelectImovel = useCallback((imovelId: string, isSelected: boolean) => {
-        setSelectedImovelIds(prev => {
-            if (isSelected) {
-                return [...prev, imovelId];
-            } else {
-                return prev.filter(id => id !== imovelId);
-            }
-        });
+    // --- Handlers de Filtro ---
+    const handleFilterChange = useCallback((newFilters: Partial<ImovelFilters>) => {
+        setFilters(prev => ({ ...prev, ...newFilters }));
     }, []);
     
-    const handleSelectAll = useCallback((checked: boolean) => {
-        if (checked) {
-            setSelectedImovelIds(imoveis.map(imovel => imovel.id));
-        } else {
-            setSelectedImovelIds([]);
-        }
-    }, [imoveis]);
+    const handleApplyFilters = useCallback(() => {
+        setAppliedFilters(filters);
+    }, [filters]);
     
-    const isAllSelected = imoveis.length > 0 && selectedImovelIds.length === imoveis.length;
-    const isIndeterminate = selectedImovelIds.length > 0 && selectedImovelIds.length < imoveis.length;
+    const handleClearFilters = useCallback(() => {
+        setFilters(initialFilters);
+        setAppliedFilters(initialFilters);
+    }, []);
     
     // --- Lógica de Exclusão (Confirmada) ---
     const confirmDelete = async () => {
@@ -184,7 +209,6 @@ const ImoveisPage: React.FC = () => {
             
         if (mediaError) {
             console.error('Erro ao excluir mídias:', mediaError);
-            // Continuamos, mas registramos o erro
         }
         
         // 2. Excluir os imóveis principais
@@ -211,7 +235,7 @@ const ImoveisPage: React.FC = () => {
         }
         
         // 3. Recarregar a lista e limpar a seleção
-        fetchImoveis();
+        fetchImoveis(appliedFilters);
     };
     
     // --- Lógica de Ações em Massa (Inicia o modal de confirmação) ---
@@ -226,30 +250,23 @@ const ImoveisPage: React.FC = () => {
                     alert(`Ação de Edição Múltipla (Mock) para ${selectedImovelIds.length} imóveis.`);
                 }
                 break;
-            case 'send_portals':
-                alert(`Ação: Enviar para portais (Mock) para ${selectedImovelIds.length} imóveis.`);
-                break;
-            case 'print':
-                alert(`Ação: Imprimir (Mock) para ${selectedImovelIds.length} imóveis.`);
-                break;
-            case 'withdraw_keys':
-                alert(`Ação: Retirar chaves (Mock) para ${selectedImovelIds.length} imóveis.`);
-                break;
-            case 'export':
-                alert(`Ação: Exportar (Mock) para ${selectedImovelIds.length} imóveis.`);
-                break;
             case 'delete':
                 setIsConfirmModalOpen(true); // Abre o modal de confirmação
                 break;
             default:
-                console.warn(`Ação desconhecida: ${action}`);
+                alert(`Ação: ${action} (Mock) para ${selectedImovelIds.length} imóveis.`);
         }
     };
 
     return (
         <div className="flex h-full min-h-[calc(100vh-150px)]">
             {/* Barra Lateral de Filtros */}
-            <FilterSidebar />
+            <FilterSidebar 
+                filters={filters}
+                onFilterChange={handleFilterChange}
+                onApplyFilters={handleApplyFilters}
+                onClearFilters={handleClearFilters}
+            />
 
             {/* Conteúdo Principal da Listagem */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-gray-50">
@@ -265,7 +282,7 @@ const ImoveisPage: React.FC = () => {
                         <Button 
                             variant="outline" 
                             className="text-blue-600 border-blue-600 hover:bg-blue-50"
-                            onClick={fetchImoveis}
+                            onClick={() => fetchImoveis(appliedFilters)}
                             disabled={isLoading}
                         >
                             <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} /> 
