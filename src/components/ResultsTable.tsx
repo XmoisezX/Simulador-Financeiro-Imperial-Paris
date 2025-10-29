@@ -99,7 +99,7 @@ const EditableCell: React.FC<EditableCellProps> = ({ month, field, projectedValu
     // Format the value for display in the input field
     const formattedDisplayValue = isCurrency
         ? (displayValue || displayValue === 0 ? new Intl.NumberFormat('pt-BR').format(Number(displayValue)) : '')
-        : value;
+        : (isInteger ? (displayValue || displayValue === 0 ? Math.round(Number(displayValue)).toString() : '') : displayValue.toFixed(2)); // CORRIGIDO: Usando displayValue
 
     if (!isPastMonth) {
         // Display projected value only
