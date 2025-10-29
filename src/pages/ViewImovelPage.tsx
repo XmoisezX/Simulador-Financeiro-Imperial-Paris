@@ -1167,7 +1167,7 @@ const ViewImovelPage: React.FC = () => {
                 return (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-3">
-                            <h3 className="text-sm font-medium text-light-text">Status de aprovação <RequiredAsterisk /></label>
+                            <h3 className="text-sm font-medium text-light-text">Status de aprovação <RequiredAsterisk /></h3>
                             {renderRadioGroup('status_aprovacao', approvalOptions)}
                         </div>
                         <div className="space-y-2">
