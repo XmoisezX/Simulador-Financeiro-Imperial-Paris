@@ -7,6 +7,7 @@ import MarketAnalysisPage from './src/pages/MarketAnalysisPage';
 import ListingGoalsPage from './src/pages/ListingGoalsPage';
 import DashboardPage from './src/pages/DashboardPage'; // Novo Dashboard do CRM
 import ImoveisPage from './src/pages/ImoveisPage'; // Nova página de Imóveis
+import NewImovelPage from './src/pages/NewImovelPage'; // Nova página de Cadastro de Imóvel
 import CRMLayout from './src/components/CRMLayout'; // Novo Layout
 
 const AppContent: React.FC = () => {
@@ -25,6 +26,7 @@ const AppContent: React.FC = () => {
                 {/* Páginas do CRM */}
                 <Route path="/crm/dashboard" element={<DashboardPage />} />
                 <Route path="/crm/imoveis" element={<ImoveisPage />} />
+                <Route path="/crm/imoveis/novo" element={<NewImovelPage />} />
                 {/* Rotas placeholder para as outras funcionalidades do CRM */}
                 <Route path="/crm/chaves" element={<div className="p-4 text-xl">Página de Chaves (Em construção)</div>} />
                 <Route path="/crm/propostas" element={<div className="p-4 text-xl">Página de Propostas (Em construção)</div>} />

@@ -3,7 +3,7 @@ import { Plus, RefreshCw, List, Map } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import FilterSidebar from '../components/FilterSidebar';
 import ImovelCard from '../components/ImovelCard';
-import { Button } from '../components/ui/button';
+import { Button } from '../components/ui/Button';
 
 // Mock Data
 const mockImoveis = [
@@ -26,9 +26,11 @@ const ImoveisPage: React.FC = () => {
                 {/* Header de Ações */}
                 <div className="flex justify-between items-center mb-6">
                     <div className="flex space-x-3">
-                        <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                            <Plus className="w-4 h-4 mr-2" /> Novo imóvel
-                        </Button>
+                        <Link to="/crm/imoveis/novo">
+                            <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                                <Plus className="w-4 h-4 mr-2" /> Novo imóvel
+                            </Button>
+                        </Link>
                         <Button variant="outline" className="text-blue-600 border-blue-600 hover:bg-blue-50">
                             <RefreshCw className="w-4 h-4 mr-2" /> Reajustar valores
                         </Button>
