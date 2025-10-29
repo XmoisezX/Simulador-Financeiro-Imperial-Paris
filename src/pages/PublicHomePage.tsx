@@ -5,6 +5,7 @@ import TextInput from '../components/TextInput';
 import { Link } from 'react-router-dom';
 import ImovelSearch from '../components/ImovelSearch';
 import { usePublicImoveis } from '../hooks/usePublicImoveis'; // Importando o hook
+import ClientOnly from '../components/ClientOnly'; // Importando ClientOnly
 
 // URL pública da imagem no Supabase Storage
 const SUPABASE_HERO_IMAGE_URL = "https://pqievwbfrbiqhvdyalrh.supabase.co/storage/v1/object/public/imovel-media/hero-background.png";
@@ -37,7 +38,9 @@ const PublicHomePage: React.FC = () => {
                 {/* Overlay para escurecer a imagem e melhorar a legibilidade */}
                 <div className="absolute inset-0 bg-black opacity-40"></div> 
                 <div className="relative z-10">
-                    <ImovelSearch />
+                    <ClientOnly>
+                        <ImovelSearch />
+                    </ClientOnly>
                 </div>
             </div>
 
@@ -60,7 +63,7 @@ const PublicHomePage: React.FC = () => {
                 {isLoading && (
                     <div className="flex items-center justify-center py-10">
                         <Loader2 className="w-6 h-6 animate-spin text-primary-orange mr-3" />
-                        <p className="text-gray-600">Carregando imóveis...</p>
+                        <p className="ml-3 text-gray-600">Carregando imóveis...</p>
                     </div>
                 )}
                 
