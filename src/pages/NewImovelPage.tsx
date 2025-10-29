@@ -11,6 +11,7 @@ import { Checkbox } from '../components/ui/Checkbox'; // Mantendo o import para 
 import { useCepLookup } from '../../hooks/useCepLookup';
 import { useNominatimLookup } from '../../hooks/useNominatimLookup'; // NOVO HOOK
 import MapDisplay from '../components/MapDisplay'; // USANDO IMPORT DIRETO
+import ClientOnly from '../components/ClientOnly'; // NOVO IMPORT
 
 // --- Mock Data ---
 const propertyTypes = [
@@ -626,14 +627,16 @@ const NewImovelPage: React.FC = () => {
                             </div>
                         </div>
                         
-                        <MapDisplay 
-                            visibilidade={formData.mapa_visibilidade as VisibilidadeMapa} 
-                            address={fullAddress}
-                            isValid={isAddressValid}
-                            location={nominatimLocation ? { lat: nominatimLocation.lat, lng: nominatimLocation.lng } : null}
-                            isGeocoding={nominatimLoading}
-                            geocodingError={nominatimError}
-                        />
+                        <ClientOnly>
+                            <MapDisplay 
+                                visibilidade={formData.mapa_visibilidade as VisibilidadeMapa} 
+                                address={fullAddress}
+                                isValid={isAddressValid}
+                                location={nominatimLocation ? { lat: nominatimLocation.lat, lng: nominatimLocation.lng } : null}
+                                isGeocoding={nominatimLoading}
+                                geocodingError={nominatimError}
+                            />
+                        </ClientOnly>
                     </>
                 );
             case 3:
