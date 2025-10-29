@@ -21,11 +21,25 @@ const PublicHomePage: React.FC = () => {
 
     return (
         <div className="bg-white">
-            {/* 1. Seção de Busca */}
-            <ImovelSearch />
+            {/* 1. Seção de Busca com Background */}
+            <div 
+                className="relative w-full bg-cover bg-center pt-12 pb-24" 
+                style={{ 
+                    backgroundImage: "url('/hero-background.png')",
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    minHeight: '400px' // Garante altura mínima
+                }}
+            >
+                {/* Overlay para escurecer a imagem e melhorar a legibilidade */}
+                <div className="absolute inset-0 bg-black opacity-40"></div> 
+                <div className="relative z-10">
+                    <ImovelSearch />
+                </div>
+            </div>
 
-            {/* 2. Stats/KPIs Section */}
-            <div className="container mx-auto p-8 -mt-16 relative z-10">
+            {/* 2. Stats/KPIs Section (Ajustando o posicionamento para subir e sobrepor a imagem) */}
+            <div className="container mx-auto px-8 relative z-10 -mt-16"> 
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 bg-white p-6 rounded-xl shadow-lg border-t-4 border-primary-orange">
                     {stats.map((stat, index) => (
                         <div key={index} className="text-center p-3 border-r last:border-r-0 lg:border-r border-gray-200">
