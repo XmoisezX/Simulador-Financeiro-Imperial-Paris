@@ -51,8 +51,8 @@ const ImovelDetailsModal: React.FC<ImovelDetailsModalProps> = ({ isOpen, onClose
     
     const handleEdit = () => {
         onClose();
-        // Redireciona para a página de edição do imóvel, passando o ID
-        navigate(`/crm/imoveis/${imovel.id}?id=${imovel.id}`);
+        // Redireciona para a página de edição do imóvel, usando o ID como parâmetro de rota
+        navigate(`/crm/imoveis/${imovel.id}`);
     };
 
     return (

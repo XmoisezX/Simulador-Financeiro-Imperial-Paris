@@ -1,6 +1,7 @@
 import React from 'react';
 import { Bed, Bath, Home, Maximize2, ChevronRight, Image, RefreshCw, Info } from 'lucide-react';
 import ImageCarousel from './ImageCarousel'; // Importando o carrossel
+import { Link } from 'react-router-dom'; // Importando Link
 
 // Interface baseada na estrutura de dados do Supabase (tabela imoveis + primeira midia)
 interface Imovel {

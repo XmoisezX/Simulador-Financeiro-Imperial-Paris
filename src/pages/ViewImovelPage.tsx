@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Home, MapPin, DollarSign, Eye, Lock, Key, FileText, Image, List, CheckCircle, Zap, Loader2, Plus, Edit, Save, X } from 'lucide-react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom'; // Usando useParams
 import { ImovelInput, SimNao, Disponibilidade, SimNaoSemimobiliado, Financiavel, VisibilidadeMapa, StatusAprovacao, Ocupacao, ImovelImage } from '../../types';
 import { useAuth } from '../contexts/AuthContext';
 import ImovelStep from '../components/ImovelStep';
@@ -54,8 +54,7 @@ const TOTAL_STEPS = 11;
 const ViewImovelPage: React.FC = () => {
     const { supabase, session } = useAuth();
     const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
-    const imovelId = searchParams.get('id');
+    const { id: imovelId } = useParams<{ id: string }>(); // Usando useParams
 
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState<ImovelInput | null>(null);
