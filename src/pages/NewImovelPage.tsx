@@ -16,8 +16,9 @@ import ImageCard from '../components/ImageCard';
 import ActionsDropdown from '../components/ActionsDropdown';
 import { uploadImovelMedia, saveMediaMetadata } from '../utils/media'; // Importando utilitários
 import { useUnsavedChangesWarning } from '../hooks/useUnsavedChangesWarning'; // Importando o hook
-import PersonSelect from '../components/PersonSelect'; // NOVO: Importando PersonSelect
-import NewPersonModal from '../components/NewPersonModal'; // NOVO: Importando NewPersonModal
+import PersonSelect from '../components/PersonSelect'; // Importando PersonSelect (para Proprietário)
+import UserSelect from '../components/UserSelect'; // NOVO: Importando UserSelect (para Agenciador/Responsável)
+import NewPersonModal from '../components/NewPersonModal'; // Importando NewPersonModal
 
 // --- Mock Data ---
 const propertyTypes = [
@@ -917,14 +918,14 @@ const NewImovelPage: React.FC = () => {
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                            <PersonSelect 
+                            <UserSelect 
                                 label="Agenciador / Captador" 
                                 id="agenciador_id" 
                                 value={formData.agenciador_id} 
                                 onChange={(id) => handlePersonSelectChange('agenciador_id', id)}
                                 required
                             />
-                            <PersonSelect 
+                            <UserSelect 
                                 label="Responsável / Corretor" 
                                 id="responsavel_id" 
                                 value={formData.responsavel_id} 
