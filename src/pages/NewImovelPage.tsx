@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, MapPin, DollarSign, Eye, Lock, Key, FileText, Image, List, CheckCircle } from 'lucide-react';
+import { Home, MapPin, DollarSign, Eye, Lock, Key, FileText, Image, List, CheckCircle, Zap } from 'lucide-react';
 import CollapsibleCard from '../components/CollapsibleCard';
 import TextInput from '../components/TextInput';
 import { Button } from '../components/ui/Button';
