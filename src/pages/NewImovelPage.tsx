@@ -9,7 +9,8 @@ import NumberInput from '../components/NumberInput';
 import { Button } from '../components/ui/Button';
 import { Checkbox } from '../components/ui/Checkbox'; // Mantendo o import para outros usos
 import { useCepLookup } from '../../hooks/useCepLookup';
-import MapDisplay from '../components/MapDisplay'; // Importando o novo componente
+import { useNominatimLookup } from '../../hooks/useNominatimLookup'; // NOVO HOOK
+import MapDisplay from '../components/MapDisplay'; 
 
 // --- Mock Data ---
 const propertyTypes = [
@@ -38,7 +39,7 @@ const generateRandomCode = () => String(Math.floor(10000 + Math.random() * 90000
 const getInitialState = (): ImovelInput => ({
     tipo_imovel: '',
     codigo: generateRandomCode(), // Código randômico inicial
-    venda_ativo: false, // REMOVIDA PRÉ-SELEÇÃO
+    venda_ativo: false, 
     venda_disponibilidade: 'Disponível',
     venda_motivo_indisponibilidade: '',
     locacao_ativo: false,
@@ -52,7 +53,7 @@ const getInitialState = (): ImovelInput => ({
     condominio_id: '',
     bloco_torre: '',
     cep: '',
-    estado: 'RS', // Usando sigla padrão
+    estado: 'RS', 
     cidade: 'Pelotas',
     bairro: '',
     logradouro: '',
@@ -144,6 +145,14 @@ const NewImovelPage: React.FC = () => {
     const [isCurrentStepValid, setIsCurrentStepValid] = useState(false);
     
     const { data: cepData, loading: cepLoading, error: cepError, lookup: lookupCep } = useCepLookup();
+    
+    // NOVO: Hook para geocodificação de endereço completo
+    const { 
+        location: nominatimLocation, 
+        loading: nominatimLoading, 
+        error: nominatimError, 
+        lookup: lookupNominatim 
+    } = useNominatimLookup();
 
     // Scroll to the active step whenever it changes
     useEffect(() => {
@@ -172,6 +181,19 @@ const NewImovelPage: React.FC = () => {
             }));
         }
     }, [cepData]);
+    
+    // Efeito para geocodificar o endereço completo no Passo 2
+    useEffect(() => {
+        if (step === 2) {
+            const fullAddress = `${formData.logradouro}, ${formData.numero} - ${formData.bairro}, ${formData.cidade} - ${formData.estado}`;
+            const isAddressValid = formData.cep.replace(/\D/g, '').length === 8 && formData.bairro && formData.logradouro && formData.numero;
+            
+            if (isAddressValid) {
+                lookupNominatim(fullAddress);
+            }
+        }
+    }, [step, formData.logradouro, formData.numero, formData.bairro, formData.cidade, formData.estado, formData.cep, lookupNominatim]);
+
 
     const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { id, value, type, checked } = e.target as HTMLInputElement;
@@ -608,6 +630,9 @@ const NewImovelPage: React.FC = () => {
                             visibilidade={formData.mapa_visibilidade as VisibilidadeMapa} 
                             address={fullAddress}
                             isValid={isAddressValid}
+                            location={nominatimLocation ? { lat: nominatimLocation.lat, lng: nominatimLocation.lng } : null}
+                            isGeocoding={nominatimLoading}
+                            geocodingError={nominatimError}
                         />
                     </>
                 );

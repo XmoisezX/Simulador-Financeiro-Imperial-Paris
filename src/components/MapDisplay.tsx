@@ -1,139 +1,72 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { MapPin, XCircle, Loader2 } from 'lucide-react';
-import { useGoogleMapsScript } from '../../hooks/useGoogleMapsScript';
+import { MapContainer, TileLayer, Marker, Circle, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// Fix Leaflet default icon issue with Webpack/Vite
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+    iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+});
 
 interface MapDisplayProps {
     visibilidade: 'Exata' | 'Aproximada' | 'Não mostrar';
     address: string;
     isValid: boolean;
+    location: { lat: number, lng: number } | null;
+    isGeocoding: boolean;
+    geocodingError: string | null;
 }
 
-const MapDisplay: React.FC<MapDisplayProps> = ({ visibilidade, address, isValid }) => {
-    const mapRef = useRef<HTMLDivElement>(null);
-    const mapInstanceRef = useRef<google.maps.Map | null>(null);
-    const markerRef = useRef<google.maps.Marker | null>(null);
-    const circleRef = useRef<google.maps.Circle | null>(null);
-    const { loaded: scriptLoaded, error: scriptError } = useGoogleMapsScript();
-    const [isGeocoding, setIsGeocoding] = useState(false);
-    const [location, setLocation] = useState<{ lat: number, lng: number } | null>(null);
-    const [geocodingError, setGeocodingError] = useState<string | null>(null); // Novo estado de erro
-
-    // Função para geocodificar o endereço
-    const geocodeAddress = async (addr: string) => {
-        if (!window.google || !window.google.maps || !window.google.maps.Geocoder) {
-            setGeocodingError("Google Maps Geocoder não disponível. Verifique a chave de API.");
-            return;
-        }
-
-        setIsGeocoding(true);
-        setGeocodingError(null);
-        const geocoder = new google.maps.Geocoder();
-        
-        try {
-            const response = await geocoder.geocode({ address: addr });
-            if (response.results.length > 0) {
-                const loc = response.results[0].geometry.location;
-                setLocation({ lat: loc.lat(), lng: loc.lng() });
-            } else {
-                setLocation(null);
-                setGeocodingError("Endereço não encontrado pelo Google Maps.");
-            }
-        } catch (e: any) {
-            console.error("Geocoding failed:", e);
-            setLocation(null);
-            setGeocodingError(`Falha na Geocodificação: ${e.message || 'Erro desconhecido'}`);
-        } finally {
-            setIsGeocoding(false);
-        }
-    };
-
-    // Efeito para geocodificar quando o endereço ou a validade mudam
+// Componente interno para controlar o mapa e marcadores
+const MapController: React.FC<{ location: { lat: number, lng: number }, visibilidade: 'Exata' | 'Aproximada' | 'Não mostrar' }> = ({ location, visibilidade }) => {
+    const map = useMap();
+    
     useEffect(() => {
-        if (scriptLoaded && isValid && address) {
-            geocodeAddress(address);
-        } else if (!isValid) {
-            setLocation(null);
-            setGeocodingError(null);
+        if (location) {
+            map.setView([location.lat, location.lng], visibilidade === 'Aproximada' ? 13 : 16);
         }
-    }, [scriptLoaded, isValid, address]);
+    }, [location, visibilidade, map]);
 
-    // Efeito para inicializar e atualizar o mapa
-    useEffect(() => {
-        if (!scriptLoaded || !mapRef.current || !location) return;
+    return (
+        <>
+            <TileLayer
+                attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            
+            {visibilidade === 'Exata' && location && (
+                <Marker position={[location.lat, location.lng]} />
+            )}
+            
+            {visibilidade === 'Aproximada' && location && (
+                <Circle 
+                    center={[location.lat, location.lng]} 
+                    radius={1000} // 1 km
+                    pathOptions={{ 
+                        color: '#ff6600', 
+                        fillColor: '#ff6600', 
+                        fillOpacity: 0.35 
+                    }}
+                />
+            )}
+        </>
+    );
+};
 
-        const center = location;
-        
-        // 1. Inicializar o mapa se ainda não existir
-        if (!mapInstanceRef.current) {
-            mapInstanceRef.current = new google.maps.Map(mapRef.current, {
-                center: center,
-                zoom: 15,
-                disableDefaultUI: true,
-                zoomControl: true,
-            });
-        } else {
-            // Se o mapa já existe, apenas centraliza
-            mapInstanceRef.current.setCenter(center);
-        }
 
-        // 2. Limpar marcadores/círculos anteriores
-        markerRef.current?.setMap(null);
-        circleRef.current?.setMap(null);
-
-        // 3. Adicionar elementos baseados na visibilidade
-        if (visibilidade === 'Exata') {
-            markerRef.current = new google.maps.Marker({
-                position: center,
-                map: mapInstanceRef.current,
-                title: "Localização Exata",
-                icon: {
-                    url: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png',
-                }
-            });
-            mapInstanceRef.current.setZoom(16);
-        } else if (visibilidade === 'Aproximada') {
-            // Adiciona um círculo de 1km (1000 metros)
-            circleRef.current = new google.maps.Circle({
-                strokeColor: '#ff6600',
-                strokeOpacity: 0.8,
-                strokeWeight: 2,
-                fillColor: '#ff6600',
-                fillOpacity: 0.35,
-                map: mapInstanceRef.current,
-                center: center,
-                radius: 1000, // 1 km
-            });
-            mapInstanceRef.current.setZoom(13);
-        }
-        
-        // Cleanup function
-        return () => {
-            markerRef.current?.setMap(null);
-            circleRef.current?.setMap(null);
-        };
-
-    }, [scriptLoaded, location, visibilidade]);
-
+const MapDisplay: React.FC<MapDisplayProps> = ({ visibilidade, address, isValid, location, isGeocoding, geocodingError }) => {
+    
+    const defaultCenter: [number, number] = [-31.7719, -52.3425]; // Centro de Pelotas, RS
+    const defaultZoom = 12;
 
     let mapContent;
     let mapClasses = "relative h-64 bg-gray-200 rounded-md mt-4 flex items-center justify-center overflow-hidden";
 
-    if (scriptError) {
-        mapContent = (
-            <div className="text-center text-red-500 p-4">
-                <XCircle className="w-8 h-8 mx-auto mb-2" />
-                <p className="font-semibold">Erro ao carregar o Google Maps.</p>
-                <p className="text-sm">Verifique se a chave de API está configurada corretamente e se o serviço Maps JavaScript API está ativado.</p>
-            </div>
-        );
-    } else if (!scriptLoaded || isGeocoding) {
-        mapContent = (
-            <div className="text-center text-gray-500">
-                <Loader2 className="w-8 h-8 mx-auto mb-2 animate-spin" />
-                <p>{isGeocoding ? 'Buscando endereço no mapa...' : 'Carregando script do mapa...'}</p>
-            </div>
-        );
-    } else if (!isValid) {
+    if (!isValid) {
         mapContent = (
             <div className="flex flex-col items-center justify-center text-gray-500 p-4">
                 <XCircle className="w-8 h-8 text-red-500 mb-2" />
@@ -141,12 +74,11 @@ const MapDisplay: React.FC<MapDisplayProps> = ({ visibilidade, address, isValid 
                 <p className="text-sm text-center">Preencha o CEP, Logradouro, Bairro e Número para visualizar o mapa.</p>
             </div>
         );
-    } else if (visibilidade === 'Não mostrar') {
+    } else if (isGeocoding) {
         mapContent = (
             <div className="text-center text-gray-500">
-                <MapPin className="w-8 h-8 mx-auto mb-2" />
-                <p>Localização no centro do bairro/cidade.</p>
-                <p className="text-xs">Endereço não será exibido no mapa do site.</p>
+                <Loader2 className="w-8 h-8 mx-auto mb-2 animate-spin" />
+                <p>Buscando endereço no mapa...</p>
             </div>
         );
     } else if (geocodingError) {
@@ -157,19 +89,36 @@ const MapDisplay: React.FC<MapDisplayProps> = ({ visibilidade, address, isValid 
                 <p className="text-sm text-center">{geocodingError}</p>
             </div>
         );
+    } else if (visibilidade === 'Não mostrar') {
+        mapContent = (
+            <div className="text-center text-gray-500">
+                <MapPin className="w-8 h-8 mx-auto mb-2" />
+                <p>Localização no centro do bairro/cidade.</p>
+                <p className="text-xs">Endereço não será exibido no mapa do site.</p>
+            </div>
+        );
     }
 
+    // Se houver localização e não houver erro/carregamento, renderiza o mapa
+    if (location && !isGeocoding && !geocodingError && visibilidade !== 'Não mostrar') {
+        return (
+            <div className="relative h-64 rounded-md mt-4">
+                <MapContainer 
+                    center={[location.lat, location.lng]} 
+                    zoom={defaultZoom} 
+                    scrollWheelZoom={false}
+                    className="w-full h-full rounded-md z-0"
+                >
+                    <MapController location={location} visibilidade={visibilidade} />
+                </MapContainer>
+            </div>
+        );
+    }
+
+    // Renderiza o placeholder/erro
     return (
         <div className={mapClasses}>
-            {/* O mapa real será renderizado neste div */}
-            <div ref={mapRef} className="w-full h-full" style={{ display: (scriptLoaded && location && visibilidade !== 'Não mostrar') ? 'block' : 'none' }}></div>
-            
-            {/* Overlay para estados de carregamento/erro/não mostrar */}
-            {(!scriptLoaded || isGeocoding || !isValid || visibilidade === 'Não mostrar' || geocodingError || scriptError) && (
-                <div className="absolute inset-0 bg-gray-100 flex items-center justify-center z-10">
-                    {mapContent}
-                </div>
-            )}
+            {mapContent}
         </div>
     );
 };
