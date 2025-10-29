@@ -162,7 +162,7 @@ const ImoveisPage: React.FC = () => {
     const isIndeterminate = selectedImovelIds.length > 0 && selectedImovelIds.length < imoveis.length;
     
     // --- Lógica de Ações em Massa ---
-    const handleMassAction = (action: string) => {
+    const handleMassAction = async (action: string) => {
         if (selectedImovelIds.length === 0) return;
         
         switch (action) {
@@ -186,10 +186,44 @@ const ImoveisPage: React.FC = () => {
                 alert(`Ação: Exportar (Mock) para ${selectedImovelIds.length} imóveis.`);
                 break;
             case 'delete':
-                if (window.confirm(`Tem certeza que deseja excluir ${selectedImovelIds.length} imóvel(is)? (Mock)`)) {
-                    alert(`Ação: Excluir (Mock) para ${selectedImovelIds.length} imóveis.`);
-                    // Em um cenário real, você faria a exclusão aqui e chamaria fetchImoveis()
-                    setSelectedImovelIds([]);
+                if (window.confirm(`Tem certeza que deseja excluir ${selectedImovelIds.length} imóvel(is)? Esta ação é irreversível.`)) {
+                    setIsLoading(true);
+                    let successCount = 0;
+                    let errorCount = 0;
+                    
+                    // 1. Excluir metadados das imagens (para evitar órfãos)
+                    const { error: mediaError } = await supabase
+                        .from('imagens_imovel')
+                        .delete()
+                        .in('imovel_id', selectedImovelIds);
+                        
+                    if (mediaError) {
+                        console.error('Erro ao excluir mídias:', mediaError);
+                        // Continuamos, mas alertamos sobre o erro de mídias
+                    }
+                    
+                    // 2. Excluir os imóveis principais
+                    const { error: imovelDeleteError, count } = await supabase
+                        .from('imoveis')
+                        .delete()
+                        .in('id', selectedImovelIds);
+                        
+                    if (imovelDeleteError) {
+                        console.error('Erro ao excluir imóveis:', imovelDeleteError);
+                        alert(`Erro ao excluir imóveis: ${imovelDeleteError.message}`);
+                        errorCount = selectedImovelIds.length;
+                    } else {
+                        successCount = selectedImovelIds.length;
+                    }
+                    
+                    if (successCount > 0) {
+                        alert(`${successCount} imóvel(is) excluído(s) com sucesso.`);
+                    } else if (errorCount > 0) {
+                        alert(`Falha ao excluir ${errorCount} imóvel(is).`);
+                    }
+                    
+                    // 3. Recarregar a lista e limpar a seleção
+                    fetchImoveis();
                 }
                 break;
             default:
