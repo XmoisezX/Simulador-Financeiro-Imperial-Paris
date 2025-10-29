@@ -164,7 +164,7 @@ const ImovelDetailsModal: React.FC<ImovelDetailsModalProps> = ({ isOpen, onClose
                             <span className="text-light-text">Observações Internas:</span>
                             <p className="text-sm mt-1 p-2 bg-gray-100 rounded">{dados_internos.observacoes_internas || 'Nenhuma observação.'}</p>
                         </div>
-                    </div >
+                    </DetailSection>
                 </div>
             </div>
         </div>
