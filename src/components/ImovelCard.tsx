@@ -37,7 +37,7 @@ interface Imovel {
     };
     
     // Mídia (lista completa de mídias)
-    imovel_media: { id: string, url: string, rotation: number }[]; // Adicionado 'id'
+    imagens_imovel: { id: string, url: string, rotation: number, ordem: number }[]; // Adicionado 'id' e 'ordem'
 }
 
 interface ImovelCardProps {
@@ -64,7 +64,11 @@ const ImovelCard: React.FC<ImovelCardProps> = ({ imovel, onViewDetails }) => {
     const defaultImage = '/LOGO LARANJA.png';
     
     // Mídias visíveis (assumindo que todas as mídias retornadas são visíveis para o CRM)
-    const mediaForCarousel = imovel.imovel_media.map(m => ({ url: m.url, rotation: m.rotation }));
+    // O ImageCarousel já espera um array de { url, rotation }
+    const mediaForCarousel = imovel.imagens_imovel
+        .filter(m => m.url) // Garante que a URL existe
+        .sort((a, b) => a.ordem - b.ordem) // Ordena pela ordem
+        .map(m => ({ url: m.url, rotation: m.rotation }));
 
     return (
         <div className="flex border border-gray-200 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200 mb-4 relative">

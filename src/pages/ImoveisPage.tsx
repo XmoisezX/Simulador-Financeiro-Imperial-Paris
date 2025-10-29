@@ -21,14 +21,14 @@ interface Imovel {
     dados_valores: any;
     dados_localizacao: any;
     dados_caracteristicas: any;
-    imovel_media: { id: string, url: string, rotation: number }[]; // Alterado para lista completa com ID
+    imagens_imovel: { id: string, url: string, rotation: number, ordem: number }[]; // Alterado para lista completa com ID e ordem
 }
 
 // Interface para os detalhes completos (para o modal)
 interface ImovelDetails extends ImovelInput {
     id: string;
     created_at: string;
-    imovel_media: { id: string, url: string, legend: string, is_visible: boolean, rotation: number }[];
+    imagens_imovel: { id: string, url: string, legend: string, is_visible: boolean, rotation: number, ordem: number }[];
 }
 
 const ImoveisPage: React.FC = () => {
@@ -54,7 +54,7 @@ const ImoveisPage: React.FC = () => {
             .select(`
                 id, codigo, bairro, logradouro, numero, status_aprovacao,
                 dados_contrato, dados_valores, dados_localizacao, dados_caracteristicas,
-                imovel_media(id, url, rotation)
+                imagens_imovel(id, url, rotation, ordem)
             `)
             .eq('user_id', session.user.id)
             .order('created_at', { ascending: false });
@@ -69,8 +69,10 @@ const ImoveisPage: React.FC = () => {
         // 2. Mapear e formatar os dados
         const formattedImoveis: Imovel[] = imoveisData.map((imovel: any) => {
             
-            // Filtra apenas URL e rotation para o carrossel
-            const mediaForCard = imovel.imovel_media.map((m: any) => ({ id: m.id, url: m.url, rotation: m.rotation }));
+            // Filtra e ordena as imagens para o carrossel, priorizando ordem 0
+            const mediaForCard = imovel.imagens_imovel
+                .sort((a: any, b: any) => a.ordem - b.ordem) // Ordena pela ordem crescente
+                .map((m: any) => ({ id: m.id, url: m.url, rotation: m.rotation, ordem: m.ordem }));
             
             return {
                 id: imovel.id,
@@ -83,7 +85,7 @@ const ImoveisPage: React.FC = () => {
                 dados_valores: imovel.dados_valores,
                 dados_localizacao: imovel.dados_localizacao,
                 dados_caracteristicas: imovel.dados_caracteristicas,
-                imovel_media: mediaForCard, // Passa a lista de mídias
+                imagens_imovel: mediaForCard, // Passa a lista de mídias
             };
         });
 
@@ -102,7 +104,7 @@ const ImoveisPage: React.FC = () => {
             .from('imoveis')
             .select(`
                 *,
-                imovel_media(id, url, legend, is_visible, rotation)
+                imagens_imovel(id, url, legend, is_visible, rotation, ordem)
             `)
             .eq('id', imovelId)
             .eq('user_id', session.user.id)

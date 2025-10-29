@@ -254,4 +254,5 @@ export interface ImovelImage {
     legend: string;
     isVisible: boolean;
     rotation: number;
+    ordem: number; // NOVO CAMPO
 }

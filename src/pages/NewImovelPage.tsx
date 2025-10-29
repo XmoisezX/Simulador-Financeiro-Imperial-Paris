@@ -178,13 +178,14 @@ const NewImovelPage: React.FC = () => {
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             const newFiles = Array.from(e.target.files);
-            const newImages: ImovelImage[] = newFiles.map(file => ({
+            const newImages: ImovelImage[] = newFiles.map((file, index) => ({
                 id: crypto.randomUUID(), // Gerar ID único para cada nova imagem
                 url: URL.createObjectURL(file),
                 file: file,
                 legend: '',
                 isVisible: true,
                 rotation: 0,
+                ordem: images.length + index, // Atribui uma ordem sequencial
             }));
             setImages(prev => [...prev, ...newImages]);
         }

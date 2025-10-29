@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 interface ImovelDetails extends ImovelInput {
     id: string;
     created_at: string;
-    imovel_media: { id: string, url: string, legend: string, is_visible: boolean, rotation: number }[];
+    imagens_imovel: { id: string, url: string, legend: string, is_visible: boolean, rotation: number, ordem: number }[];
 }
 
 interface ImovelDetailsModalProps {
@@ -51,8 +51,8 @@ const ImovelDetailsModal: React.FC<ImovelDetailsModalProps> = ({ isOpen, onClose
     
     const handleEdit = () => {
         onClose();
-        // Redireciona para a página de novo imóvel, passando o ID para edição
-        navigate(`/crm/imoveis/${imovel.id}`);
+        // Redireciona para a página de edição do imóvel, passando o ID
+        navigate(`/crm/imoveis/${imovel.id}?id=${imovel.id}`);
     };
 
     return (
@@ -76,9 +76,11 @@ const ImovelDetailsModal: React.FC<ImovelDetailsModalProps> = ({ isOpen, onClose
                 <div className="p-6 space-y-6">
                     {/* Seção de Mídias */}
                     <div className="border p-4 rounded-lg bg-gray-50">
-                        <h3 className="text-lg font-semibold text-primary-orange mb-3 flex items-center"><Image className="w-5 h-5 mr-2" /> Mídias ({imovel.imovel_media.length})</h3>
+                        <h3 className="text-lg font-semibold text-primary-orange mb-3 flex items-center"><Image className="w-5 h-5 mr-2" /> Mídias ({imovel.imagens_imovel.length})</h3>
                         <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 max-h-64 overflow-y-auto p-2">
-                            {imovel.imovel_media.map((media, index) => (
+                            {imovel.imagens_imovel
+                                .sort((a, b) => a.ordem - b.ordem) // Ordena as imagens
+                                .map((media, index) => (
                                 <div key={media.id} className="relative h-24 w-full rounded-md overflow-hidden shadow-md border border-gray-200">
                                     <img 
                                         src={media.url} 
@@ -94,7 +96,7 @@ const ImovelDetailsModal: React.FC<ImovelDetailsModalProps> = ({ isOpen, onClose
                                     <p className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white text-[10px] p-1 truncate">{media.legend || 'Sem legenda'}</p>
                                 </div>
                             ))}
-                            {imovel.imovel_media.length === 0 && <p className="text-sm text-light-text col-span-full">Nenhuma mídia cadastrada.</p>}
+                            {imovel.imagens_imovel.length === 0 && <p className="text-sm text-light-text col-span-full">Nenhuma mídia cadastrada.</p>}
                         </div>
                     </div>
 

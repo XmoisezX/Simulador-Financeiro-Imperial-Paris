@@ -21,18 +21,31 @@ const simulateOptimization = (file: File): File => {
  * @returns Lista de metadados das imagens salvas.
  */
 export const uploadImovelMedia = async (images: ImovelImage[], userId: string, imovelId: string) => {
-    const uploadedMedia: { id: string, url: string, legend: string, is_visible: boolean, rotation: number }[] = [];
+    const uploadedMedia: { id: string, url: string, legend: string, is_visible: boolean, rotation: number, ordem: number }[] = [];
 
     for (const image of images) {
+        // Se a imagem não tem um arquivo, significa que já existe no storage e não precisa ser reenviada
+        if (!image.file) {
+            uploadedMedia.push({
+                id: image.id,
+                url: image.url,
+                legend: image.legend,
+                is_visible: image.isVisible,
+                rotation: image.rotation,
+                ordem: image.ordem,
+            });
+            continue;
+        }
+
         // 1. Simular Otimização (WebP)
-        const optimizedFile = simulateOptimization(image.file as File); // 'file' não será nulo para novas imagens
+        const optimizedFile = simulateOptimization(image.file);
         
         // 2. Definir o caminho no Storage
         const filePath = `imoveis/${imovelId}/${image.id}-${optimizedFile.name}`;
 
         // 3. Upload para o Storage
         const { error: uploadError } = await supabase.storage
-            .from('imovel-media')
+            .from('imovel-media') // Usando o bucket 'imovel-media'
             .upload(filePath, optimizedFile, {
                 cacheControl: '3600',
                 upsert: false,
@@ -56,6 +69,7 @@ export const uploadImovelMedia = async (images: ImovelImage[], userId: string, i
             legend: image.legend,
             is_visible: image.isVisible,
             rotation: image.rotation,
+            ordem: image.ordem, // Incluir a ordem
         });
     }
     
@@ -63,9 +77,9 @@ export const uploadImovelMedia = async (images: ImovelImage[], userId: string, i
 };
 
 /**
- * Salva os metadados das mídias na tabela imovel_media.
+ * Salva os metadados das mídias na tabela imagens_imovel.
  */
-export const saveMediaMetadata = async (imovelId: string, userId: string, media: { id: string, url: string, legend: string, is_visible: boolean, rotation: number }[]) => {
+export const saveMediaMetadata = async (imovelId: string, userId: string, media: { id: string, url: string, legend: string, is_visible: boolean, rotation: number, ordem: number }[]) => {
     if (media.length === 0) return { error: null };
     
     const dataToInsert = media.map(m => ({
@@ -76,10 +90,11 @@ export const saveMediaMetadata = async (imovelId: string, userId: string, media:
         legend: m.legend,
         is_visible: m.is_visible,
         rotation: m.rotation,
+        ordem: m.ordem, // Incluir a ordem
     }));
     
     const { error } = await supabase
-        .from('imovel_media')
+        .from('imagens_imovel') // Usando a nova tabela 'imagens_imovel'
         .insert(dataToInsert);
         
     return { error };
