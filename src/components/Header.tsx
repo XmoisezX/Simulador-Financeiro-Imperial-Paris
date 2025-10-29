@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import UserProfileDropdown from './UserProfileDropdown'; // Importando o novo componente
+import UserProfileDropdown from './UserProfileDropdown';
+import { Bell } from 'lucide-react'; // Importando o ícone Bell
 
 const Header: React.FC = () => {
     const { session } = useAuth();
