@@ -3,6 +3,7 @@ import { Search, Home, DollarSign, MapPin, CheckCircle, ArrowRight, User } from 
 import { Button } from '../components/ui/Button';
 import TextInput from '../components/TextInput';
 import { Link } from 'react-router-dom';
+import ImovelSearch from '../components/ImovelSearch'; // Importando o novo componente
 
 // Mock Data
 const stats = [
@@ -21,38 +22,11 @@ const featuredProperties = [
 const PublicHomePage: React.FC = () => {
     return (
         <div className="bg-white">
-            {/* 1. Hero Section */}
-            <div className="relative h-[60vh] min-h-[400px] bg-cover bg-center flex items-center justify-center" style={{ backgroundImage: "url('https://via.placeholder.com/1920x800/ff6600/ffffff?text=Imperial+Paris+Imoveis')" }}>
-                <div className="absolute inset-0 bg-black bg-opacity-40"></div>
-                <div className="relative z-10 text-center p-4 max-w-4xl mx-auto">
-                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-4">
-                        Somos a tua imobiliária em <span className="text-primary-orange">Pelotas-RS</span>.
-                    </h1>
-                    <p className="text-lg sm:text-xl text-gray-200 mb-8">
-                        Encontre o imóvel perfeito para morar ou investir.
-                    </p>
-                    
-                    {/* Search Bar Mock */}
-                    <div className="bg-white p-4 rounded-lg shadow-xl flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-3">
-                        <div className="flex-1">
-                            <TextInput 
-                                label="" 
-                                id="search_term" 
-                                placeholder="Busque por código, bairro ou tipo de imóvel..."
-                                className="w-full"
-                            />
-                        </div>
-                        <div className="w-full md:w-auto">
-                            <Button className="w-full bg-primary-orange hover:bg-secondary-orange text-white h-full py-3">
-                                <Search className="w-5 h-5 mr-2" /> Buscar
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            {/* 1. Seção de Busca (Substitui o Hero) */}
+            <ImovelSearch />
 
-            {/* 2. Stats/KPIs Section */}
-            <div className="container mx-auto p-8 -mt-16 relative z-10">
+            {/* 2. Stats/KPIs Section (Mantido, mas ajustado o margin top) */}
+            <div className="container mx-auto p-8 relative z-10">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 bg-white p-6 rounded-xl shadow-lg border-t-4 border-primary-orange">
                     {stats.map((stat, index) => (
                         <div key={index} className="text-center p-3 border-r last:border-r-0 lg:border-r border-gray-200">
