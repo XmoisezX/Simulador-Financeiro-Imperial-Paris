@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../src/contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const Header: React.FC = () => {
     const { session, supabase } = useAuth();
@@ -42,7 +42,7 @@ const Header: React.FC = () => {
                 {session && (
                     <div className="flex items-center space-x-4">
                         <nav className="hidden md:flex items-center space-x-2 bg-white p-1 rounded-lg">
-                            <Link to="/" className={navLinkClasses('/')}>
+                            <Link to="/simulador" className={navLinkClasses('/simulador')}>
                                 Simulador
                             </Link>
                             <Link to="/analise-de-mercado" className={navLinkClasses('/analise-de-mercado')}>

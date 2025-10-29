@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { SimulationInput, SimulationResult, MonthlyResult } from '../../types';
 import { useFinancialSimulator } from '../../hooks/useFinancialSimulator';
 import { initialSimulationInputs } from '../../constants';
-import Sidebar from '../../components/Sidebar';
-import Dashboard from '../../components/Dashboard';
+import Sidebar from '../components/Sidebar';
+import Dashboard from '../components/Dashboard';
 
 // Define a estrutura para armazenar os dados reais inseridos pelo usuário
 type ActualDataMap = Record<number, Partial<MonthlyResult>>;
