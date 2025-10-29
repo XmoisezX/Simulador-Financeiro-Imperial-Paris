@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Home, MapPin, DollarSign, Eye, Lock, Key, FileText, Image, List, CheckCircle, Zap } from 'lucide-react';
+import { Home, MapPin, DollarSign, Eye, Lock, Key, FileText, Image, List, CheckCircle, Zap, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ImovelInput, SimNao, Disponibilidade, SimNaoSemimobiliado, Financiavel, VisibilidadeMapa, StatusAprovacao } from '../../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,7 +7,8 @@ import ImovelStep from '../components/ImovelStep';
 import TextInput from '../components/TextInput';
 import NumberInput from '../components/NumberInput';
 import { Button } from '../components/ui/Button';
-import { Checkbox } from '../components/ui/Checkbox'; // Importação correta
+import { Checkbox } from '../components/ui/Checkbox';
+import { useCepLookup } from '../../hooks/useCepLookup'; // Importando o novo hook
 
 // --- Mock Data ---
 const propertyTypes = [
@@ -140,6 +141,8 @@ const NewImovelPage: React.FC = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [validationError, setValidationError] = useState<string | null>(null);
     const [isCurrentStepValid, setIsCurrentStepValid] = useState(false);
+    
+    const { data: cepData, loading: cepLoading, error: cepError, lookup: lookupCep } = useCepLookup();
 
     // Scroll to the active step whenever it changes
     useEffect(() => {
@@ -151,10 +154,23 @@ const NewImovelPage: React.FC = () => {
 
     // Efeito para revalidar o passo atual sempre que o formData mudar
     useEffect(() => {
-        // A validação é executada aqui para atualizar o botão 'Próximo'
         const isValid = validateStep(formData, step, false);
         setIsCurrentStepValid(isValid);
     }, [formData, step]);
+
+    // Efeito para preencher o formulário quando o CEP é encontrado
+    useEffect(() => {
+        if (cepData) {
+            setFormData(prev => ({
+                ...prev,
+                logradouro: cepData.logradouro || prev.logradouro,
+                bairro: cepData.bairro || prev.bairro,
+                cidade: cepData.localidade || prev.cidade,
+                estado: cepData.uf || prev.estado,
+                cep: cepData.cep || prev.cep,
+            }));
+        }
+    }, [cepData]);
 
     const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { id, value, type, checked } = e.target as HTMLInputElement;
@@ -212,6 +228,15 @@ const NewImovelPage: React.FC = () => {
         });
     }, []);
 
+    const handleCepChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const cep = e.target.value;
+        handleInputChange(e); // Atualiza o estado do CEP no formulário
+        
+        if (cep.replace(/\D/g, '').length === 8) {
+            lookupCep(cep);
+        }
+    }, [handleInputChange, lookupCep]);
+
 
     const validateStep = useCallback((currentData: ImovelInput, currentStep: number, shouldSetError: boolean = true): boolean => {
         let errors: string[] = [];
@@ -232,7 +257,7 @@ const NewImovelPage: React.FC = () => {
                 // Adicionar validações para locação e temporada se ativos
                 break;
             case 2: // Localização
-                if (!currentData.cep) errors.push('O CEP é obrigatório.');
+                if (!currentData.cep || currentData.cep.replace(/\D/g, '').length !== 8) errors.push('O CEP é obrigatório e deve ter 8 dígitos.');
                 if (!currentData.bairro) errors.push('O bairro é obrigatório.');
                 if (!currentData.logradouro) errors.push('O logradouro é obrigatório.');
                 if (!currentData.numero) errors.push('O número é obrigatório.');
@@ -505,32 +530,49 @@ const NewImovelPage: React.FC = () => {
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
-                            <TextInput label="CEP *" id="cep" value={formData.cep} onChange={handleInputChange} placeholder="99999-999" />
+                            <div className="relative">
+                                <TextInput 
+                                    label="CEP *" 
+                                    id="cep" 
+                                    value={formData.cep} 
+                                    onChange={handleCepChange} 
+                                    placeholder="99999-999" 
+                                    maxLength={9}
+                                />
+                                {cepLoading && (
+                                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pt-6">
+                                        <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                                    </div>
+                                )}
+                                {cepError && <p className="text-xs text-red-500 mt-1">{cepError}</p>}
+                            </div>
+                            
                             <div className="space-y-2">
                                 <label className="block text-sm font-medium text-light-text">Estado *</label>
-                                <select id="estado" value={formData.estado} onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text">
-                                    <option>Rio Grande do Sul</option>
+                                <select id="estado" value={formData.estado} onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100" disabled={cepLoading || !!cepData}>
+                                    <option value={formData.estado}>{formData.estado}</option>
                                 </select>
                             </div>
                             <div className="space-y-2">
                                 <label className="block text-sm font-medium text-light-text">Cidade *</label>
-                                <select id="cidade" value={formData.cidade} onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text">
-                                    <option>Pelotas</option>
+                                <select id="cidade" value={formData.cidade} onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100" disabled={cepLoading || !!cepData}>
+                                    <option value={formData.cidade}>{formData.cidade}</option>
                                 </select>
                             </div>
                             <div className="space-y-2">
                                 <label className="block text-sm font-medium text-light-text">Bairro *</label>
-                                <select id="bairro" value={formData.bairro} onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text">
-                                    <option value="">Escolha o bairro</option>
-                                    {neighborhoods.map(b => <option key={b} value={b}>{b}</option>)}
+                                <select id="bairro" value={formData.bairro} onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100" disabled={cepLoading || !!cepData}>
+                                    <option value={formData.bairro}>{formData.bairro}</option>
+                                    {/* Mock de bairros se não houver CEP data */}
+                                    {!cepData && neighborhoods.map(b => <option key={b} value={b}>{b}</option>)}
                                 </select>
                             </div>
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
-                            <TextInput label="Logradouro *" id="logradouro" value={formData.logradouro} onChange={handleInputChange} placeholder="Informe o logradouro" />
+                            <TextInput label="Logradouro *" id="logradouro" value={formData.logradouro} onChange={handleInputChange} placeholder="Informe o logradouro" disabled={cepLoading || !!cepData} />
                             <TextInput label="Número *" id="numero" value={formData.numero} onChange={handleInputChange} placeholder="Informe o número" />
-                            <TextInput label="Complemento" id="complemento" value={formData.complemento} onChange={handleInputChange} placeholder="Informe o complemento" />
+                            <TextInput label="Complemento" id="complemento" value={formData.complemento} onChange={handleInputChange} placeholder="Informe o complemento" disabled={cepLoading || !!cepData} />
                             <TextInput label="Ponto de referência" id="referencia" value={formData.referencia} onChange={handleInputChange} placeholder="Ex: Ao lado da igreja" />
                         </div>
                         
