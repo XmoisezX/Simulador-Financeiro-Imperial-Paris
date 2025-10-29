@@ -75,9 +75,9 @@ const HomePage: React.FC = () => {
     }, []);
     
     return (
-        <div className="flex flex-1 flex-col lg:flex-row">
+        <div className="flex flex-1 flex-col lg:flex-row min-h-full bg-gray-50">
             <Sidebar inputs={inputs} onInputChange={handleInputChange} onLoadSimulation={handleLoadSimulation} />
-            <main className="flex-1 overflow-y-auto">
+            <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
                 {results ? (
                     <Dashboard 
                         results={results} 
