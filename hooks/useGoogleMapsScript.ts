@@ -6,6 +6,7 @@ export const useGoogleMapsScript = () => {
     const [error, setError] = useState(false);
 
     useEffect(() => {
+        // Verifica se a chave foi configurada
         if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY === 'YOUR_GOOGLE_MAPS_API_KEY') {
             console.error("Google Maps API Key não configurada.");
             setError(true);
@@ -19,12 +20,14 @@ export const useGoogleMapsScript = () => {
 
         const scriptId = 'google-maps-script';
         if (document.getElementById(scriptId)) {
+            // Se o script já foi adicionado, esperamos o evento de load (ou assumimos que já carregou)
             setLoaded(true);
             return;
         }
 
         const script = document.createElement('script');
         script.id = scriptId;
+        // Usando a chave importada
         script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=geometry`;
         script.async = true;
         script.defer = true;
