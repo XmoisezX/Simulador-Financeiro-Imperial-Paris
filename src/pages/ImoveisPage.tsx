@@ -105,7 +105,7 @@ const ImoveisPage: React.FC = () => {
             .from('imoveis')
             .select(`
                 *,
-                imovel_media(id, url, legend, is_visible, rotation, ordem)
+                imagens_imovel(id, url, legend, is_visible, rotation, ordem)
             `)
             .eq('id', imovelId)
             .eq('user_id', session.user.id)

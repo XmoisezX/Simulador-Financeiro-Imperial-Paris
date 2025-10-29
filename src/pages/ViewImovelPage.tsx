@@ -85,7 +85,7 @@ const ViewImovelPage: React.FC = () => {
             .from('imoveis')
             .select(`
                 *,
-                imovel_media(id, url, legend, is_visible, rotation, ordem)
+                imagens_imovel(id, url, legend, is_visible, rotation, ordem)
             `)
             .eq('id', imovelId)
             .eq('user_id', session.user.id)
@@ -112,7 +112,7 @@ const ViewImovelPage: React.FC = () => {
         setFormData(mappedData);
 
         // Mapear mídias para o estado de imagens e ordenar por 'ordem'
-        const mappedImages: ImovelImage[] = data.imovel_media
+        const mappedImages: ImovelImage[] = data.imagens_imovel
             .map((media: any) => ({
                 id: media.id, // Usar o ID do Supabase para imagens existentes
                 url: media.url,
@@ -383,7 +383,7 @@ const ViewImovelPage: React.FC = () => {
             }
             // Excluir do banco de dados
             const { error: deleteDbError } = await supabase
-                .from('imovel_media')
+                .from('imagens_imovel') // Corrigido: Usando imagens_imovel
                 .delete()
                 .eq('id', img.id);
             if (deleteDbError) {
@@ -414,7 +414,7 @@ const ViewImovelPage: React.FC = () => {
         
         for (const img of updatedExistingImages) {
             const { error: updateError } = await supabase
-                .from('imovel_media')
+                .from('imagens_imovel') // Corrigido: Usando imagens_imovel
                 .update({ legend: img.legend, is_visible: img.isVisible, rotation: img.rotation, ordem: img.ordem })
                 .eq('id', img.id);
             if (updateError) {

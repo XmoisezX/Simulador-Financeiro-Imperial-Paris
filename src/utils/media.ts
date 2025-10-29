@@ -88,7 +88,7 @@ export const saveMediaMetadata = async (imovelId: string, userId: string, media:
     }));
     
     const { error } = await supabase
-        .from('imovel_media') // Usando a tabela 'imovel_media'
+        .from('imagens_imovel') // CORRIGIDO: Usando a tabela 'imagens_imovel'
         .insert(dataToInsert);
         
     return { error };
