@@ -1,19 +1,19 @@
 import React from 'react';
 import { Button } from './ui/Button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Save, Loader2 } from 'lucide-react';
 
 interface ImovelStepProps {
     title: React.ReactNode;
     children: React.ReactNode;
     step: number;
     totalSteps: number;
-    onNext: () => void; // Mantido para compatibilidade, mas não usado
-    onBack: () => void; // Mantido para compatibilidade, mas não usado
-    onSave: () => void; // Mantido para compatibilidade, mas não usado
-    isLastStep: boolean; // Mantido para compatibilidade, mas não usado
-    isFirstStep: boolean; // Mantido para compatibilidade, mas não usado
-    isStepValid: boolean; // Mantido para compatibilidade, mas não usado
-    isSaving: boolean; // Mantido para compatibilidade, mas não usado
+    onNext: () => void;
+    onBack: () => void;
+    onSave: () => void;
+    isLastStep: boolean;
+    isFirstStep: boolean;
+    isStepValid: boolean;
+    isSaving: boolean;
     disabled?: boolean;
 }
 
@@ -22,6 +22,13 @@ const ImovelStep: React.FC<ImovelStepProps> = ({
     children,
     step,
     totalSteps,
+    onNext,
+    onBack,
+    onSave,
+    isLastStep,
+    isFirstStep,
+    isStepValid,
+    isSaving,
     disabled = false,
 }) => {
     return (
@@ -40,7 +47,38 @@ const ImovelStep: React.FC<ImovelStepProps> = ({
                     {children}
                 </div>
                 
-                {/* Removemos o footer de navegação por passo */}
+                {/* Footer de Navegação (Visível apenas se NÃO estiver disabled) */}
+                {!disabled && (
+                    <div className="flex justify-between mt-6 pt-4 border-t border-gray-100">
+                        <Button
+                            onClick={onBack}
+                            disabled={isFirstStep || isSaving}
+                            variant="outline"
+                            className="text-gray-700 border-gray-300 hover:bg-gray-100"
+                        >
+                            <ChevronLeft className="w-4 h-4 mr-2" /> Voltar
+                        </Button>
+
+                        {isLastStep ? (
+                            <Button
+                                onClick={onSave}
+                                disabled={!isStepValid || isSaving}
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                            >
+                                {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                                Salvar Imóvel
+                            </Button>
+                        ) : (
+                            <Button
+                                onClick={onNext}
+                                disabled={!isStepValid || isSaving}
+                                className="bg-blue-600 hover:bg-blue-700 text-white"
+                            >
+                                Próximo <ChevronRight className="w-4 h-4 ml-2" />
+                            </Button>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );
