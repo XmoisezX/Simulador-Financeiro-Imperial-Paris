@@ -1,24 +1,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Save, Loader2, User, Mail, Briefcase, Phone, Lock, Globe, Image } from 'lucide-react';
+import { X, Save, Loader2, User, Mail, Briefcase, Phone, Lock, Globe } from 'lucide-react';
 import { Button } from './ui/Button';
 import TextInput from './TextInput';
 import AvatarUploader from './AvatarUploader';
 import { useProfile } from '../hooks/useProfile';
 import { useAuth } from '../contexts/AuthContext';
-import ProfileMediaSettings from './ProfileMediaSettings';
 
 interface ProfileSettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
 }
 
-type ActiveTab = 'profile' | 'media';
-
 const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onClose }) => {
     const { profile, updateProfile, fetchProfile } = useProfile();
     const { session } = useAuth();
     
-    const [activeTab, setActiveTab] = useState<ActiveTab>('profile');
     const [fullName, setFullName] = useState('');
     const [role, setRole] = useState('');
     const [companyName, setCompanyName] = useState('');
@@ -73,8 +69,6 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
     }, [updateProfile]);
 
     if (!isOpen) return null;
-    
-    const tabButtonClasses = (tabName: ActiveTab) => `py-2 px-4 text-sm font-medium transition-all duration-300 ${activeTab === tabName ? 'border-b-2 border-blue-600 text-blue-800 font-semibold' : 'text-gray-500 hover:text-blue-700'}`;
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 animate-fade-in">
@@ -86,106 +80,87 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
                     </button>
                 </div>
                 
-                {/* Tabs Navigation */}
-                <div className="flex border-b border-gray-200 px-6">
-                    <button className={tabButtonClasses('profile')} onClick={() => setActiveTab('profile')}>
-                        <User className="w-4 h-4 inline mr-1" /> Perfil
-                    </button>
-                    <button className={tabButtonClasses('media')} onClick={() => setActiveTab('media')}>
-                        <Image className="w-4 h-4 inline mr-1" /> Mídias (Mock)
-                    </button>
-                </div>
-
+                {/* Conteúdo do Perfil */}
                 <div className="p-6 space-y-6">
-                    {activeTab === 'profile' && (
-                        <>
-                            <div className="border p-4 rounded-lg bg-gray-50">
-                                <h3 className="text-lg font-semibold text-dark-text mb-3">Foto de Perfil</h3>
-                                <AvatarUploader 
-                                    currentAvatarUrl={profile?.avatar_url || null}
-                                    onUploadSuccess={handleAvatarUpdate}
-                                    disabled={isUpdating}
-                                />
-                                <p className="text-xs text-gray-500 mt-2">Formatos: JPG, PNG, WEBP. Máx: 5MB.</p>
-                            </div>
+                    <div className="border p-4 rounded-lg bg-gray-50">
+                        <h3 className="text-lg font-semibold text-dark-text mb-3">Foto de Perfil</h3>
+                        <AvatarUploader 
+                            currentAvatarUrl={profile?.avatar_url || null}
+                            onUploadSuccess={handleAvatarUpdate}
+                            disabled={isUpdating}
+                        />
+                        <p className="text-xs text-gray-500 mt-2">Formatos: JPG, PNG, WEBP. Máx: 5MB.</p>
+                    </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <TextInput 
-                                    label={<span>Nome Completo <span className="text-red-500">*</span></span>} 
-                                    id="fullName" 
-                                    value={fullName} 
-                                    onChange={(e) => setFullName(e.target.value)} 
-                                    placeholder="Seu nome completo"
-                                />
-                                <TextInput 
-                                    label={<span>E-mail Empresarial</span>} 
-                                    id="email" 
-                                    value={session?.user.email || ''} 
-                                    disabled
-                                    placeholder="email@empresa.com"
-                                />
-                            </div>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <TextInput 
-                                    label={<span>Cargo / Função</span>} 
-                                    id="role" 
-                                    value={role} 
-                                    onChange={(e) => setRole(e.target.value)} 
-                                    placeholder="Corretor, Gerente, etc."
-                                />
-                                <TextInput 
-                                    label={<span>Nome da Empresa</span>} 
-                                    id="companyName" 
-                                    value={companyName} 
-                                    onChange={(e) => setCompanyName(e.target.value)} 
-                                    placeholder="IMPERIAL PARIS"
-                                />
-                            </div>
-
-                            <h3 className="text-lg font-semibold text-dark-text pt-4 border-t border-gray-100">Contato e Preferências</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <TextInput 
-                                    label={<span>Telefone</span>} 
-                                    id="phone" 
-                                    value={phone} 
-                                    onChange={(e) => setPhone(e.target.value)}
-                                    placeholder="(53) 99999-9999"
-                                />
-                                <TextInput 
-                                    label={<span>Idioma</span>} 
-                                    id="language" 
-                                    value="Português (Brasil)" 
-                                    placeholder="Idioma"
-                                    disabled
-                                />
-                            </div>
-                            <Button variant="outline" className="w-full text-red-600 border-red-300 hover:bg-red-50">
-                                <Lock className="w-4 h-4 mr-2" /> Alterar Senha (Mock)
-                            </Button>
-                        </>
-                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <TextInput 
+                            label={<span>Nome Completo <span className="text-red-500">*</span></span>} 
+                            id="fullName" 
+                            value={fullName} 
+                            onChange={(e) => setFullName(e.target.value)} 
+                            placeholder="Seu nome completo"
+                        />
+                        <TextInput 
+                            label={<span>E-mail Empresarial</span>} 
+                            id="email" 
+                            value={session?.user.email || ''} 
+                            disabled
+                            placeholder="email@empresa.com"
+                        />
+                    </div>
                     
-                    {activeTab === 'media' && (
-                        <ProfileMediaSettings />
-                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <TextInput 
+                            label={<span>Cargo / Função</span>} 
+                            id="role" 
+                            value={role} 
+                            onChange={(e) => setRole(e.target.value)} 
+                            placeholder="Corretor, Gerente, etc."
+                        />
+                        <TextInput 
+                            label={<span>Nome da Empresa</span>} 
+                            id="companyName" 
+                            value={companyName} 
+                            onChange={(e) => setCompanyName(e.target.value)} 
+                            placeholder="IMPERIAL PARIS"
+                        />
+                    </div>
+
+                    <h3 className="text-lg font-semibold text-dark-text pt-4 border-t border-gray-100">Contato e Preferências</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <TextInput 
+                            label={<span>Telefone</span>} 
+                            id="phone" 
+                            value={phone} 
+                            onChange={(e) => setPhone(e.target.value)}
+                            placeholder="(53) 99999-9999"
+                        />
+                        <TextInput 
+                            label={<span>Idioma</span>} 
+                            id="language" 
+                            value="Português (Brasil)" 
+                            placeholder="Idioma"
+                            disabled
+                        />
+                    </div>
+                    <Button variant="outline" className="w-full text-red-600 border-red-300 hover:bg-red-50">
+                        <Lock className="w-4 h-4 mr-2" /> Alterar Senha (Mock)
+                    </Button>
                 </div>
 
-                {/* Footer de Ações (Apenas visível na aba de Perfil) */}
-                {activeTab === 'profile' && (
-                    <div className="p-6 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
-                        {updateError && <p className="text-red-600 self-center mr-4 text-sm">{updateError}</p>}
-                        {updateSuccess && <p className="text-green-600 self-center mr-4 text-sm">Salvo com sucesso!</p>}
-                        
-                        <Button variant="outline" onClick={onClose} disabled={isUpdating}>
-                            Cancelar
-                        </Button>
-                        <Button onClick={handleSave} disabled={isUpdating}>
-                            {isUpdating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                            Salvar Alterações
-                        </Button>
-                    </div>
-                )}
+                {/* Footer de Ações */}
+                <div className="p-6 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
+                    {updateError && <p className="text-red-600 self-center mr-4 text-sm">{updateError}</p>}
+                    {updateSuccess && <p className="text-green-600 self-center mr-4 text-sm">Salvo com sucesso!</p>}
+                    
+                    <Button variant="outline" onClick={onClose} disabled={isUpdating}>
+                        Cancelar
+                    </Button>
+                    <Button onClick={handleSave} disabled={isUpdating}>
+                        {isUpdating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                        Salvar Alterações
+                    </Button>
+                </div>
             </div>
         </div>
     );
