@@ -14,6 +14,7 @@ interface ImovelStepProps {
     isFirstStep: boolean;
     isStepValid: boolean;
     isSaving: boolean;
+    disabled?: boolean; // Nova prop
 }
 
 const ImovelStep: React.FC<ImovelStepProps> = ({
@@ -28,6 +29,7 @@ const ImovelStep: React.FC<ImovelStepProps> = ({
     isFirstStep,
     isStepValid,
     isSaving,
+    disabled = false, // Valor padrão
 }) => {
     return (
         <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
@@ -49,7 +51,7 @@ const ImovelStep: React.FC<ImovelStepProps> = ({
                     <Button 
                         onClick={onBack} 
                         variant="outline" 
-                        disabled={isFirstStep}
+                        disabled={isFirstStep || disabled} // Desabilita se for o primeiro passo ou se o componente estiver desabilitado
                         className="text-gray-700 border-gray-300 hover:bg-gray-50"
                     >
                         <ChevronLeft className="w-4 h-4 mr-2" /> Voltar
@@ -58,7 +60,7 @@ const ImovelStep: React.FC<ImovelStepProps> = ({
                     {isLastStep ? (
                         <Button 
                             onClick={onSave} 
-                            disabled={!isStepValid || isSaving}
+                            disabled={!isStepValid || isSaving || disabled} // Desabilita se o passo não for válido, estiver salvando ou o componente estiver desabilitado
                             className="bg-primary-orange hover:bg-secondary-orange"
                         >
                             {isSaving ? 'Salvando...' : 'Finalizar Cadastro'}
@@ -66,7 +68,7 @@ const ImovelStep: React.FC<ImovelStepProps> = ({
                     ) : (
                         <Button 
                             onClick={onNext} 
-                            disabled={!isStepValid}
+                            disabled={!isStepValid || disabled} // Desabilita se o passo não for válido ou o componente estiver desabilitado
                             className="bg-blue-600 hover:bg-blue-700"
                         >
                             Próximo <ChevronRight className="w-4 h-4 ml-2" />

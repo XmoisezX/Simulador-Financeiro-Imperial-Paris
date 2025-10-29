@@ -18,8 +18,10 @@ const ActionsDropdown: React.FC<ActionsDropdownProps> = ({ onAction, disabled })
     ];
 
     const handleActionClick = (value: string) => {
-        onAction(value);
-        setIsOpen(false);
+        if (!disabled) { // Só permite a ação se não estiver desabilitado
+            onAction(value);
+            setIsOpen(false);
+        }
     };
 
     return (
@@ -43,6 +45,7 @@ const ActionsDropdown: React.FC<ActionsDropdownProps> = ({ onAction, disabled })
                                 onClick={() => handleActionClick(action.value)}
                                 className={`block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 ${action.className || ''}`}
                                 role="menuitem"
+                                disabled={disabled} // Desabilita os itens do menu
                             >
                                 {action.label}
                             </button>
