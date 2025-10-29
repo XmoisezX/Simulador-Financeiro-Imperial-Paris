@@ -6,6 +6,9 @@ import { Link } from 'react-router-dom';
 import ImovelSearch from '../components/ImovelSearch';
 import { usePublicImoveis } from '../hooks/usePublicImoveis'; // Importando o hook
 
+// URL pública da imagem no Supabase Storage
+const SUPABASE_HERO_IMAGE_URL = "https://pqievwbfrbiqhvdyalrh.supabase.co/storage/v1/object/public/imovel-media/hero-background.png";
+
 // Mock Data (mantido para as outras seções)
 const stats = [
     { value: '100+', label: 'Imóveis Exclusivos' },
@@ -25,7 +28,7 @@ const PublicHomePage: React.FC = () => {
             <div 
                 className="relative w-full bg-cover bg-center pt-12 pb-24" 
                 style={{ 
-                    backgroundImage: "url('/hero-background.png')",
+                    backgroundImage: `url('${SUPABASE_HERO_IMAGE_URL}')`,
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     minHeight: '400px' // Garante altura mínima
