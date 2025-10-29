@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import KpiCard from '../../components/KpiCard';
-import NumberInput from '../../components/NumberInput';
+import KpiCard from '../components/KpiCard';
+import NumberInput from '../components/NumberInput';
 
 const ListingGoalsPage: React.FC = () => {
     // Mock data based on user input
