@@ -63,11 +63,9 @@ const ImovelCard: React.FC<ImovelCardProps> = ({ imovel, onViewDetails }) => {
     
     const defaultImage = '/LOGO LARANJA.png';
     
-    // Mídias visíveis (assumindo que todas as mídias retornadas são visíveis para o CRM)
-    // O ImageCarousel já espera um array de { url, rotation }
+    // Mídias visíveis (já vêm ordenadas do ImoveisPage.tsx)
     const mediaForCarousel = imovel.imagens_imovel
         .filter(m => m.url) // Garante que a URL existe
-        .sort((a, b) => a.ordem - b.ordem) // Ordena pela ordem
         .map(m => ({ url: m.url, rotation: m.rotation }));
 
     return (

@@ -49,6 +49,7 @@ const ImoveisPage: React.FC = () => {
         setError(null);
 
         // 1. Buscar Imóveis (dados resumidos + todas as mídias necessárias para o carrossel)
+        // Usamos a sintaxe de foreign table para buscar as imagens e ordená-las
         const { data: imoveisData, error: imovelError } = await supabase
             .from('imoveis')
             .select(`
@@ -71,7 +72,7 @@ const ImoveisPage: React.FC = () => {
             
             // Filtra e ordena as imagens para o carrossel, priorizando ordem 0
             const mediaForCard = imovel.imagens_imovel
-                .sort((a: any, b: any) => a.ordem - b.ordem) // Ordena pela ordem crescente
+                .sort((a: any, b: any) => a.ordem - b.ordem) // Ordena pela ordem crescente (0 será o primeiro)
                 .map((m: any) => ({ id: m.id, url: m.url, rotation: m.rotation, ordem: m.ordem }));
             
             return {
@@ -85,7 +86,7 @@ const ImoveisPage: React.FC = () => {
                 dados_valores: imovel.dados_valores,
                 dados_localizacao: imovel.dados_localizacao,
                 dados_caracteristicas: imovel.dados_caracteristicas,
-                imagens_imovel: mediaForCard, // Passa a lista de mídias
+                imagens_imovel: mediaForCard, // Passa a lista de mídias ordenadas
             };
         });
 
@@ -104,7 +105,7 @@ const ImoveisPage: React.FC = () => {
             .from('imoveis')
             .select(`
                 *,
-                imagens_imovel(id, url, legend, is_visible, rotation, ordem)
+                imovel_media(id, url, legend, is_visible, rotation, ordem)
             `)
             .eq('id', imovelId)
             .eq('user_id', session.user.id)
@@ -116,6 +117,11 @@ const ImoveisPage: React.FC = () => {
             console.error('Erro ao buscar detalhes do imóvel:', error);
             alert('Não foi possível carregar os detalhes do imóvel.');
             return;
+        }
+        
+        // Ordenar as imagens antes de passar para o modal
+        if (data.imagens_imovel) {
+            data.imagens_imovel.sort((a: any, b: any) => a.ordem - b.ordem);
         }
         
         setSelectedImovelDetails(data as ImovelDetails);

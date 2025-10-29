@@ -86,7 +86,7 @@ const ViewImovelPage: React.FC = () => {
             .from('imoveis')
             .select(`
                 *,
-                imovel_media(id, url, legend, is_visible, rotation)
+                imovel_media(id, url, legend, is_visible, rotation, ordem)
             `)
             .eq('id', imovelId)
             .eq('user_id', session.user.id)
@@ -112,15 +112,19 @@ const ViewImovelPage: React.FC = () => {
 
         setFormData(mappedData);
 
-        // Mapear mídias para o estado de imagens
-        const mappedImages: ImovelImage[] = data.imovel_media.map((media: any) => ({
-            id: media.id, // Usar o ID do Supabase para imagens existentes
-            url: media.url,
-            file: null, // Imagem existente não tem arquivo
-            legend: media.legend,
-            isVisible: media.is_visible,
-            rotation: media.rotation,
-        }));
+        // Mapear mídias para o estado de imagens e ordenar por 'ordem'
+        const mappedImages: ImovelImage[] = data.imovel_media
+            .map((media: any) => ({
+                id: media.id, // Usar o ID do Supabase para imagens existentes
+                url: media.url,
+                file: null, // Imagem existente não tem arquivo
+                legend: media.legend,
+                isVisible: media.is_visible,
+                rotation: media.rotation,
+                ordem: media.ordem,
+            }))
+            .sort((a: ImovelImage, b: ImovelImage) => a.ordem - b.ordem); // Ordenar aqui
+
         setImages(mappedImages);
         setInitialImages(mappedImages); // Salvar estado inicial das imagens para comparação
 
@@ -141,6 +145,7 @@ const ViewImovelPage: React.FC = () => {
                 legend: '',
                 isVisible: true,
                 rotation: 0,
+                ordem: images.length > 0 ? Math.max(...images.map(img => img.ordem)) + 1 : 0, // Atribui a próxima ordem disponível
             }));
             setImages(prev => [...prev, ...newImages]);
         }
@@ -404,13 +409,14 @@ const ViewImovelPage: React.FC = () => {
         const updatedExistingImages = images.filter(img => img.file === null && existingImageIds.includes(img.id))
             .filter(img => {
                 const initial = initialImages.find(i => i.id === img.id);
-                return initial && (initial.legend !== img.legend || initial.isVisible !== img.isVisible || initial.rotation !== img.rotation);
+                // Verifica se houve alteração em legenda, visibilidade, rotação OU ORDEM
+                return initial && (initial.legend !== img.legend || initial.isVisible !== img.isVisible || initial.rotation !== img.rotation || initial.ordem !== img.ordem);
             });
         
         for (const img of updatedExistingImages) {
             const { error: updateError } = await supabase
                 .from('imovel_media')
-                .update({ legend: img.legend, is_visible: img.isVisible, rotation: img.rotation })
+                .update({ legend: img.legend, is_visible: img.isVisible, rotation: img.rotation, ordem: img.ordem })
                 .eq('id', img.id);
             if (updateError) {
                 console.error(`Erro ao atualizar metadados da imagem (${img.id}):`, updateError);
@@ -1118,7 +1124,7 @@ const ViewImovelPage: React.FC = () => {
                 return (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-3">
-                            <h3 className="text-sm font-medium text-light-text">Status de aprovação <RequiredAsterisk /></h3>
+                            <h3 className="text-sm font-medium text-light-text">Status de aprovação <RequiredAsterisk /></label>
                             {renderRadioGroup('status_aprovacao', approvalOptions)}
                         </div>
                         <div className="space-y-2">

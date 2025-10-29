@@ -26,21 +26,15 @@ export const uploadImovelMedia = async (images: ImovelImage[], userId: string, i
     for (const image of images) {
         // Se a imagem não tem um arquivo, significa que já existe no storage e não precisa ser reenviada
         if (!image.file) {
-            uploadedMedia.push({
-                id: image.id,
-                url: image.url,
-                legend: image.legend,
-                is_visible: image.isVisible,
-                rotation: image.rotation,
-                ordem: image.ordem,
-            });
+            // Isso não deve acontecer no fluxo de upload de novas imagens, mas é um bom fallback
             continue;
         }
 
         // 1. Simular Otimização (WebP)
-        const optimizedFile = simulateOptimization(image.file);
+        const optimizedFile = simulateOptimization(image.file as File);
         
         // 2. Definir o caminho no Storage
+        // Usamos o ID do imóvel e o ID da imagem para garantir unicidade e organização
         const filePath = `imoveis/${imovelId}/${image.id}-${optimizedFile.name}`;
 
         // 3. Upload para o Storage
@@ -94,7 +88,7 @@ export const saveMediaMetadata = async (imovelId: string, userId: string, media:
     }));
     
     const { error } = await supabase
-        .from('imagens_imovel') // Usando a nova tabela 'imagens_imovel'
+        .from('imovel_media') // Usando a tabela 'imovel_media'
         .insert(dataToInsert);
         
     return { error };
