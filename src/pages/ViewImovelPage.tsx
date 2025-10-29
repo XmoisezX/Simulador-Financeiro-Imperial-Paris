@@ -15,6 +15,7 @@ import ToggleSwitch from '../components/ToggleSwitch';
 import ImageCard from '../components/ImageCard';
 import ActionsDropdown from '../components/ActionsDropdown';
 import { uploadImovelMedia, saveMediaMetadata } from '../utils/media';
+import ImageCarousel from '../components/ImageCarousel'; // Importar o ImageCarousel
 
 // --- Mock Data ---
 const propertyTypes = [
@@ -1170,6 +1171,17 @@ const ViewImovelPage: React.FC = () => {
                     <p className="text-sm">{validationError}</p>
                 </div>
             )}
+
+            {/* Carrossel de Imagens (fora dos passos) */}
+            <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+                <div className="relative h-64">
+                    <ImageCarousel 
+                        media={images.filter(img => img.isVisible)} // Apenas imagens visíveis no carrossel principal
+                        defaultImageUrl="/LOGO LARANJA.png"
+                        altText={`Imóvel ${formData.codigo}`}
+                    />
+                </div>
+            </div>
 
             {/* Botões de Ação Global (Editar/Salvar/Cancelar) */}
             <div className="flex justify-end space-x-3 mb-6 max-w-4xl mx-auto">
