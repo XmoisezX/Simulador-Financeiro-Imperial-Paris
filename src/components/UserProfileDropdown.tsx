@@ -34,7 +34,8 @@ const UserProfileDropdown: React.FC = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const avatarUrl = profile?.avatar_url || '/LOGO LARANJA.png'; // Usando logo como fallback
+    // O avatar_url é obtido do perfil. Se for null, o ícone User será exibido.
+    const avatarUrl = profile?.avatar_url; 
 
     const menuItems = [
         { icon: <Settings className="w-5 h-5" />, label: 'Configurações da conta', action: handleOpenModal },

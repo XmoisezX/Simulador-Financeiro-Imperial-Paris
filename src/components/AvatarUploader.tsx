@@ -6,7 +6,7 @@ import { supabase } from '../integrations/supabase/client';
 
 interface AvatarUploaderProps {
     currentAvatarUrl: string | null;
-    onUploadSuccess: (newUrl: string) => void;
+    onUploadSuccess: (newUrl: string) => Promise<boolean>; // Retorna boolean para indicar sucesso
     disabled?: boolean;
 }
 
@@ -36,6 +36,11 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({ currentAvatarUrl, onUpl
             return;
         }
 
+        // Revoga a URL anterior para evitar vazamento de memória
+        if (previewUrl && previewUrl.startsWith('blob:')) {
+            URL.revokeObjectURL(previewUrl);
+        }
+        
         setFileToUpload(file);
         setPreviewUrl(URL.createObjectURL(file));
     };
@@ -46,16 +51,16 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({ currentAvatarUrl, onUpl
         setUploading(true);
         setError(null);
 
+        // Usamos o ID do usuário como nome do arquivo para garantir que seja único e fácil de gerenciar
         const fileExt = fileToUpload.name.split('.').pop();
-        const fileName = `${session.user.id}-${Date.now()}.${fileExt}`;
-        const filePath = `avatars/${fileName}`;
+        const filePath = `avatars/${session.user.id}.${fileExt}`;
 
-        // 1. Upload para o Storage
+        // 1. Upload para o Storage com upsert: true para sobrescrever
         const { error: uploadError } = await supabase.storage
-            .from('avatars') // Usaremos um bucket chamado 'avatars'
+            .from('avatars')
             .upload(filePath, fileToUpload, {
                 cacheControl: '3600',
-                upsert: false,
+                upsert: true, // Sobrescreve o arquivo existente
             });
 
         if (uploadError) {
@@ -69,7 +74,7 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({ currentAvatarUrl, onUpl
             .from('avatars')
             .getPublicUrl(filePath);
 
-        // 3. Atualizar o perfil no banco de dados
+        // 3. Atualizar o perfil no banco de dados (via prop)
         const success = await onUploadSuccess(publicUrl);
 
         if (success) {
@@ -77,14 +82,17 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({ currentAvatarUrl, onUpl
             setFileToUpload(null);
             setPreviewUrl(null);
         } else {
-             setError('Erro ao salvar a URL no perfil.');
+             // O erro de salvamento no perfil será tratado pelo modal
+             setError('Erro ao salvar a URL no perfil. Tente novamente.');
         }
 
         setUploading(false);
     }, [session?.user.id, fileToUpload, onUploadSuccess]);
     
     const handleCancel = () => {
-        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        if (previewUrl && previewUrl.startsWith('blob:')) {
+            URL.revokeObjectURL(previewUrl);
+        }
         setFileToUpload(null);
         setPreviewUrl(null);
         setError(null);
