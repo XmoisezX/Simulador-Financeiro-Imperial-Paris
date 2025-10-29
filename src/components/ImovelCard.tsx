@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bed, Bath, Car, Maximize2, ChevronRight, Image, RefreshCw, Info, Checkbox as CheckboxIcon } from 'lucide-react';
+import { Bed, Bath, Car, Maximize2, ChevronRight, Image, RefreshCw, Info, Square as CheckboxIcon } from 'lucide-react';
 import ImageCarousel from './ImageCarousel'; // Importando o carrossel
 import { Link } from 'react-router-dom'; // Importando Link
 
