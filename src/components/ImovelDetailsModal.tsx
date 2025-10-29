@@ -1,7 +1,9 @@
 import React from 'react';
-import { X, Bed, Bath, Home, Maximize2, DollarSign, MapPin, Lock, Eye, FileText, Image } from 'lucide-react';
+import { X, Bed, Bath, Home, Maximize2, DollarSign, MapPin, Lock, Eye, FileText, Image, Edit } from 'lucide-react';
 import { ImovelInput } from '../../types';
 import { supabase } from '../integrations/supabase/client';
+import { Button } from './ui/Button';
+import { useNavigate } from 'react-router-dom';
 
 // Interface para o Imóvel (dados completos + mídias)
 interface ImovelDetails extends ImovelInput {
@@ -41,18 +43,34 @@ const DetailItem: React.FC<{ label: string, value: string | number | boolean | n
 };
 
 const ImovelDetailsModal: React.FC<ImovelDetailsModalProps> = ({ isOpen, onClose, imovel }) => {
+    const navigate = useNavigate();
+    
     if (!isOpen || !imovel) return null;
 
     const { dados_contrato, dados_localizacao, dados_valores, dados_caracteristicas, dados_internos } = imovel;
+    
+    const handleEdit = () => {
+        onClose();
+        // Redireciona para a página de novo imóvel, passando o ID para edição
+        navigate(`/crm/imoveis/novo?id=${imovel.id}`);
+    };
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 animate-fade-in">
             <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
                 <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
                     <h2 className="text-xl font-bold text-dark-text">Detalhes do Imóvel: {imovel.codigo}</h2>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-800">
-                        <X className="w-6 h-6" />
-                    </button>
+                    <div className="flex space-x-3">
+                        <Button 
+                            onClick={handleEdit}
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                            <Edit className="w-4 h-4 mr-2" /> Editar Cadastro
+                        </Button>
+                        <button onClick={onClose} className="text-gray-500 hover:text-gray-800 p-2 rounded-full hover:bg-gray-100">
+                            <X className="w-6 h-6" />
+                        </button>
+                    </div>
                 </div>
                 
                 <div className="p-6 space-y-6">
@@ -146,7 +164,7 @@ const ImovelDetailsModal: React.FC<ImovelDetailsModalProps> = ({ isOpen, onClose
                             <span className="text-light-text">Observações Internas:</span>
                             <p className="text-sm mt-1 p-2 bg-gray-100 rounded">{dados_internos.observacoes_internas || 'Nenhuma observação.'}</p>
                         </div>
-                    </DetailSection>
+                    </div >
                 </div>
             </div>
         </div>

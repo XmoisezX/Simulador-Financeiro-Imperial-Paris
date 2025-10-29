@@ -1,5 +1,6 @@
 import React from 'react';
 import { Bed, Bath, Home, Maximize2, ChevronRight, Image, RefreshCw, Info } from 'lucide-react';
+import ImageCarousel from './ImageCarousel'; // Importando o carrossel
 
 // Interface baseada na estrutura de dados do Supabase (tabela imoveis + primeira midia)
 interface Imovel {
@@ -35,8 +36,8 @@ interface Imovel {
         area_privativa_m2: number; // NOVO CAMPO
     };
     
-    // Mídia (primeira imagem)
-    first_image_url: string | null;
+    // Mídia (lista completa de mídias)
+    imovel_media: { url: string, rotation: number }[];
 }
 
 interface ImovelCardProps {
@@ -61,21 +62,23 @@ const ImovelCard: React.FC<ImovelCardProps> = ({ imovel, onViewDetails }) => {
     const type = imovel.dados_caracteristicas.tipo_imovel;
     
     const defaultImage = '/LOGO LARANJA.png';
-    const imageUrl = imovel.first_image_url || defaultImage;
+    
+    // Mídias visíveis (assumindo que todas as mídias retornadas são visíveis para o CRM)
+    const mediaForCarousel = imovel.imovel_media.map(m => ({ url: m.url, rotation: m.rotation }));
 
     return (
         <div className="flex border border-gray-200 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200 mb-4 relative">
             <div className="flex-shrink-0 w-40 h-40 relative">
-                <img 
-                    src={imageUrl} 
-                    alt={`Imagem do Imóvel ${imovel.codigo}`} 
-                    className="w-full h-full object-cover"
+                <ImageCarousel 
+                    media={mediaForCarousel}
+                    defaultImageUrl={defaultImage}
+                    altText={`Imóvel ${imovel.codigo}`}
                 />
-                <div className="absolute bottom-0 left-0 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded-tr-lg font-semibold">
+                <div className="absolute bottom-0 left-0 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded-tr-lg font-semibold z-10">
                     {imovel.codigo}
                 </div>
                 {!isAvailable && (
-                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
                         <p className="text-white font-bold text-sm rotate-[-15deg]">Indisponível</p>
                     </div>
                 )}

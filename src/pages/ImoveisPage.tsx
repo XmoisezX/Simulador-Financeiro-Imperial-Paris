@@ -21,7 +21,7 @@ interface Imovel {
     dados_valores: any;
     dados_localizacao: any;
     dados_caracteristicas: any;
-    first_image_url: string | null;
+    imovel_media: { url: string, rotation: number }[]; // Alterado para lista completa
 }
 
 // Interface para os detalhes completos (para o modal)
@@ -48,13 +48,13 @@ const ImoveisPage: React.FC = () => {
         setIsLoading(true);
         setError(null);
 
-        // 1. Buscar Imóveis (apenas dados resumidos + primeira imagem)
+        // 1. Buscar Imóveis (dados resumidos + todas as mídias necessárias para o carrossel)
         const { data: imoveisData, error: imovelError } = await supabase
             .from('imoveis')
             .select(`
                 id, codigo, bairro, logradouro, numero, status_aprovacao,
                 dados_contrato, dados_valores, dados_localizacao, dados_caracteristicas,
-                imovel_media(url)
+                imovel_media(url, rotation)
             `)
             .eq('user_id', session.user.id)
             .order('created_at', { ascending: false });
@@ -68,8 +68,9 @@ const ImoveisPage: React.FC = () => {
         
         // 2. Mapear e formatar os dados
         const formattedImoveis: Imovel[] = imoveisData.map((imovel: any) => {
-            // A primeira imagem é a primeira URL da lista de mídias, se houver
-            const firstMedia = imovel.imovel_media?.[0];
+            
+            // Filtra apenas URL e rotation para o carrossel
+            const mediaForCard = imovel.imovel_media.map((m: any) => ({ url: m.url, rotation: m.rotation }));
             
             return {
                 id: imovel.id,
@@ -82,7 +83,7 @@ const ImoveisPage: React.FC = () => {
                 dados_valores: imovel.dados_valores,
                 dados_localizacao: imovel.dados_localizacao,
                 dados_caracteristicas: imovel.dados_caracteristicas,
-                first_image_url: firstMedia ? firstMedia.url : null,
+                imovel_media: mediaForCard, // Passa a lista de mídias
             };
         });
 
@@ -115,8 +116,6 @@ const ImoveisPage: React.FC = () => {
             return;
         }
         
-        // O Supabase retorna os campos JSONB diretamente, e o '*' inclui todos os campos da tabela.
-        // O tipo ImovelDetails é compatível com o retorno.
         setSelectedImovelDetails(data as ImovelDetails);
         setIsModalOpen(true);
         
