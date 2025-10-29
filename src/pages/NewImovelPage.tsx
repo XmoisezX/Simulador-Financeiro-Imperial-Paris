@@ -16,6 +16,8 @@ import ImageCard from '../components/ImageCard';
 import ActionsDropdown from '../components/ActionsDropdown';
 import { uploadImovelMedia, saveMediaMetadata } from '../utils/media'; // Importando utilitários
 import { useUnsavedChangesWarning } from '../hooks/useUnsavedChangesWarning'; // Importando o hook
+import PersonSelect from '../components/PersonSelect'; // NOVO: Importando PersonSelect
+import NewPersonModal from '../components/NewPersonModal'; // NOVO: Importando NewPersonModal
 
 // --- Mock Data ---
 const propertyTypes = [
@@ -104,12 +106,12 @@ const getInitialState = (): ImovelInput => ({
     vis_condominio: 'Invisível',
 
     // Step 5: Dados não visíveis no site
-    proprietario_id: '',
+    proprietario_id: '', // Agora armazena o ID da pessoa
     comissao_proprietario_percent: 100,
     periodo_email_atualizacao: 30,
     enviar_email_atualizacao: true,
-    agenciador_id: '',
-    responsavel_id: '',
+    agenciador_id: '', // Agora armazena o ID da pessoa
+    responsavel_id: '', // Agora armazena o ID da pessoa
     honorarios_venda_percent: 0,
     honorarios_locacao_percent: 0,
     honorarios_temporada_percent: 0,
@@ -323,6 +325,11 @@ const NewImovelPage: React.FC = () => {
             return { ...prev, [id]: newValue };
         });
         setValidationError(null); // Limpa o erro ao digitar
+    }, []);
+    
+    const handlePersonSelectChange = useCallback((id: keyof ImovelInput, personId: string) => {
+        setFormData(prev => ({ ...prev, [id]: personId }));
+        setValidationError(null);
     }, []);
     
     const handleRadioChange = useCallback((name: keyof ImovelInput, value: string) => {
@@ -889,7 +896,14 @@ const NewImovelPage: React.FC = () => {
                 return (
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <TextInput label={<span>Proprietário <RequiredAsterisk /></span>} id="proprietario_id" value={formData.proprietario_id} onChange={handleInputChange} placeholder="Pesquise por: Nome, CPF, Telefone (Mock)" />
+                            <PersonSelect 
+                                label="Proprietário" 
+                                id="proprietario_id" 
+                                value={formData.proprietario_id} 
+                                onChange={(id) => handlePersonSelectChange('proprietario_id', id)}
+                                required
+                                showNewButton // Botão de cadastro rápido
+                            />
                             <NumberInput label="Comissão (%)" id="comissao_proprietario_percent" value={formData.comissao_proprietario_percent} onChange={handleInputChange} placeholder="100%" />
                         </div>
                         <Button variant="outline" className="mt-2">+ Mais um proprietário (Mock)</Button>
@@ -903,8 +917,20 @@ const NewImovelPage: React.FC = () => {
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                            <TextInput label={<span>Agenciador / Captador <RequiredAsterisk /></span>} id="agenciador_id" value={formData.agenciador_id} onChange={handleInputChange} placeholder="Moisez Torres (Mock)" />
-                            <TextInput label={<span>Responsável / Corretor <RequiredAsterisk /></span>} id="responsavel_id" value={formData.responsavel_id} onChange={handleInputChange} placeholder="Alessandro Gomes (Mock)" />
+                            <PersonSelect 
+                                label="Agenciador / Captador" 
+                                id="agenciador_id" 
+                                value={formData.agenciador_id} 
+                                onChange={(id) => handlePersonSelectChange('agenciador_id', id)}
+                                required
+                            />
+                            <PersonSelect 
+                                label="Responsável / Corretor" 
+                                id="responsavel_id" 
+                                value={formData.responsavel_id} 
+                                onChange={(id) => handlePersonSelectChange('responsavel_id', id)}
+                                required
+                            />
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">

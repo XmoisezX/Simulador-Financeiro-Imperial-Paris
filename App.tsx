@@ -9,6 +9,7 @@ import DashboardPage from './src/pages/DashboardPage'; // Novo Dashboard do CRM
 import ImoveisPage from './src/pages/ImoveisPage'; // Nova página de Imóveis
 import NewImovelPage from './src/pages/NewImovelPage'; // Nova página de Cadastro de Imóvel
 import ViewImovelPage from './src/pages/ViewImovelPage'; // Nova página de Visualização/Edição de Imóvel
+import PessoasPage from './src/pages/PessoasPage'; // NOVA ROTA
 import MapTestPage from './src/pages/MapTestPage'; // Nova página de Teste de Mapa
 import CRMLayout from './src/components/CRMLayout'; // Novo Layout
 
@@ -29,13 +30,13 @@ const AppContent: React.FC = () => {
                 <Route path="/crm/dashboard" element={<DashboardPage />} />
                 <Route path="/crm/imoveis" element={<ImoveisPage />} />
                 <Route path="/crm/imoveis/novo" element={<NewImovelPage />} />
-                <Route path="/crm/imoveis/:id" element={<ViewImovelPage />} /> {/* NOVA ROTA */}
+                <Route path="/crm/imoveis/:id" element={<ViewImovelPage />} />
+                <Route path="/crm/pessoas" element={<PessoasPage />} /> {/* NOVA ROTA */}
                 {/* Rotas placeholder para as outras funcionalidades do CRM */}
                 <Route path="/crm/chaves" element={<div className="p-4 text-xl">Página de Chaves (Em construção)</div>} />
                 <Route path="/crm/propostas" element={<div className="p-4 text-xl">Página de Propostas (Em construção)</div>} />
                 <Route path="/crm/leads" element={<div className="p-4 text-xl">Página de Leads (Em construção)</div>} />
                 <Route path="/crm/oportunidades" element={<div className="p-4 text-xl">Página de Oportunidades (Em construção)</div>} />
-                <Route path="/crm/pessoas" element={<div className="p-4 text-xl">Página de Pessoas (Em construção)</div>} />
                 <Route path="/crm/atividades" element={<div className="p-4 text-xl">Página de Atividades (Em construção)</div>} />
                 
                 {/* Ferramentas existentes */}

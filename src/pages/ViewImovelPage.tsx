@@ -18,6 +18,7 @@ import { uploadImovelMedia, saveMediaMetadata } from '../utils/media';
 import ImageCarousel from '../components/ImageCarousel';
 import { useUnsavedChangesWarning } from '../hooks/useUnsavedChangesWarning';
 import { supabase } from '../integrations/supabase/client'; // Importar supabase
+import PersonSelect from '../components/PersonSelect'; // NOVO: Importando PersonSelect
 
 // --- Mock Data ---
 const propertyTypes = [
@@ -246,6 +247,12 @@ const ViewImovelPage: React.FC = () => {
             
             return { ...prev, [id]: newValue };
         });
+        setValidationError(null);
+    }, [formData, isEditing]);
+    
+    const handlePersonSelectChange = useCallback((id: keyof ImovelInput, personId: string) => {
+        if (!formData || !isEditing) return;
+        setFormData(prev => prev ? { ...prev, [id]: personId } : null);
         setValidationError(null);
     }, [formData, isEditing]);
     
@@ -871,7 +878,15 @@ const ViewImovelPage: React.FC = () => {
                 return (
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <TextInput label={<span>Proprietário <RequiredAsterisk /></span>} id="proprietario_id" value={formData.proprietario_id} onChange={handleInputChange} placeholder="Pesquise por: Nome, CPF, Telefone (Mock)" disabled={!isEditing} />
+                            <PersonSelect 
+                                label="Proprietário" 
+                                id="proprietario_id" 
+                                value={formData.proprietario_id} 
+                                onChange={(id) => handlePersonSelectChange('proprietario_id', id)}
+                                required
+                                showNewButton
+                                disabled={!isEditing}
+                            />
                             <NumberInput label="Comissão (%)" id="comissao_proprietario_percent" value={formData.comissao_proprietario_percent} onChange={handleInputChange} placeholder="100%" disabled={!isEditing} />
                         </div>
                         <Button variant="outline" className="mt-2" disabled={!isEditing}>+ Mais um proprietário (Mock)</Button>
@@ -885,8 +900,22 @@ const ViewImovelPage: React.FC = () => {
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                            <TextInput label={<span>Agenciador / Captador <RequiredAsterisk /></span>} id="agenciador_id" value={formData.agenciador_id} onChange={handleInputChange} placeholder="Moisez Torres (Mock)" disabled={!isEditing} />
-                            <TextInput label={<span>Responsável / Corretor <RequiredAsterisk /></span>} id="responsavel_id" value={formData.responsavel_id} onChange={handleInputChange} placeholder="Alessandro Gomes (Mock)" disabled={!isEditing} />
+                            <PersonSelect 
+                                label="Agenciador / Captador" 
+                                id="agenciador_id" 
+                                value={formData.agenciador_id} 
+                                onChange={(id) => handlePersonSelectChange('agenciador_id', id)}
+                                required
+                                disabled={!isEditing}
+                            />
+                            <PersonSelect 
+                                label="Responsável / Corretor" 
+                                id="responsavel_id" 
+                                value={formData.responsavel_id} 
+                                onChange={(id) => handlePersonSelectChange('responsavel_id', id)}
+                                required
+                                disabled={!isEditing}
+                            />
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
@@ -1138,7 +1167,7 @@ const ViewImovelPage: React.FC = () => {
                 return (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-3">
-                            <h3 className="text-sm font-medium text-light-text">Status de aprovação <RequiredAsterisk /></h3>
+                            <h3 className="text-sm font-medium text-light-text">Status de aprovação <RequiredAsterisk /></label>
                             {renderRadioGroup('status_aprovacao', approvalOptions)}
                         </div>
                         <div className="space-y-2">
