@@ -1,11 +1,12 @@
 import React from 'react';
-import { Search, Home, DollarSign, MapPin, CheckCircle, ArrowRight, User } from 'lucide-react';
+import { Search, Home, DollarSign, MapPin, CheckCircle, ArrowRight, User, Loader2 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import TextInput from '../components/TextInput';
 import { Link } from 'react-router-dom';
-import ImovelSearch from '../components/ImovelSearch'; // Importando o novo componente
+import ImovelSearch from '../components/ImovelSearch';
+import { usePublicImoveis } from '../hooks/usePublicImoveis'; // Importando o hook
 
-// Mock Data
+// Mock Data (mantido para as outras seções)
 const stats = [
     { value: '100+', label: 'Imóveis Exclusivos' },
     { value: '15', label: 'Anos de Experiência' },
@@ -13,20 +14,18 @@ const stats = [
     { value: 'Pelotas', label: 'Foco Regional' },
 ];
 
-const featuredProperties = [
-    { id: 1, title: 'Apartamento de Luxo no Laranjal', price: 850000, location: 'Laranjal, Pelotas', beds: 3, baths: 2, area: 120, imageUrl: 'https://via.placeholder.com/400x300/ff6600/ffffff?text=Imovel+1' },
-    { id: 2, title: 'Casa em Condomínio Fechado', price: 420000, location: 'Areal, Pelotas', beds: 4, baths: 3, area: 180, imageUrl: 'https://via.placeholder.com/400x300/3b82f6/ffffff?text=Imovel+2' },
-    { id: 3, title: 'Terreno Comercial no Centro', price: 250000, location: 'Centro, Pelotas', beds: 0, baths: 0, area: 300, imageUrl: 'https://via.placeholder.com/400x300/10b981/ffffff?text=Imovel+3' },
-];
-
 const PublicHomePage: React.FC = () => {
+    const { imoveis, isLoading, error } = usePublicImoveis();
+
+    const formatCurrency = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
     return (
         <div className="bg-white">
-            {/* 1. Seção de Busca (Substitui o Hero) */}
+            {/* 1. Seção de Busca */}
             <ImovelSearch />
 
-            {/* 2. Stats/KPIs Section (Mantido, mas ajustado o margin top) */}
-            <div className="container mx-auto p-8 relative z-10">
+            {/* 2. Stats/KPIs Section */}
+            <div className="container mx-auto p-8 -mt-16 relative z-10">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 bg-white p-6 rounded-xl shadow-lg border-t-4 border-primary-orange">
                     {stats.map((stat, index) => (
                         <div key={index} className="text-center p-3 border-r last:border-r-0 lg:border-r border-gray-200">
@@ -37,34 +36,65 @@ const PublicHomePage: React.FC = () => {
                 </div>
             </div>
 
-            {/* 3. Featured Properties */}
+            {/* 3. Featured Properties (Imóveis em Destaque) */}
             <div className="container mx-auto p-8 mt-8">
                 <h2 className="text-3xl font-bold text-dark-text mb-8 border-b pb-2">Imóveis em Destaque</h2>
+                
+                {isLoading && (
+                    <div className="flex items-center justify-center py-10">
+                        <Loader2 className="w-6 h-6 animate-spin text-primary-orange mr-3" />
+                        <p className="text-gray-600">Carregando imóveis...</p>
+                    </div>
+                )}
+                
+                {error && (
+                    <div className="text-red-600 p-4 bg-red-50 rounded-md">Erro ao carregar destaques: {error}</div>
+                )}
+                
+                {!isLoading && imoveis.length === 0 && (
+                    <div className="text-center py-10 text-gray-500">
+                        <p className="text-lg">Nenhum imóvel aprovado e disponível encontrado para destaque.</p>
+                    </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {featuredProperties.map(prop => (
-                        <div key={prop.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
-                            <div className="h-48 bg-gray-200 relative">
-                                <img src={prop.imageUrl} alt={prop.title} className="w-full h-full object-cover" />
-                                <div className="absolute top-2 right-2 bg-primary-orange text-white text-xs font-semibold px-3 py-1 rounded-full">
-                                    Venda
+                    {imoveis.map(prop => {
+                        const isVenda = prop.dados_contrato.venda_ativo && prop.dados_contrato.venda_disponibilidade === 'Disponível';
+                        const isLocacao = prop.dados_contrato.locacao_ativo && prop.dados_contrato.locacao_disponibilidade === 'Disponível';
+                        
+                        const price = isVenda ? prop.dados_valores.valor_venda : prop.dados_valores.valor_locacao;
+                        const operationType = isVenda ? 'Venda' : (isLocacao ? 'Locação' : 'Indefinido');
+                        const imageUrl = prop.imagens_imovel?.[0]?.url || 'https://via.placeholder.com/400x300/ff6600/ffffff?text=Sem+Foto';
+                        
+                        const title = `${prop.dados_caracteristicas.tipo_imovel} ${operationType} - Cód: ${prop.codigo}`;
+                        
+                        return (
+                            <div key={prop.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                                <div className="h-48 bg-gray-200 relative">
+                                    <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
+                                    <div className="absolute top-2 right-2 bg-primary-orange text-white text-xs font-semibold px-3 py-1 rounded-full">
+                                        {operationType}
+                                    </div>
+                                </div>
+                                <div className="p-4 space-y-2">
+                                    <h3 className="text-lg font-semibold text-dark-text truncate">{title}</h3>
+                                    <p className="text-2xl font-bold text-primary-orange">{formatCurrency(price)}</p>
+                                    <div className="flex items-center text-sm text-light-text space-x-4">
+                                        <span className="flex items-center"><MapPin className="w-4 h-4 mr-1" /> {prop.bairro}, {prop.logradouro}</span>
+                                    </div>
+                                    <div className="flex items-center text-sm text-dark-text space-x-4 border-t pt-2">
+                                        <span className="flex items-center"><Home className="w-4 h-4 mr-1" /> {prop.dados_caracteristicas.area_privativa_m2} m²</span>
+                                        <span className="flex items-center"><DollarSign className="w-4 h-4 mr-1" /> {prop.dados_caracteristicas.dormitorios} Dorms</span>
+                                    </div>
+                                    <Link to={`/imoveis/${prop.id}`}>
+                                        <Button variant="outline" className="w-full mt-3 text-blue-600 border-blue-600 hover:bg-blue-50">
+                                            Ver Detalhes <ArrowRight className="w-4 h-4 ml-2" />
+                                        </Button>
+                                    </Link>
                                 </div>
                             </div>
-                            <div className="p-4 space-y-2">
-                                <h3 className="text-lg font-semibold text-dark-text truncate">{prop.title}</h3>
-                                <p className="text-2xl font-bold text-primary-orange">{prop.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
-                                <div className="flex items-center text-sm text-light-text space-x-4">
-                                    <span className="flex items-center"><MapPin className="w-4 h-4 mr-1" /> {prop.location}</span>
-                                </div>
-                                <div className="flex items-center text-sm text-dark-text space-x-4 border-t pt-2">
-                                    <span className="flex items-center"><Home className="w-4 h-4 mr-1" /> {prop.area} m²</span>
-                                    <span className="flex items-center"><DollarSign className="w-4 h-4 mr-1" /> Financiável</span>
-                                </div>
-                                <Button variant="outline" className="w-full mt-3 text-blue-600 border-blue-600 hover:bg-blue-50">
-                                    Ver Detalhes <ArrowRight className="w-4 h-4 ml-2" />
-                                </Button>
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
                 <div className="text-center mt-10">
                     <Button className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-3">

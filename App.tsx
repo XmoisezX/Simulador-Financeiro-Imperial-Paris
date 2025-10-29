@@ -14,6 +14,7 @@ import MapTestPage from './src/pages/MapTestPage';
 import CRMLayout from './src/components/CRMLayout';
 import PublicHomePage from './src/pages/PublicHomePage'; // NOVA PÁGINA
 import PublicLayout from './src/layouts/PublicLayout'; // NOVO LAYOUT
+import PublicImovelDetailsPage from './src/pages/PublicImovelDetailsPage'; // NOVO
 
 const AppContent: React.FC = () => {
     const { session } = useAuth();
@@ -26,6 +27,7 @@ const AppContent: React.FC = () => {
                 <Route path="/login" element={<LoginPage />} />
                 {/* Rotas públicas mockadas */}
                 <Route path="/imoveis" element={<PublicLayout><div className="p-8 text-xl">Página de Imóveis (Mock)</div></PublicLayout>} />
+                <Route path="/imoveis/:id" element={<PublicLayout><PublicImovelDetailsPage /></PublicLayout>} />
                 <Route path="/sobre" element={<PublicLayout><div className="p-8 text-xl">Página Sobre Nós (Mock)</div></PublicLayout>} />
                 <Route path="/contato" element={<PublicLayout><div className="p-8 text-xl">Página de Contato (Mock)</div></PublicLayout>} />
                 
