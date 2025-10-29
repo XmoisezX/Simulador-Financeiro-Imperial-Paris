@@ -9,6 +9,7 @@ interface Profile {
     role: string | null;
     company_name: string | null;
     avatar_url: string | null;
+    phone: string | null; // Campo adicionado
 }
 
 interface UpdateProfileData {
@@ -16,6 +17,7 @@ interface UpdateProfileData {
     role?: string;
     company_name?: string;
     avatar_url?: string;
+    phone?: string; // Campo adicionado
 }
 
 export const useProfile = () => {
@@ -36,15 +38,13 @@ export const useProfile = () => {
 
         const { data, error } = await supabase
             .from('profiles')
-            .select('id, full_name, email, role, company_name, avatar_url')
+            .select('id, full_name, email, role, company_name, avatar_url, phone') // Selecionando o novo campo
             .eq('id', session.user.id)
             .single();
 
-        if (error) {
+        if (error && error.code !== 'PGRST116') { // Ignora erro "Row not found"
             console.error('Error fetching profile:', error);
-            // Se o erro for "Row not found", pode ser que o trigger não tenha rodado.
-            // Não definimos um erro fatal aqui para permitir que o usuário continue.
-            setProfile(null);
+            setError(error.message);
         } else {
             setProfile(data as Profile);
         }
@@ -63,30 +63,28 @@ export const useProfile = () => {
 
         setError(null);
         
-        // Adiciona updated_at para garantir que o registro seja atualizado
-        const updatesWithTimestamp = {
+        const profileData = {
+            id: session.user.id, // Essencial para o upsert
+            email: session.user.email, // Garante que o email esteja presente
             ...updates,
             updated_at: new Date().toISOString(),
         };
 
+        // Usar upsert para criar o perfil se ele não existir, ou atualizá-lo se existir.
         const { error } = await supabase
             .from('profiles')
-            .update(updatesWithTimestamp)
-            .eq('id', session.user.id);
+            .upsert(profileData);
 
         if (error) {
-            console.error('Error updating profile:', error);
+            console.error('Error upserting profile:', error);
             setError(`Erro ao atualizar o perfil: ${error.message}`);
             return false;
         }
 
-        // Atualiza o estado local após o sucesso
-        setProfile(prev => ({
-            ...(prev as Profile),
-            ...updates,
-        }));
+        // Após um upsert bem-sucedido, buscamos os dados novamente para garantir consistência.
+        await fetchProfile();
         return true;
-    }, [session?.user.id]);
+    }, [session?.user.id, fetchProfile]);
 
     return { profile, isLoading, error, updateProfile, fetchProfile };
 };

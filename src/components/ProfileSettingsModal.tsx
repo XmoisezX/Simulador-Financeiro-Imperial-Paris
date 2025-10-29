@@ -18,6 +18,7 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
     const [fullName, setFullName] = useState('');
     const [role, setRole] = useState('');
     const [companyName, setCompanyName] = useState('');
+    const [phone, setPhone] = useState(''); // Novo estado para o telefone
     const [isUpdating, setIsUpdating] = useState(false);
     const [updateError, setUpdateError] = useState<string | null>(null);
     const [updateSuccess, setUpdateSuccess] = useState(false);
@@ -27,8 +28,15 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
             setFullName(profile.full_name || '');
             setRole(profile.role || '');
             setCompanyName(profile.company_name || 'IMPERIAL PARIS');
+            setPhone(profile.phone || ''); // Atualiza o estado do telefone
+        } else if (session) {
+            // Preenche com dados padrão se o perfil ainda não existir
+            setFullName('');
+            setRole('');
+            setCompanyName('IMPERIAL PARIS');
+            setPhone('');
         }
-    }, [profile]);
+    }, [profile, session]);
 
     const handleSave = useCallback(async () => {
         if (!fullName.trim()) {
@@ -44,27 +52,23 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
             full_name: fullName.trim(),
             role: role.trim(),
             company_name: companyName.trim(),
+            phone: phone.trim(), // Inclui o telefone no objeto de atualização
         });
 
         setIsUpdating(false);
         if (success) {
             setUpdateSuccess(true);
-            // Força o refresh do perfil no dropdown após o sucesso
-            fetchProfile(); 
             setTimeout(() => setUpdateSuccess(false), 3000);
         } else {
             setUpdateError('Falha ao salvar as informações.');
         }
-    }, [fullName, role, companyName, updateProfile, fetchProfile]);
+    }, [fullName, role, companyName, phone, updateProfile]);
     
     const handleAvatarUpdate = useCallback(async (newUrl: string) => {
         const success = await updateProfile({ avatar_url: newUrl });
-        if (success) {
-            fetchProfile(); // Recarrega o perfil para garantir a URL atualizada
-            return true;
-        }
-        return false;
-    }, [updateProfile, fetchProfile]);
+        // O fetchProfile já é chamado dentro do updateProfile, então não precisamos chamar de novo.
+        return success;
+    }, [updateProfile]);
 
     if (!isOpen) return null;
 
@@ -79,7 +83,6 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
                 </div>
 
                 <div className="p-6 space-y-6">
-                    {/* Seção de Avatar */}
                     <div className="border p-4 rounded-lg bg-gray-50">
                         <h3 className="text-lg font-semibold text-dark-text mb-3">Foto de Perfil</h3>
                         <AvatarUploader 
@@ -87,18 +90,16 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
                             onUploadSuccess={handleAvatarUpdate}
                             disabled={isUpdating}
                         />
-                        <p className="text-xs text-gray-500 mt-2">Formatos: JPG, PNG, WEBP. Máx: 5MB. (Requer bucket 'avatars' no Supabase Storage)</p>
+                        <p className="text-xs text-gray-500 mt-2">Formatos: JPG, PNG, WEBP. Máx: 5MB.</p>
                     </div>
 
-                    {/* Informações Básicas */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <TextInput 
-                            label={<span>Nome Completo</span>} 
+                            label={<span>Nome Completo <span className="text-red-500">*</span></span>} 
                             id="fullName" 
                             value={fullName} 
                             onChange={(e) => setFullName(e.target.value)} 
                             placeholder="Seu nome completo"
-                            icon={<User className="w-4 h-4 text-gray-500" />}
                         />
                         <TextInput 
                             label={<span>E-mail Empresarial</span>} 
@@ -106,7 +107,6 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
                             value={session?.user.email || ''} 
                             disabled
                             placeholder="email@empresa.com"
-                            icon={<Mail className="w-4 h-4 text-gray-500" />}
                         />
                     </div>
                     
@@ -117,7 +117,6 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
                             value={role} 
                             onChange={(e) => setRole(e.target.value)} 
                             placeholder="Corretor, Gerente, etc."
-                            icon={<Briefcase className="w-4 h-4 text-gray-500" />}
                         />
                         <TextInput 
                             label={<span>Nome da Empresa</span>} 
@@ -125,27 +124,23 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
                             value={companyName} 
                             onChange={(e) => setCompanyName(e.target.value)} 
                             placeholder="IMPERIAL PARIS"
-                            icon={<Briefcase className="w-4 h-4 text-gray-500" />}
                         />
                     </div>
 
-                    {/* Outras Configurações (Mock) */}
-                    <h3 className="text-lg font-semibold text-dark-text pt-4 border-t border-gray-100">Segurança e Preferências</h3>
+                    <h3 className="text-lg font-semibold text-dark-text pt-4 border-t border-gray-100">Contato e Preferências</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <TextInput 
                             label={<span>Telefone</span>} 
                             id="phone" 
-                            value="(53) 99999-9999" 
-                            placeholder="Telefone"
-                            icon={<Phone className="w-4 h-4 text-gray-500" />}
-                            disabled
+                            value={phone} 
+                            onChange={(e) => setPhone(e.target.value)} // Campo agora é editável
+                            placeholder="(53) 99999-9999"
                         />
                         <TextInput 
                             label={<span>Idioma</span>} 
                             id="language" 
                             value="Português (Brasil)" 
                             placeholder="Idioma"
-                            icon={<Globe className="w-4 h-4 text-gray-500" />}
                             disabled
                         />
                     </div>
@@ -155,8 +150,8 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
                 </div>
 
                 <div className="p-6 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
-                    {updateError && <p className="text-red-600 self-center mr-4">{updateError}</p>}
-                    {updateSuccess && <p className="text-green-600 self-center mr-4">Salvo com sucesso!</p>}
+                    {updateError && <p className="text-red-600 self-center mr-4 text-sm">{updateError}</p>}
+                    {updateSuccess && <p className="text-green-600 self-center mr-4 text-sm">Salvo com sucesso!</p>}
                     
                     <Button variant="outline" onClick={onClose} disabled={isUpdating}>
                         Cancelar
