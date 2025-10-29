@@ -1,8 +1,7 @@
 import React, { useMemo, lazy, Suspense } from 'react';
 import { MapPin, XCircle, Loader2 } from 'lucide-react';
-
-// Importação dinâmica do MapWrapper para garantir que o Leaflet só seja carregado no cliente
-const MapWrapper = lazy(() => import('./MapWrapper'));
+import ClientOnly from './ClientOnly';
+import LeafletMap from './LeafletMap'; // Importando o componente puro
 
 interface MapDisplayProps {
     visibilidade: 'Exata' | 'Aproximada' | 'Não mostrar';
@@ -72,23 +71,18 @@ const MapDisplay: React.FC<MapDisplayProps> = ({ visibilidade, isValid, location
         );
     }
 
-    // Renderiza o mapa real usando Suspense e Lazy Loading
+    // Renderiza o mapa real dentro do ClientOnly
     return (
-        <div className="relative h-64 rounded-md mt-4">
-            <Suspense fallback={
-                <div className="relative h-64 bg-gray-200 rounded-md flex items-center justify-center">
-                    <Loader2 className="w-8 h-8 mx-auto mb-2 animate-spin text-blue-600" />
-                    <p className="ml-3 text-gray-600">Carregando mapa...</p>
-                </div>
-            }>
-                <MapWrapper 
+        <ClientOnly>
+            <div className="relative h-64 rounded-md mt-4">
+                <LeafletMap 
                     location={location} 
                     visibilidade={visibilidade} 
                     center={center} 
                     zoom={zoom} 
                 />
-            </Suspense>
-        </div>
+            </div>
+        </ClientOnly>
     );
 };
 
