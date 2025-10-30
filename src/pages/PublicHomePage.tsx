@@ -20,7 +20,7 @@ const stats = [
 ];
 
 const PublicHomePage: React.FC = () => {
-    const { imoveis, isLoading: isImoveisLoading } = usePublicImoveis();
+    const { imoveis, isLoading: isImoveisLoading, error } = usePublicImoveis();
     const { position: bannerPosition, isLoading: isPositionLoading } = useBannerPosition(); // Usando o novo hook
 
     const formatCurrency = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
