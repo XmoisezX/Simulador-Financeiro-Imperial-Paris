@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Home, Building2, Loader2, Plus } from 'lucide-react';
+import { Home, Building2, Loader2, Plus, MapPin, List, FileText, Image, CheckCircle, Zap, Lock, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { CondominioInput, CondominioMedia } from '../../types';
 import { useAuth } from '../contexts/AuthContext';
