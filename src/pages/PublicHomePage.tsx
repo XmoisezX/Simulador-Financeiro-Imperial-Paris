@@ -7,7 +7,7 @@ import FloatingSearchForm from '../components/FloatingSearchForm'; // NOVO COMPO
 import { usePublicImoveis } from '../hooks/usePublicImoveis'; // Importando o hook
 import { useBannerPosition } from '../hooks/useBannerPosition'; // NOVO HOOK
 import ClientOnly from '../components/ClientOnly'; // Importando ClientOnly
-import { DeviceType, ImageTransform } from '../components/ImageEditor';
+import { DeviceType, ImageTransform } from '../components/ImageManipulator';
 
 // URL pública da imagem no Supabase Storage
 const SUPABASE_HERO_IMAGE_URL = "https://pqievwbfrbiqhvdyalrh.supabase.co/storage/v1/object/public/imovel-media/hero-background.png";
@@ -24,6 +24,7 @@ const PublicHomePage: React.FC = () => {
     const { imoveis, isLoading: isImoveisLoading, error } = usePublicImoveis();
     const { settings, isLoading: isSettingsLoading } = useBannerPosition(); 
     const [currentTransform, setCurrentTransform] = useState<ImageTransform | null>(null);
+    const [currentDevice, setCurrentDevice] = useState<DeviceType>('desktop'); // Adicionado estado de dispositivo
 
     const formatCurrency = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     
@@ -39,6 +40,7 @@ const PublicHomePage: React.FC = () => {
 
         const updateTransform = () => {
             const device = getDevice();
+            setCurrentDevice(device);
             setCurrentTransform(settings[device]);
         };
 
@@ -47,12 +49,38 @@ const PublicHomePage: React.FC = () => {
         return () => window.removeEventListener('resize', updateTransform);
     }, [settings, isSettingsLoading]);
     
-    const heroStyle: React.CSSProperties = {
+    let heroStyle: React.CSSProperties = {
         backgroundImage: `url('${SUPABASE_HERO_IMAGE_URL}')`,
-        backgroundSize: currentTransform ? `${currentTransform.scale * 100}%` : 'cover',
-        backgroundPosition: currentTransform ? `${50 + currentTransform.offsetX}% ${50 + currentTransform.offsetY}%` : 'center',
-        minHeight: '650px'
+        minHeight: '650px',
     };
+    
+    if (currentTransform) {
+        if (currentDevice === 'desktop' && currentTransform.scale === 1.0) {
+            // Se for desktop e o zoom for 1.0 (padrão de "sem zoom"), usamos contain
+            heroStyle = {
+                ...heroStyle,
+                backgroundSize: 'contain',
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'center center',
+            };
+        } else {
+            // Para outros casos (mobile, tablet, ou zoom aplicado), usamos a lógica de cover/manipulação
+            heroStyle = {
+                ...heroStyle,
+                backgroundSize: `${currentTransform.scale * 100}%`,
+                backgroundPosition: `${50 + currentTransform.offsetX}% ${50 + currentTransform.offsetY}%`,
+                backgroundRepeat: 'no-repeat',
+            };
+        }
+    } else {
+        // Fallback se as configurações ainda não carregaram
+        heroStyle = {
+            ...heroStyle,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+        };
+    }
+
 
     return (
         <div className="bg-white">

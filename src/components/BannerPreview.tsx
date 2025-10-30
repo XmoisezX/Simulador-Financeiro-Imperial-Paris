@@ -1,6 +1,6 @@
 import React from 'react';
 import FloatingSearchForm from './FloatingSearchForm';
-import { DeviceType, ImageTransform } from './ImageEditor';
+import { DeviceType, ImageTransform } from './ImageManipulator';
 
 // URL pública da imagem no Supabase Storage
 const SUPABASE_HERO_IMAGE_URL = "https://pqievwbfrbiqhvdyalrh.supabase.co/storage/v1/object/public/imovel-media/hero-background.png";
@@ -15,15 +15,29 @@ const BannerPreview: React.FC<BannerPreviewProps> = ({ device, transform, imageU
     
     const { scale, offsetX, offsetY } = transform;
 
-    // Estilos dinâmicos para a imagem de fundo
-    const heroStyle: React.CSSProperties = {
+    let heroStyle: React.CSSProperties = {
         backgroundImage: `url('${imageUrl}')`,
-        backgroundSize: `${scale * 100}%`,
-        backgroundPosition: `${50 + offsetX}% ${50 + offsetY}%`,
         minHeight: '650px',
-        // Garante que o background seja fixo para simular o comportamento de capa
         backgroundAttachment: 'scroll', 
     };
+    
+    if (device === 'desktop' && scale === 1.0) {
+        // Se for desktop e o zoom for 1.0, usamos contain para mostrar a imagem inteira
+        heroStyle = {
+            ...heroStyle,
+            backgroundSize: 'contain',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center center',
+        };
+    } else {
+        // Para outros casos, usamos a manipulação de zoom/offset
+        heroStyle = {
+            ...heroStyle,
+            backgroundSize: `${scale * 100}%`,
+            backgroundPosition: `${50 + offsetX}% ${50 + offsetY}%`,
+            backgroundRepeat: 'no-repeat',
+        };
+    }
     
     // Dimensões simuladas para o preview
     const deviceClasses: Record<DeviceType, string> = {
