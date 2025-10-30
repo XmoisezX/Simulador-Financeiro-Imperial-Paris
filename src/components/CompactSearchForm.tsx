@@ -36,8 +36,8 @@ interface CompactSearchFormProps {
 
 const CompactSearchForm: React.FC<CompactSearchFormProps> = ({ initialFilters = {}, onFilterChange }) => {
     const [filters, setFilters] = useState<FilterState>({ ...defaultInitialFilters, ...initialFilters });
-    const [isFiltersOpen, setIsFiltersOpen] = useState(true); // Começa aberto por padrão
-
+    const [isFiltersOpen, setIsFiltersOpen] = useState(false); // Alterado para FALSE
+    
     // Sincroniza o estado interno se as props iniciais mudarem (ex: ao navegar com novos params)
     useEffect(() => {
         setFilters(prev => ({ ...defaultInitialFilters, ...prev, ...initialFilters }));
