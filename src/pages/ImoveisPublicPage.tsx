@@ -6,6 +6,7 @@ import ClientOnly from '../components/ClientOnly';
 import { Button } from '../components/ui/Button';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import FloatingSearchForm from '../components/FloatingSearchForm'; // Importando o formulário
 
 // Ícone customizado para o mapa
 const CustomIcon = L.divIcon({
@@ -156,14 +157,18 @@ const ImoveisPublicPage: React.FC = () => {
         // 1. Destaca no mapa
         setHighlightedId(id);
         // 2. Navega para a página de detalhes
+        // navigate(`/imoveis/${id}`); // Comentado para permitir apenas o destaque no mapa
+    }, []);
+    
+    const handleViewDetails = useCallback((id: string) => {
         navigate(`/imoveis/${id}`);
     }, [navigate]);
 
     return (
-        <div className="flex flex-col lg:flex-row min-h-[calc(100vh-150px)] pt-[100px] bg-gray-50">
+        <div className="flex flex-col lg:grid lg:grid-cols-3 min-h-[calc(100vh-150px)] pt-[100px] bg-gray-50">
             
-            {/* Lista Lateral (Esquerda) */}
-            <div className="w-full lg:w-1/3 lg:max-w-md flex-shrink-0 overflow-y-auto p-4 sm:p-6 space-y-6 bg-white shadow-lg lg:shadow-none">
+            {/* Coluna 1: Lista de Imóveis */}
+            <div className="w-full flex-shrink-0 overflow-y-auto p-4 sm:p-6 space-y-6 bg-white shadow-lg lg:shadow-none lg:col-span-1">
                 <h1 className="text-2xl font-bold text-dark-text flex items-center">
                     <Home className="w-5 h-5 mr-2 text-primary-orange" /> Imóveis para Venda ({imoveis.length})
                 </h1>
@@ -180,12 +185,13 @@ const ImoveisPublicPage: React.FC = () => {
 
                 <div className="space-y-4">
                     {imoveis.map(imovel => (
-                        <ImovelListItem 
-                            key={imovel.id}
-                            imovel={imovel}
-                            isHighlighted={imovel.id === highlightedId}
-                            onClick={handleListItemClick}
-                        />
+                        <div key={imovel.id} onClick={() => handleViewDetails(imovel.id)}>
+                            <ImovelListItem 
+                                imovel={imovel}
+                                isHighlighted={imovel.id === highlightedId}
+                                onClick={handleListItemClick}
+                            />
+                        </div>
                     ))}
                 </div>
                 
@@ -195,9 +201,16 @@ const ImoveisPublicPage: React.FC = () => {
                     </div>
                 )}
             </div>
+            
+            {/* Coluna 2: Formulário de Busca (FloatingSearchForm) */}
+            <div className="w-full flex-shrink-0 p-4 sm:p-6 lg:col-span-1 bg-gray-50">
+                <div className="sticky top-[100px]">
+                    <FloatingSearchForm isPreview={false} />
+                </div>
+            </div>
 
-            {/* Mapa (Direita) */}
-            <div className="flex-1 h-[50vh] lg:h-auto lg:sticky lg:top-[88px] lg:flex-grow">
+            {/* Coluna 3: Mapa */}
+            <div className="lg:col-span-1 h-[50vh] lg:h-auto lg:sticky lg:top-[88px] lg:flex-grow">
                 <ClientOnly fallback={
                     <div className="flex items-center justify-center h-full bg-gray-200">
                         <Loader2 className="w-8 h-8 animate-spin text-primary-orange" />
