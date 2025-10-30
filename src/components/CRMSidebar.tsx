@@ -154,7 +154,7 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                 </div>
             </aside>
             
-            {/* Sidebar para Mobile (Overlay) - Mantém o fundo branco para melhor legibilidade no overlay */}
+            {/* Sidebar para Mobile (Overlay) - A prop isSidebarOpen é sempre true aqui */}
             <aside className={`
                 ${mobileClasses} 
                 bg-white border-r border-gray-200 flex-shrink-0 overflow-y-auto h-full 
@@ -169,24 +169,24 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                     </div>
                     
                     <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1 px-3">Navegação</h3>
-                    <NavItem to="/crm/dashboard" icon={<Home className="w-5 h-5" />} label="Início" isSidebarOpen={false} onClick={handleNavClick} />
+                    <NavItem to="/crm/dashboard" icon={<Home className="w-5 h-5" />} label="Início" isSidebarOpen={true} onClick={handleNavClick} />
                     
                     <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1 px-3">Imóveis & Vendas</h3>
-                    <NavItem to="/crm/imoveis" icon={<Building className="w-5 h-5" />} label="Imóveis" isSidebarOpen={false} onClick={handleNavClick} />
-                    <NavItem to="/crm/chaves" icon={<Key className="w-5 h-5" />} label="Chaves" isSidebarOpen={false} onClick={handleNavClick} />
-                    <NavItem to="/crm/propostas" icon={<FileText className="w-5 h-5" />} label="Propostas" isSidebarOpen={false} onClick={handleNavClick} />
-                    <NavItem to="/crm/leads" icon={<Zap className="w-5 h-5" />} label="Leads" isSidebarOpen={false} onClick={handleNavClick} />
-                    <NavItem to="/crm/oportunidades" icon={<Briefcase className="w-5 h-5" />} label="Oportunidades" isSidebarOpen={false} onClick={handleNavClick} />
+                    <NavItem to="/crm/imoveis" icon={<Building className="w-5 h-5" />} label="Imóveis" isSidebarOpen={true} onClick={handleNavClick} />
+                    <NavItem to="/crm/chaves" icon={<Key className="w-5 h-5" />} label="Chaves" isSidebarOpen={true} onClick={handleNavClick} />
+                    <NavItem to="/crm/propostas" icon={<FileText className="w-5 h-5" />} label="Propostas" isSidebarOpen={true} onClick={handleNavClick} />
+                    <NavItem to="/crm/leads" icon={<Zap className="w-5 h-5" />} label="Leads" isSidebarOpen={true} onClick={handleNavClick} />
+                    <NavItem to="/crm/oportunidades" icon={<Briefcase className="w-5 h-5" />} label="Oportunidades" isSidebarOpen={true} onClick={handleNavClick} />
                     
                     <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1 px-3">Pessoas & Rotinas</h3>
-                    <NavItem to="/crm/pessoas" icon={<Users className="w-5 h-5" />} label="Pessoas" isSidebarOpen={false} onClick={handleNavClick} />
-                    <NavItem to="/crm/atividades" icon={<CalendarCheck className="w-5 h-5" />} label="Atividades" isSidebarOpen={false} onClick={handleNavClick} />
+                    <NavItem to="/crm/pessoas" icon={<Users className="w-5 h-5" />} label="Pessoas" isSidebarOpen={true} onClick={handleNavClick} />
+                    <NavItem to="/crm/atividades" icon={<CalendarCheck className="w-5 h-5" />} label="Atividades" isSidebarOpen={true} onClick={handleNavClick} />
                     
                     <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1 px-3">Ferramentas</h3>
-                    <NavItem to="/simulador" icon={<DollarSign className="w-5 h-5" />} label="Simulador Financeiro" isSidebarOpen={false} onClick={handleNavClick} />
-                    <NavItem to="/analise-de-mercado" icon={<Building className="w-5 h-5" />} label="Análise de Mercado" isSidebarOpen={false} onClick={handleNavClick} />
-                    <NavItem to="/metas-agenciamento" icon={<Target className="w-5 h-5" />} label="Metas Agenciamento" isSidebarOpen={false} onClick={handleNavClick} />
-                    <NavItem to="/mapa-teste" icon={<Map className="w-5 h-5" />} label="Teste de Mapa" isSidebarOpen={false} onClick={handleNavClick} />
+                    <NavItem to="/simulador" icon={<DollarSign className="w-5 h-5" />} label="Simulador Financeiro" isSidebarOpen={true} onClick={handleNavClick} />
+                    <NavItem to="/analise-de-mercado" icon={<Building className="w-5 h-5" />} label="Análise de Mercado" isSidebarOpen={true} onClick={handleNavClick} />
+                    <NavItem to="/metas-agenciamento" icon={<Target className="w-5 h-5" />} label="Metas Agenciamento" isSidebarOpen={true} onClick={handleNavClick} />
+                    <NavItem to="/mapa-teste" icon={<Map className="w-5 h-5" />} label="Teste de Mapa" isSidebarOpen={true} onClick={handleNavClick} />
                     
                     <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1 px-3">Administração</h3>
                     <div className="relative">
@@ -205,8 +205,8 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                         
                         {isSystemOpen && (
                             <div className="pl-4 pt-1 space-y-1">
-                                <NavItem to="/crm/sistema/site" icon={<Globe className="w-5 h-5" />} label="Site" isSidebarOpen={false} onClick={handleNavClick} />
-                                <NavItem to="/crm/sistema/geral" icon={<Settings className="w-5 h-5" />} label="Geral (Mock)" isSidebarOpen={false} onClick={handleNavClick} />
+                                <NavItem to="/crm/sistema/site" icon={<Globe className="w-5 h-5" />} label="Site" isSidebarOpen={true} onClick={handleNavClick} />
+                                <NavItem to="/crm/sistema/geral" icon={<Settings className="w-5 h-5" />} label="Geral (Mock)" isSidebarOpen={true} onClick={handleNavClick} />
                             </div>
                         )}
                     </div>
