@@ -250,6 +250,14 @@ export const useBannerPosition = () => {
                         path="src/hooks/useBannerPosition.ts"
                         description="Atualizando as configurações estáticas do banner no código."
                     >
-{`
-${pendingCodeToWrite}
-`}
+                    {`
+                    ${pendingCodeToWrite}
+                    `}
+                    </dyad-write>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default BannerUploader;
