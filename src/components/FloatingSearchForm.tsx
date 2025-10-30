@@ -94,9 +94,9 @@ const FloatingSearchForm: React.FC = () => {
     return (
         <form onSubmit={handleSearch} className="w-full max-w-md bg-white p-8 rounded-xl shadow-2xl">
             
-            <h1 className="text-2xl font-bold text-blue-800">A sua imobiliária</h1>
+            <h1 className="text-2xl font-bold text-blue-800">A imobiliária que mais cresce em Pelotas</h1>
             <h2 className="text-3xl font-bold text-blue-800 mb-2">Encontre seu imóvel</h2>
-            <p className="text-lg text-light-text mb-6">São mais de 3243 opções disponíveis.</p>
+            <p className="text-lg text-light-text mb-6">São mais de 1500 opções disponíveis.</p>
 
             {/* Abas de Operação */}
             <div className="flex border-b border-gray-200 mb-6">
