@@ -14,7 +14,7 @@ const PublicHeader: React.FC = () => {
     };
 
     return (
-        <header className="fixed top-0 left-0 right-0 z-20 bg-white/50 backdrop-blur-sm">
+        <header className="fixed top-0 left-0 right-0 z-20 backdrop-blur-sm">
             {/* Barra Principal (Logo e Navegação) */}
             <div className="container mx-auto p-4 flex items-center justify-between">
                 <Link to="/" className="flex items-center">
