@@ -5,6 +5,7 @@ import { supabase } from '../integrations/supabase/client';
 import ImageCarousel from '../components/ImageCarousel';
 import ClientOnly from '../components/ClientOnly';
 import LeafletMap from '../components/LeafletMap';
+import { Button } from '../components/ui/Button'; // Importação adicionada
 
 // Interface para os detalhes completos (baseada na estrutura do banco)
 interface ImovelDetails {
