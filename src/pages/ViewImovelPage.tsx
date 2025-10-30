@@ -484,6 +484,15 @@ const ViewImovelPage: React.FC = () => {
 
     const allSteps = Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1);
 
+    if (isLoadingData || !formData) {
+        return (
+            <div className="p-8 flex items-center justify-center min-h-[500px]">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600 mr-3" />
+                <p className="text-gray-600">Carregando dados do imóvel...</p>
+            </div>
+        );
+    }
+
     return (
         <div className="p-4 sm:p-6 lg:p-8 animate-fade-in space-y-6">
             <h1 className="text-2xl font-bold text-dark-text flex items-center">
