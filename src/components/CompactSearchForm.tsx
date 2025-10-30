@@ -44,9 +44,9 @@ const CompactSearchForm: React.FC = () => {
         // Aqui a lógica real de filtragem da lista seria implementada
     };
     
-    // Ajustado para ocupar a largura total do container
+    // Ajustado para ser flexível em largura
     const renderSelect = (name: keyof FilterState, options: (string | number)[], placeholder: string) => (
-        <div className="relative w-full">
+        <div className="relative flex-1 min-w-[100px]">
             <select
                 id={name}
                 name={name}
@@ -65,9 +65,9 @@ const CompactSearchForm: React.FC = () => {
         </div>
     );
     
-    // Ajustado para ocupar a largura total do container
+    // Ajustado para ser flexível em largura
     const renderPriceInput = (name: keyof FilterState, placeholder: string) => (
-        <div className="relative w-full">
+        <div className="relative flex-1 min-w-[80px]">
             <input
                 type="text"
                 name={name}
@@ -80,7 +80,11 @@ const CompactSearchForm: React.FC = () => {
     );
 
     return (
-        <form onSubmit={handleSearch} className="w-full bg-white p-4 rounded-lg shadow-md border border-gray-100 space-y-4">
+        <form 
+            onSubmit={handleSearch} 
+            className="w-full bg-white p-4 rounded-lg shadow-md border border-gray-100 space-y-3"
+            style={{ maxWidth: '350px', maxHeight: '300px', overflowY: 'auto' }}
+        >
             
             <h2 className="text-lg font-bold text-dark-text border-b pb-2">Filtros de Busca</h2>
             
@@ -110,8 +114,8 @@ const CompactSearchForm: React.FC = () => {
                 </button>
             </div>
 
-            {/* Campos de Filtro Verticais */}
-            <div className="space-y-3">
+            {/* Campos de Filtro (Horizontal em telas pequenas, mas forçado a quebrar em 2 colunas para caber na largura máxima) */}
+            <div className="grid grid-cols-2 gap-3">
                 
                 {/* Bairro */}
                 {renderSelect('neighborhood', neighborhoods, 'Bairro')}
@@ -126,19 +130,20 @@ const CompactSearchForm: React.FC = () => {
                 {renderSelect('garages', roomOptions, 'Vagas')}
                 
                 {/* Preço Mínimo */}
-                {renderPriceInput('minPrice', 'Preço Mínimo')}
+                {renderPriceInput('minPrice', 'R$ Mín')}
                 
                 {/* Preço Máximo */}
-                {renderPriceInput('maxPrice', 'Preço Máximo')}
+                {renderPriceInput('maxPrice', 'R$ Máx')}
                 
-                {/* Botão de Busca */}
-                <Button
-                    type="submit"
-                    className="w-full bg-primary-orange hover:bg-secondary-orange text-white font-medium px-4 py-2 flex items-center justify-center h-10 flex-shrink-0"
-                >
-                    <Search className="w-4 h-4 mr-2" /> Aplicar Filtros
-                </Button>
             </div>
+            
+            {/* Botão de Busca */}
+            <Button
+                type="submit"
+                className="w-full bg-primary-orange hover:bg-secondary-orange text-white font-medium px-4 py-2 flex items-center justify-center h-10 flex-shrink-0"
+            >
+                <Search className="w-4 h-4 mr-2" /> Aplicar Filtros
+            </Button>
         </form>
     );
 };
