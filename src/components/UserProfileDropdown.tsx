@@ -16,6 +16,13 @@ const UserProfileDropdown: React.FC = () => {
         // Fecha o dropdown imediatamente
         setIsOpen(false); 
         
+        // Adiciona verificação: Se não houver sessão, não tenta o signOut,
+        // mas permite que o fluxo continue (o App.tsx já redirecionará).
+        if (!session) {
+            console.warn('Tentativa de logout sem sessão ativa.');
+            return;
+        }
+        
         // Chama a função de logout do Supabase
         const { error } = await supabase.auth.signOut();
         
