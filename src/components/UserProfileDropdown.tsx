@@ -16,22 +16,31 @@ const UserProfileDropdown: React.FC = () => {
         // Fecha o dropdown imediatamente
         setIsOpen(false); 
         
-        // Adiciona verificação: Se não houver sessão, não tenta o signOut,
-        // mas permite que o fluxo continue (o App.tsx já redirecionará).
+        // Se não houver sessão, não precisamos fazer nada, o App.tsx já redireciona.
         if (!session) {
             console.warn('Tentativa de logout sem sessão ativa.');
             return;
         }
         
-        // Chama a função de logout do Supabase
-        const { error } = await supabase.auth.signOut();
-        
-        if (error) {
-            // Loga o erro, mas não usa alert, permitindo que o erro suba.
-            // O App.tsx deve lidar com a mudança de estado de autenticação.
-            console.error('Erro ao fazer logout:', error);
-            // Se o erro for grave, ele será capturado pelo ErrorBoundary ou pelo console.
-            throw new Error(`Falha ao sair da conta: ${error.message}`);
+        try {
+            // Chama a função de logout do Supabase
+            const { error } = await supabase.auth.signOut();
+            
+            if (error) {
+                // Se for o erro específico de sessão ausente, tratamos como sucesso.
+                if (error.message.includes('Auth session missing!')) {
+                    console.warn('Sessão já estava ausente, logout concluído.');
+                    return;
+                }
+                
+                // Para outros erros, logamos e lançamos.
+                console.error('Erro ao fazer logout:', error);
+                throw new Error(`Falha ao sair da conta: ${error.message}`);
+            }
+        } catch (e) {
+            // Captura erros de rede ou outros erros não tratados pelo Supabase
+            console.error('Erro inesperado durante o logout:', e);
+            throw e;
         }
     };
 
