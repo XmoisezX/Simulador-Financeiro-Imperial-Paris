@@ -10,6 +10,8 @@ interface ResultsTableProps {
     actualData: Record<number, Partial<MonthlyResult>>;
 }
 
+// --- Funções Utilitárias ---
+
 const formatCurrency = (value: number) => {
     if (isNaN(value) || !isFinite(value)) return 'N/A';
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -18,22 +20,13 @@ const formatCurrency = (value: number) => {
 const formatPercent = (value: number) => {
     if (isNaN(value) || !isFinite(value)) return 'N/A';
     return `${(value).toFixed(2)}%`;
-}
-
-const CashFlowCell: React.FC<{ value: number }> = ({ value }) => {
-    const className = value >= 0 ? 'text-green-700 font-semibold' : 'text-red-600 font-semibold';
-    return <td className={`px-2 md:px-4 py-3 text-xs md:text-sm text-right ${className}`}>{formatCurrency(value)}</td>;
 };
 
-const TH: React.FC<{ children: React.ReactNode; title?: string }> = ({ children, title }) => (
-    <th title={title} className="px-2 md:px-4 py-3 text-xs md:text-sm text-left uppercase sticky top-0 z-10 whitespace-nowrap">{children}</th>
-);
+const formatBasic = (value: number, isInteger: boolean) => {
+    if (isInteger) return value.toFixed(0);
+    return value.toFixed(2);
+};
 
-const TD: React.FC<{ children: React.ReactNode, className?: string }> = ({ children, className = '' }) => (
-    <td className={`px-2 md:px-4 py-3 text-xs md:text-sm text-right ${className}`}>{children}</td>
-);
-
-// Helper function to get the date for a given month index
 const getMonthDate = (startDateStr: string, monthIndex: number): string => {
     const start = new Date(startDateStr + 'T00:00:00');
     const targetDate = new Date(start.getFullYear(), start.getMonth() + monthIndex - 1, 1);
@@ -41,7 +34,6 @@ const getMonthDate = (startDateStr: string, monthIndex: number): string => {
     return targetDate.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
 };
 
-// Helper function to determine the current month index (1-indexed)
 const getCurrentMonthIndex = (startDateStr: string): number => {
     const start = new Date(startDateStr + 'T00:00:00');
     const now = new Date();
@@ -56,6 +48,21 @@ const getCurrentMonthIndex = (startDateStr: string): number => {
     return (diffYears * 12) + diffMonths + 1;
 };
 
+// --- Componentes Auxiliares Memoizados ---
+
+const CashFlowCell: React.FC<{ value: number }> = React.memo(({ value }) => {
+    const className = value >= 0 ? 'text-green-700 font-semibold' : 'text-red-600 font-semibold';
+    return <td className={`px-2 md:px-4 py-3 text-xs md:text-sm text-right ${className}`}>{formatCurrency(value)}</td>;
+});
+
+const TH: React.FC<{ children: React.ReactNode; title?: string }> = React.memo(({ children, title }) => (
+    <th title={title} className="px-2 md:px-4 py-3 text-xs md:text-sm text-left uppercase sticky top-0 z-10 whitespace-nowrap">{children}</th>
+));
+
+const TD: React.FC<{ children: React.ReactNode, className?: string }> = React.memo(({ children, className = '' }) => (
+    <td className={`px-2 md:px-4 py-3 text-xs md:text-sm text-right ${className}`}>{children}</td>
+));
+
 interface EditableCellProps {
     month: number; 
     field: keyof MonthlyResult; 
@@ -67,51 +74,38 @@ interface EditableCellProps {
     isPastMonth: boolean;
 }
 
-const EditableCell: React.FC<EditableCellProps> = ({ month, field, projectedValue, actualValue, isCurrency = false, isInteger = false, onActualDataChange, isPastMonth }) => {
+const EditableCell: React.FC<EditableCellProps> = React.memo(({ month, field, projectedValue, actualValue, isCurrency = false, isInteger = false, onActualDataChange, isPastMonth }) => {
     
-    const displayValue = actualValue !== null ? actualValue : projectedValue;
     const isActual = actualValue !== null;
     
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const rawValue = e.target.value;
         
         if (rawValue.trim() === '') {
-            // Se o campo estiver vazio, passamos null para o handler
             onActualDataChange(month, field, null);
             return;
         }
         
-        // 1. Remove pontos de milhar (se houver)
-        // 2. Substitui a vírgula decimal por ponto
         const cleanValue = rawValue.replace(/\./g, '').replace(/,/g, '.');
-        
         const numericValue = parseFloat(cleanValue);
         
-        // Se o valor não for um número válido (NaN), não atualizamos o estado
         if (isNaN(numericValue)) {
-            // Podemos optar por não fazer nada ou passar null se o usuário limpar o campo
             return; 
         }
         
         onActualDataChange(month, field, numericValue);
     };
     
-    // Format the value for display in the input field
-    const formattedDisplayValue = isCurrency
-        ? (displayValue || displayValue === 0 ? new Intl.NumberFormat('pt-BR').format(Number(displayValue)) : '')
-        : (isInteger ? (displayValue || displayValue === 0 ? Math.round(Number(displayValue)).toString() : '') : displayValue.toFixed(2)); // CORRIGIDO: Usando displayValue
-
     if (!isPastMonth) {
-        // Display projected value only
-        return <TD className={`text-right ${isCurrency ? '' : 'text-center'}`}>{isCurrency ? formatCurrency(projectedValue) : (isInteger ? projectedValue.toFixed(0) : projectedValue.toFixed(2))}</TD>;
+        const display = isCurrency ? formatCurrency(projectedValue) : formatBasic(projectedValue, isInteger);
+        return <TD className={`text-right ${isCurrency ? '' : 'text-center'}`}>{display}</TD>;
     }
 
-    // Para meses passados, usamos o valor real (se existir) ou o projetado para preencher o input
     const inputValue = actualValue !== null 
-        ? (isCurrency ? new Intl.NumberFormat('pt-BR').format(actualValue) : (isInteger ? Math.round(actualValue).toString() : actualValue.toFixed(2)))
-        : ''; // Se não houver valor real, o input começa vazio para facilitar a digitação
+        ? (isCurrency ? new Intl.NumberFormat('pt-BR').format(actualValue) : formatBasic(actualValue, isInteger))
+        : '';
 
-    const projectedDisplay = isCurrency ? formatCurrency(projectedValue) : (isInteger ? projectedValue.toFixed(0) : projectedValue.toFixed(2));
+    const projectedDisplay = isCurrency ? formatCurrency(projectedValue) : formatBasic(projectedValue, isInteger);
 
     return (
         <td className="p-0">
@@ -130,21 +124,27 @@ const EditableCell: React.FC<EditableCellProps> = ({ month, field, projectedValu
             </div>
         </td>
     );
-};
+});
 
+
+// --- Componente Principal ---
 
 const ResultsTable: React.FC<ResultsTableProps> = ({ monthlyData, totals, taxRate, startDate, onActualDataChange, actualData }) => {
     
-    const currentMonthIndex = getCurrentMonthIndex(startDate);
+    const currentMonthIndex = React.useMemo(() => getCurrentMonthIndex(startDate), [startDate]);
     
-    const headers = [
+    const getMonthDateCallback = React.useCallback((monthIndex: number) => {
+        return getMonthDate(startDate, monthIndex);
+    }, [startDate]);
+
+    const headers = React.useMemo(() => [
         "Mês", "Data", "Nº Vendas Total", "Nº Vendas (Sócio)", "Nº Vendas (Corr.)", "VGV", "Nº Aluguéis", "Fat Bruto Venda", "Fat Bruto Alug (1º)", "Fat Bruto Alug (Adm)", "Fat Bruto Reg.", "Fat Bruto Total",
-        `Imposto SN (${taxRate}%)`, "Com Var Venda (S)", "Com Var Venda (C)", "Com Var Alug (1º S)", "Com Var Alug (Estag.)", // NOVO HEADER
+        `Imposto SN (${taxRate}%)`, "Com Var Venda (S)", "Com Var Venda (C)", "Com Var Alug (1º S)", "Com Var Alug (Estag.)",
         "Rec Líquida (p/ CF)", "Custo Fixo Total", "Pagto Imóvel", "Fluxo Caixa Mês", "Fluxo Caixa Acum.",
         "Margem Contrib.", "Lucratividade Op.", "Ponto Equil."
-    ];
+    ], [taxRate]);
 
-    const tooltips: { [key: string]: string } = {
+    const tooltips = React.useMemo(() => ({
         "Mês": "Mês da simulação.",
         "Data": "Data de referência para o mês da simulação.",
         "Nº Vendas Total": "Número total de vendas realizadas no mês (sócios + corretores).",
@@ -161,7 +161,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ monthlyData, totals, taxRat
         "Com Var Venda (S)": "Comissão variável paga aos sócios sobre as vendas que eles realizaram.",
         "Com Var Venda (C)": "Comissão total paga aos corretores externos sobre as vendas que eles realizaram (venda + agenciamento). Este valor é subtraído do Faturamento Bruto antes do cálculo do imposto.",
         "Com Var Alug (1º S)": "Comissão variável paga aos sócios sobre os novos contratos de aluguel.",
-        "Com Var Alug (Estag.)": "Comissão variável paga aos estagiários sobre os novos contratos de aluguel (1º aluguel).", // NOVO TOOLTIP
+        "Com Var Alug (Estag.)": "Comissão variável paga aos estagiários sobre os novos contratos de aluguel (1º aluguel).",
         "Rec Líquida (p/ CF)": "Receita Líquida: Faturamento Tributável subtraindo todos os custos variáveis (impostos, comissões de sócios, etc). Valor disponível para cobrir os custos fixos.",
         "Custo Fixo Total": "Soma de todos os custos fixos do mês (Operacional, Pró-Labore, Marketing, Estagiários).",
         "Pagto Imóvel": "Valor de pagamento de imóvel programado para este mês específico, incluindo correções.",
@@ -170,26 +170,40 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ monthlyData, totals, taxRat
         "Margem Contrib.": "Margem de Contribuição Percentual. (Receita Líquida / Faturamento Tributável). Mostra quanto % da receita sobra para pagar custos fixos e gerar lucro.",
         "Lucratividade Op.": "Lucratividade Operacional Percentual. (Lucro Operacional / Receita Líquida). Mostra a eficiência da operação principal em gerar lucro.",
         "Ponto Equil.": "Ponto de Equilíbrio. (Custo Fixo Total / % Margem Contrib.). Indica o faturamento mínimo necessário no mês para cobrir todos os custos."
-    };
+    }), [taxRate]);
+
+    const totalSalesBrokers = React.useMemo(() => 
+        monthlyData.reduce((acc, row) => acc + row.salesCountBrokers, 0),
+    [monthlyData]);
+
+    const totalSalesPartners = React.useMemo(() => 
+        totals.totalSalesCount - totalSalesBrokers,
+    [totals.totalSalesCount, totalSalesBrokers]);
+
 
     return (
-         <div className="overflow-x-auto">
+        <div className="overflow-x-auto">
             <table className="w-full min-w-[2200px] border-collapse">
                 <thead>
                     <tr className="bg-orange-100 text-kpi-value-color font-semibold tracking-wider">
                         {headers.map((header, index) => (
-                           <TH key={index} title={tooltips[header]}>
-                               {header.split(' ').map((word, i) => <div key={i}>{word}</div>)}
-                           </TH>
+                            <TH key={index} title={tooltips[header]}>
+                                {header.split(' ').map((word, i) => <div key={i}>{word}</div>)}
+                            </TH>
                         ))}
                     </tr>
                 </thead>
                 <tbody>
                     {monthlyData.map((row, index) => {
                         const isPastMonth = row.month < currentMonthIndex;
-                        const monthDate = getMonthDate(startDate, row.month);
+                        const monthDate = getMonthDateCallback(row.month);
                         
-                        // Determine if we should use actual or projected values for display in non-editable cells
+                        const commonEditableProps = {
+                            month: row.month,
+                            onActualDataChange: onActualDataChange,
+                            isPastMonth: isPastMonth
+                        };
+                        
                         const cashFlowMonth = row.monthlyCashFlow;
                         const cashFlowAccumulated = row.accumulatedCashFlow;
 
@@ -198,89 +212,67 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ monthlyData, totals, taxRat
                                 <TD className="text-center font-semibold">{row.month}</TD>
                                 <TD className="text-center text-gray-500">{monthDate}</TD>
                                 
-                                {/* Nº Vendas Total (Editable/Actual) */}
                                 <EditableCell 
-                                    month={row.month} 
                                     field="actualSalesCount" 
                                     projectedValue={row.salesCount} 
                                     actualValue={row.actualSalesCount} 
-                                    onActualDataChange={onActualDataChange} 
-                                    isPastMonth={isPastMonth}
                                     isInteger
+                                    {...commonEditableProps}
                                 />
                                 
-                                {/* Non-editable derived fields (Sales Partners/Brokers) */}
                                 <TD className="text-center">{row.salesCountPartners}</TD>
                                 <TD className="text-center">{row.salesCountBrokers}</TD>
                                 
-                                {/* VGV (Derived) */}
                                 <TD>{formatCurrency(row.vgv)}</TD>
                                 
-                                {/* Nº Aluguéis (Editable/Actual) */}
                                 <EditableCell 
-                                    month={row.month} 
                                     field="actualRentalsCount" 
                                     projectedValue={row.rentalsCount} 
                                     actualValue={row.actualRentalsCount} 
-                                    onActualDataChange={onActualDataChange} 
-                                    isPastMonth={isPastMonth}
                                     isInteger
+                                    {...commonEditableProps}
                                 />
                                 
-                                {/* Revenue Fields (Derived from counts or overridden by Gross Revenue Total) */}
                                 <TD>{formatCurrency(row.grossRevenueSales)}</TD>
                                 <TD>{formatCurrency(row.grossRevenueRental1st)}</TD>
                                 <TD>{formatCurrency(row.grossRevenueRentalAdmin)}</TD>
                                 <TD>{formatCurrency(row.grossRevenueRegularization)}</TD>
                                 
-                                {/* Gross Revenue Total (Editable/Actual) */}
                                 <EditableCell 
-                                    month={row.month} 
                                     field="actualGrossRevenueTotal" 
                                     projectedValue={row.grossRevenueTotal} 
                                     actualValue={row.actualGrossRevenueTotal} 
-                                    onActualDataChange={onActualDataChange} 
-                                    isPastMonth={isPastMonth}
                                     isCurrency
+                                    {...commonEditableProps}
                                 />
                                 
-                                {/* Variable Costs (Derived) */}
                                 <TD>{formatCurrency(row.taxAmount)}</TD>
                                 <TD>{formatCurrency(row.commissionVarSalesPartners)}</TD>
                                 <TD>{formatCurrency(row.commissionVarSalesBrokersPaid)}</TD>
                                 <TD>{formatCurrency(row.commissionVarRental1stPartners)}</TD>
-                                <TD>{formatCurrency(row.commissionVarRental1stInterns)}</TD> {/* NOVO CAMPO */}
+                                <TD>{formatCurrency(row.commissionVarRental1stInterns)}</TD>
                                 
-                                {/* Net Revenue (Derived) */}
                                 <TD>{formatCurrency(row.netRevenueForFixedCosts)}</TD>
                                 
-                                {/* Fixed Costs (Editable/Actual) */}
                                 <EditableCell 
-                                    month={row.month} 
                                     field="actualCurrentFixedCosts" 
                                     projectedValue={row.currentFixedCosts} 
                                     actualValue={row.actualCurrentFixedCosts} 
-                                    onActualDataChange={onActualDataChange} 
-                                    isPastMonth={isPastMonth}
                                     isCurrency
+                                    {...commonEditableProps}
                                 />
                                 
-                                {/* Property Payment (Editable/Actual) */}
                                 <EditableCell 
-                                    month={row.month} 
                                     field="actualPropertyPayment" 
                                     projectedValue={row.currentPropertyPayment} 
                                     actualValue={row.actualPropertyPayment} 
-                                    onActualDataChange={onActualDataChange} 
-                                    isPastMonth={isPastMonth}
                                     isCurrency
+                                    {...commonEditableProps}
                                 />
                                 
-                                {/* Cash Flow (Derived) */}
                                 <CashFlowCell value={cashFlowMonth} />
                                 <CashFlowCell value={cashFlowAccumulated} />
                                 
-                                {/* Indices (Derived) */}
                                 <TD>{formatPercent(row.contributionMarginPercent)}</TD>
                                 <TD>{formatPercent(row.operatingProfitabilityPercent)}</TD>
                                 <TD>{formatCurrency(row.breakEvenPoint)}</TD>
@@ -293,8 +285,8 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ monthlyData, totals, taxRat
                         <TD className="text-left">Total/Média</TD>
                         <TD>-</TD> {/* Data column */}
                         <TD className="text-center">{totals.totalSalesCount}</TD>
-                        <TD className="text-center">{totals.totalSalesCount - monthlyData.reduce((acc, row) => acc + row.salesCountBrokers, 0)}</TD>
-                        <TD className="text-center">{monthlyData.reduce((acc, row) => acc + row.salesCountBrokers, 0)}</TD>
+                        <TD className="text-center">{totalSalesPartners}</TD>
+                        <TD className="text-center">{totalSalesBrokers}</TD>
                         <TD>{formatCurrency(totals.totalVgv)}</TD>
                         <TD className="text-center">{totals.totalRentalsCount}</TD>
                         <TD>{formatCurrency(totals.grossRevenueSales)}</TD>
@@ -306,7 +298,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ monthlyData, totals, taxRat
                         <TD>{formatCurrency(totals.commissionVarSalesPartners)}</TD>
                         <TD>{formatCurrency(totals.commissionVarSalesBrokersPaid)}</TD>
                         <TD>{formatCurrency(totals.commissionVarRental1stPartners)}</TD>
-                        <TD>{formatCurrency(totals.commissionVarRental1stInterns)}</TD> {/* NOVO TOTAL */}
+                        <TD>{formatCurrency(totals.commissionVarRental1stInterns)}</TD>
                         <TD>{formatCurrency(totals.netRevenueForFixedCosts)}</TD>
                         <TD>{formatCurrency(totals.totalFixedCosts)}</TD>
                         <TD>{formatCurrency(totals.totalPropertyPayments)}</TD>

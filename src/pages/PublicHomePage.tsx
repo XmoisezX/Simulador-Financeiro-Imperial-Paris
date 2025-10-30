@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Search, Home, DollarSign, MapPin, CheckCircle, ArrowRight, User, Loader2 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
-import TextInput from '../components/TextInput';
 import { Link } from 'react-router-dom';
-import FloatingSearchForm from '../components/FloatingSearchForm'; // NOVO COMPONENTE
-import { usePublicImoveis } from '../hooks/usePublicImoveis'; // Importando o hook
-import { useBannerPosition } from '../hooks/useBannerPosition'; // NOVO HOOK
-import ClientOnly from '../components/ClientOnly'; // Importando ClientOnly
+import FloatingSearchForm from '../components/FloatingSearchForm';
+import { usePublicImoveis } from '../hooks/usePublicImoveis';
+import { useBannerPosition } from '../hooks/useBannerPosition';
+import ClientOnly from '../components/ClientOnly';
 import { DeviceType, ImageTransform } from '../components/ImageManipulator';
 
 // URL pública da imagem no Supabase Storage
@@ -20,27 +19,26 @@ const stats = [
     { value: 'Pelotas', label: 'Foco Regional' },
 ];
 
+// Função auxiliar para determinar o dispositivo (mais leve que usar estado)
+const getDevice = (): DeviceType => {
+    if (window.innerWidth >= 1024) return 'desktop';
+    if (window.innerWidth >= 768) return 'tablet';
+    return 'mobile';
+};
+
 const PublicHomePage: React.FC = () => {
     const { imoveis, isLoading: isImoveisLoading, error } = usePublicImoveis();
     const { settings, isLoading: isSettingsLoading } = useBannerPosition(); 
     const [currentTransform, setCurrentTransform] = useState<ImageTransform | null>(null);
-    const [currentDevice, setCurrentDevice] = useState<DeviceType>('desktop'); // Adicionado estado de dispositivo
 
     const formatCurrency = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     
-    // Lógica para determinar o dispositivo e aplicar a transformação correta
+    // 1. Efeito para carregar a transformação inicial e monitorar redimensionamento
     useEffect(() => {
         if (isSettingsLoading) return;
 
-        const getDevice = (): DeviceType => {
-            if (window.innerWidth >= 1024) return 'desktop';
-            if (window.innerWidth >= 768) return 'tablet';
-            return 'mobile';
-        };
-
         const updateTransform = () => {
             const device = getDevice();
-            setCurrentDevice(device);
             setCurrentTransform(settings[device]);
         };
 
@@ -49,34 +47,30 @@ const PublicHomePage: React.FC = () => {
         return () => window.removeEventListener('resize', updateTransform);
     }, [settings, isSettingsLoading]);
     
-    let heroStyle: React.CSSProperties = {
-        backgroundImage: `url('${SUPABASE_HERO_IMAGE_URL}')`,
-        minHeight: '650px',
-    };
-    
-    if (currentTransform) {
-        // Aplica a transformação dinâmica em todos os casos
-        heroStyle = {
-            ...heroStyle,
-            backgroundSize: `${currentTransform.scale * 100}%`,
-            backgroundPosition: `${50 + currentTransform.offsetX}% ${50 + currentTransform.offsetY}%`,
+    // 2. Memoização do estilo do banner
+    const heroStyle: React.CSSProperties = useMemo(() => {
+        let style: React.CSSProperties = {
+            backgroundImage: `url('${SUPABASE_HERO_IMAGE_URL}')`,
+            minHeight: '650px',
             backgroundRepeat: 'no-repeat',
         };
-    } else {
-        // Fallback se as configurações ainda não carregaram
-        heroStyle = {
-            ...heroStyle,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-        };
-    }
+
+        if (currentTransform) {
+            style.backgroundSize = `${currentTransform.scale * 100}%`;
+            style.backgroundPosition = `${50 + currentTransform.offsetX}% ${50 + currentTransform.offsetY}%`;
+        } else {
+            style.backgroundSize = 'cover';
+            style.backgroundPosition = 'center';
+        }
+        return style;
+    }, [currentTransform]);
 
 
     return (
         <div className="bg-white">
             {/* 1. Seção de Busca com Background */}
             <div 
-                className="relative w-full bg-cover bg-center pb-24 pt-32" 
+                className="relative w-full bg-cover bg-center pb-20 pt-[120px]" 
                 style={heroStyle}
             >
                 {/* Overlay para escurecer a imagem e melhorar a legibilidade */}
