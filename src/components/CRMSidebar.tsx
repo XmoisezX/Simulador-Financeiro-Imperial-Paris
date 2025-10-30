@@ -33,6 +33,7 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon, label, isSidebarOpen, onCli
             } ${isSidebarOpen ? 'justify-start' : 'justify-center'}`}
             title={label}
         >
+            {/* O ícone herda a cor do texto do Link (text-white no modo expandido) */}
             {icon}
             {isSidebarOpen && <span className="ml-3 text-sm whitespace-nowrap">{label}</span>}
         </Link>
@@ -95,7 +96,8 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                         className={`flex items-center p-3 rounded-lg transition-colors duration-150 w-full ${isOpen ? 'justify-end text-white hover:bg-blue-700' : 'justify-center text-slate-600 hover:bg-gray-100'}`}
                         title={isOpen ? 'Recolher Menu' : 'Expandir Menu'}
                     >
-                        <Menu className="w-5 h-5" />
+                        {/* O ícone de menu agora é branco no modo expandido */}
+                        <Menu className={`w-5 h-5 ${isOpen ? 'text-white' : 'text-slate-600'}`} />
                     </button>
 
                     {isOpen && <h3 className="text-xs font-semibold uppercase text-blue-300 pt-4 pb-1 px-3">Navegação</h3>}
