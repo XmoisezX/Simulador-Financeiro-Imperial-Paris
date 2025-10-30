@@ -62,7 +62,8 @@ const PublicHeader: React.FC = () => {
             {/* Menu Mobile Overlay */}
             {isMenuOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 z-50 lg:hidden">
-                    <div className="absolute right-0 top-0 w-64 h-full bg-white shadow-lg p-6 space-y-4">
+                    {/* Painel do Menu: Garante fundo branco e texto escuro */}
+                    <div className="absolute right-0 top-0 w-64 h-full bg-white shadow-lg p-6 space-y-4 text-dark-text">
                         <div className="flex justify-end">
                             <button onClick={() => setIsMenuOpen(false)} className="text-gray-600 hover:text-red-600">
                                 <X className="w-6 h-6" />
