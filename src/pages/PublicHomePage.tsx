@@ -84,7 +84,7 @@ const PublicHomePage: React.FC = () => {
                 <div className="relative z-10">
                     <ClientOnly>
                         {/* Ajuste: Alinhando o formulário à esquerda (justify-start) */}
-                        <div className="container mx-auto px-8 flex justify-start">
+                        <div className="container mx-auto px-8 flex justify-start lg:ml-[10px]">
                             <FloatingSearchForm />
                         </div>
                     </ClientOnly>
