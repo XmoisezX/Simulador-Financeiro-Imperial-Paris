@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { LogIn, User, Menu, X, Search, Globe } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/Button';
@@ -51,7 +51,7 @@ const PublicHeader: React.FC = () => {
                     {/* Botão de Menu Mobile */}
                     <button 
                         onClick={() => setIsMenuOpen(true)}
-                        className="p-2 rounded-full hover:bg-gray-100 transition-colors text-dark-text lg:hidden"
+                        className="p-2 rounded-full transition-colors text-dark-text lg:hidden bg-white border border-gray-200 shadow-sm hover:bg-gray-100"
                         title="Abrir Menu"
                     >
                         <Menu className="w-6 h-6" />
