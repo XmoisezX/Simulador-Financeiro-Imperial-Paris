@@ -48,6 +48,8 @@ const ImageManipulator: React.FC<ImageManipulatorProps> = ({ imageUrl, currentTr
         if (!isDragging || !containerRef.current) return;
 
         // Usamos a largura/altura do preview simulado para calcular a sensibilidade
+        // NOTA: Usamos previewWidth/Height para o cálculo de sensibilidade,
+        // mas o container visual pode ser mais largo no desktop.
         const width = previewWidth;
         const height = previewHeight;
         
@@ -56,7 +58,6 @@ const ImageManipulator: React.FC<ImageManipulatorProps> = ({ imageUrl, currentTr
         const dy = e.clientY - dragStart.y;
         
         // Converte a diferença de pixels para porcentagem do container
-        // A sensibilidade é baseada na largura/altura do container simulado
         const sensitivityX = 100 / (width * scale); 
         const sensitivityY = 100 / (height * scale); 
         
@@ -110,12 +111,8 @@ const ImageManipulator: React.FC<ImageManipulatorProps> = ({ imageUrl, currentTr
         cursor: isDragging ? 'grabbing' : 'grab',
     };
     
-    // Dimensões simuladas para o preview
-    const deviceClasses: Record<DeviceType, string> = {
-        desktop: 'w-full', // Usamos w-full aqui, mas o BannerUploader define o max-width
-        tablet: 'w-[768px] max-w-full',
-        mobile: 'w-[375px] max-w-full',
-    };
+    // Classes de largura para o container de manipulação
+    const containerWidthClass = device === 'desktop' ? 'w-full' : device === 'tablet' ? 'w-[768px] max-w-full' : 'w-[375px] max-w-full';
 
     return (
         <div className="space-y-4">
@@ -151,12 +148,13 @@ const ImageManipulator: React.FC<ImageManipulatorProps> = ({ imageUrl, currentTr
             <div className="flex justify-center items-center p-4 bg-gray-100 rounded-lg shadow-inner">
                 <div 
                     ref={containerRef}
-                    className={`relative overflow-hidden border-8 border-gray-800 rounded-xl shadow-2xl transition-all duration-300 ${deviceClasses[device]}`}
+                    className={`relative overflow-hidden border-8 border-gray-800 rounded-xl shadow-2xl transition-all duration-300 ${containerWidthClass}`}
                     style={{ 
                         height: `${previewHeight}px`,
-                        width: `${previewWidth}px`,
+                        // No desktop, usamos w-full. Nos outros, usamos a largura fixa.
+                        width: device === 'desktop' ? '100%' : `${previewWidth}px`,
                         minHeight: '300px',
-                        minWidth: '300px',
+                        minWidth: device === 'desktop' ? '300px' : `${previewWidth}px`,
                     }}
                     onMouseDown={handleMouseDown}
                 >

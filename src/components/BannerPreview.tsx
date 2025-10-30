@@ -31,13 +31,13 @@ const BannerPreview: React.FC<BannerPreviewProps> = ({ device, transform, imageU
     
     // Dimensões simuladas para o preview
     const deviceClasses: Record<DeviceType, string> = {
-        desktop: 'w-full',
+        desktop: 'w-full', // Usar w-full para expandir
         tablet: 'w-[768px] max-w-full',
         mobile: 'w-[375px] max-w-full',
     };
     
     // Altura do container de visualização
-    const previewHeight = '650px'; // Mantemos a altura fixa para o banner
+    const previewHeight = '650px';
 
     return (
         <div className="flex justify-center items-start p-4 bg-gray-100 rounded-lg shadow-inner overflow-hidden">
@@ -45,7 +45,7 @@ const BannerPreview: React.FC<BannerPreviewProps> = ({ device, transform, imageU
                 className={`relative overflow-hidden border-8 border-gray-800 rounded-xl shadow-2xl transition-all duration-300 ${deviceClasses[device]}`}
                 style={{ height: previewHeight }}
             >
-                {/* 1. Seção de Busca com Background (Copiada da PublicHomePage) */}
+                {/* 1. Seção de Busca com Background (Simulada) */}
                 <div 
                     className="relative w-full bg-cover bg-no-repeat pb-24 pt-32" 
                     style={heroStyle}
