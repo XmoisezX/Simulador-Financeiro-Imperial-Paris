@@ -111,7 +111,6 @@ const NewCondominioQuickModal: React.FC<NewCondominioQuickModalProps> = ({ isOpe
         const dataToInsert = {
             user_id: session.user.id,
             nome: formData.nome.trim(),
-            // Mapeando campos do quick form para a estrutura completa do CondominioInput
             ficha: formData.fechado === 'Sim', // Usando 'ficha' como proxy para 'fechado' (mock)
             loteamento: formData.tipo_condominio === 'Horizontal', // Usando 'loteamento' como proxy para tipo (mock)
             
@@ -129,25 +128,54 @@ const NewCondominioQuickModal: React.FC<NewCondominioQuickModalProps> = ({ isOpe
             ano_termino: new Date().getFullYear(),
             arquitetura: 'Não informado',
             descricao: `Condomínio ${formData.nome} - Cadastro Rápido.`,
-            estagio: 'Na planta',
+            // Removido 'estagio' daqui
         };
 
-        const { data, error: insertError } = await supabase
+        // 1. Inserir Condomínio
+        const { data: insertedCondominio, error: condominioError } = await supabase
             .from('condominios')
             .insert(dataToInsert)
             .select('id, nome')
             .single();
 
-        setIsSaving(false);
-
-        if (insertError) {
-            console.error('Erro ao salvar condomínio:', insertError);
-            setError(`Erro ao salvar: ${insertError.message}`);
-        } else {
-            onSaveSuccess(data.id, data.nome);
-            setFormData(initialFormData);
-            onClose();
+        if (condominioError) {
+            console.error('Erro ao salvar condomínio:', condominioError);
+            setError(`Erro ao salvar: ${condominioError.message}`);
+            setIsSaving(false);
+            return;
         }
+        
+        const condominioId = insertedCondominio.id;
+        
+        // 2. Inserir Estágio da Obra na tabela relacionada (condominio_obra)
+        const obraData = {
+            condominio_id: condominioId,
+            estagio: formData.tipo_condominio === 'Vertical' ? 'Na planta' : 'Pronto', // Define um estágio inicial baseado no tipo
+            destaque_obra: false,
+            percentual_projeto: 0,
+            percentual_terraplanagem: 0,
+            percentual_fundacao: 0,
+            percentual_estrutura: 0,
+            percentual_alvenaria: 0,
+            percentual_instalacoes: 0,
+            percentual_acabamento: 0,
+            percentual_paisagismo: 0,
+        };
+        
+        const { error: obraError } = await supabase
+            .from('condominio_obra')
+            .insert(obraData);
+            
+        if (obraError) {
+            console.error('Aviso: Erro ao salvar dados da obra:', obraError);
+            // Não impedimos o sucesso, mas alertamos sobre o problema
+        }
+
+        setIsSaving(false);
+        onSaveSuccess(condominioId, insertedCondominio.nome);
+        setFormData(initialFormData);
+        onClose();
+        
     }, [session, formData, onClose, onSaveSuccess]);
 
     if (!isOpen) return null;
