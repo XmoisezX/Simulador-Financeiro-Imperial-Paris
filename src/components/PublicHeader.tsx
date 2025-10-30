@@ -14,7 +14,7 @@ const PublicHeader: React.FC = () => {
     };
 
     return (
-        <header className="sticky top-0 z-20 bg-white/30 backdrop-blur-md shadow-md">
+        <header className="fixed top-0 left-0 right-0 z-20 bg-white/50 backdrop-blur-sm">
             {/* Barra Principal (Logo e Navegação) */}
             <div className="container mx-auto p-4 flex items-center justify-between">
                 <Link to="/" className="flex items-center">
@@ -37,8 +37,6 @@ const PublicHeader: React.FC = () => {
 
                 {/* Botões de Ação (Movidos para a direita) */}
                 <div className="flex items-center space-x-4">
-                    {/* Ícone de Busca (REMOVIDO) */}
-                    
                     {/* Módulo de Login/CRM */}
                     {session ? (
                         <Link to="/crm/dashboard" className="text-gray-600 hover:text-primary-orange transition-colors p-2 rounded-full hover:bg-gray-100 hidden sm:block" title="Acessar CRM">
