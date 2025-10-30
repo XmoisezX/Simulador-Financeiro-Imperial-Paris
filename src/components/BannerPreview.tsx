@@ -21,23 +21,13 @@ const BannerPreview: React.FC<BannerPreviewProps> = ({ device, transform, imageU
         backgroundAttachment: 'scroll', 
     };
     
-    if (device === 'desktop' && scale === 1.0) {
-        // Se for desktop e o zoom for 1.0, usamos contain para mostrar a imagem inteira
-        heroStyle = {
-            ...heroStyle,
-            backgroundSize: 'contain',
-            backgroundRepeat: 'no-repeat',
-            backgroundPosition: 'center center',
-        };
-    } else {
-        // Para outros casos, usamos a manipulação de zoom/offset
-        heroStyle = {
-            ...heroStyle,
-            backgroundSize: `${scale * 100}%`,
-            backgroundPosition: `${50 + offsetX}% ${50 + offsetY}%`,
-            backgroundRepeat: 'no-repeat',
-        };
-    }
+    // Aplica a transformação dinâmica em todos os casos
+    heroStyle = {
+        ...heroStyle,
+        backgroundSize: `${scale * 100}%`,
+        backgroundPosition: `${50 + offsetX}% ${50 + offsetY}%`,
+        backgroundRepeat: 'no-repeat',
+    };
     
     // Dimensões simuladas para o preview
     const deviceClasses: Record<DeviceType, string> = {

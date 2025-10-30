@@ -3,7 +3,7 @@ import { supabase } from '../integrations/supabase/client';
 import { DeviceType, ImageTransform } from '../components/ImageManipulator';
 
 const BANNER_SETTINGS_KEY = 'hero_settings';
-const DEFAULT_TRANSFORM: ImageTransform = { scale: 1.0, offsetX: -10, offsetY: 0 }; // Mantendo 1.0 e -10
+const DEFAULT_TRANSFORM: ImageTransform = { scale: 1.0, offsetX: 0, offsetY: 0 }; // Alterado para 0/0
 
 interface BannerSettings {
     desktop: ImageTransform;

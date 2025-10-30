@@ -55,23 +55,13 @@ const PublicHomePage: React.FC = () => {
     };
     
     if (currentTransform) {
-        if (currentDevice === 'desktop' && currentTransform.scale === 1.0) {
-            // Se for desktop e o zoom for 1.0 (padrão de "sem zoom"), usamos contain
-            heroStyle = {
-                ...heroStyle,
-                backgroundSize: 'contain',
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'center center',
-            };
-        } else {
-            // Para outros casos (mobile, tablet, ou zoom aplicado), usamos a lógica de cover/manipulação
-            heroStyle = {
-                ...heroStyle,
-                backgroundSize: `${currentTransform.scale * 100}%`,
-                backgroundPosition: `${50 + currentTransform.offsetX}% ${50 + currentTransform.offsetY}%`,
-                backgroundRepeat: 'no-repeat',
-            };
-        }
+        // Aplica a transformação dinâmica em todos os casos
+        heroStyle = {
+            ...heroStyle,
+            backgroundSize: `${currentTransform.scale * 100}%`,
+            backgroundPosition: `${50 + currentTransform.offsetX}% ${50 + currentTransform.offsetY}%`,
+            backgroundRepeat: 'no-repeat',
+        };
     } else {
         // Fallback se as configurações ainda não carregaram
         heroStyle = {
