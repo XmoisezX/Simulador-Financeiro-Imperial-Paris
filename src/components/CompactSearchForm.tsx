@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ChevronDown } from 'lucide-react';
+import { Search, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from './ui/Button';
 
 // Mock Data (Reutilizado do FloatingSearchForm)
@@ -36,6 +36,7 @@ interface CompactSearchFormProps {
 
 const CompactSearchForm: React.FC<CompactSearchFormProps> = ({ initialFilters = {}, onFilterChange }) => {
     const [filters, setFilters] = useState<FilterState>({ ...defaultInitialFilters, ...initialFilters });
+    const [isFiltersOpen, setIsFiltersOpen] = useState(true); // Começa aberto por padrão
 
     // Sincroniza o estado interno se as props iniciais mudarem (ex: ao navegar com novos params)
     useEffect(() => {
@@ -101,64 +102,78 @@ const CompactSearchForm: React.FC<CompactSearchFormProps> = ({ initialFilters = 
             className="w-full bg-white p-4 rounded-lg shadow-md border border-gray-100 space-y-3"
         >
             
-            <h2 className="text-lg font-bold text-dark-text border-b pb-2">Filtros de Busca</h2>
-            
-            {/* Abas de Operação */}
-            <div className="flex border-b border-gray-200">
-                <button
-                    type="button"
-                    onClick={() => handleInputChange({ target: { name: 'operation', value: 'Vendas' } } as React.ChangeEvent<HTMLSelectElement>)}
-                    className={`py-1 px-3 text-xs font-semibold transition-colors ${
-                        filters.operation === 'Vendas' 
-                            ? 'border-b-2 border-primary-orange text-primary-orange' 
-                            : 'text-gray-500 hover:text-dark-text'
-                    }`}
-                >
-                    VENDAS
-                </button>
-                <button
-                    type="button"
-                    onClick={() => handleInputChange({ target: { name: 'operation', value: 'Aluguel' } } as React.ChangeEvent<HTMLSelectElement>)}
-                    className={`py-1 px-3 text-xs font-semibold transition-colors ${
-                        filters.operation === 'Aluguel' 
-                            ? 'border-b-2 border-primary-orange text-primary-orange' 
-                            : 'text-gray-500 hover:text-dark-text'
-                    }`}
-                >
-                    ALUGUEL
-                </button>
-            </div>
-
-            {/* Campos de Filtro (Horizontal em telas pequenas, mas forçado a quebrar em 2 colunas para caber na largura máxima) */}
-            <div className="grid grid-cols-2 gap-3">
-                
-                {/* Bairro */}
-                {renderSelect('neighborhood', neighborhoods, 'Bairro')}
-                
-                {/* Tipo */}
-                {renderSelect('type', propertyTypes, 'Tipo')}
-                
-                {/* Quartos */}
-                {renderSelect('rooms', roomOptions, 'Quartos')}
-                
-                {/* Vagas */}
-                {renderSelect('garages', roomOptions, 'Vagas')}
-                
-                {/* Preço Mínimo */}
-                {renderPriceInput('minPrice', 'R$ Mín')}
-                
-                {/* Preço Máximo */}
-                {renderPriceInput('maxPrice', 'R$ Máx')}
-                
-            </div>
-            
-            {/* Botão de Busca */}
-            <Button
-                type="submit"
-                className="w-full bg-primary-orange hover:bg-secondary-orange text-white font-medium px-4 py-2 flex items-center justify-center h-10 flex-shrink-0"
+            {/* Header Retrátil */}
+            <button 
+                type="button"
+                onClick={() => setIsFiltersOpen(prev => !prev)}
+                className="w-full flex justify-between items-center text-lg font-bold text-dark-text border-b pb-2 hover:text-primary-orange transition-colors"
             >
-                <Search className="w-4 h-4 mr-2" /> Aplicar Filtros
-            </Button>
+                Filtros de Busca
+                {isFiltersOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+            </button>
+            
+            {/* Conteúdo Retrátil */}
+            {isFiltersOpen && (
+                <div className="space-y-3 animate-fade-in">
+                    
+                    {/* Abas de Operação */}
+                    <div className="flex border-b border-gray-200">
+                        <button
+                            type="button"
+                            onClick={() => handleInputChange({ target: { name: 'operation', value: 'Vendas' } } as React.ChangeEvent<HTMLSelectElement>)}
+                            className={`py-1 px-3 text-xs font-semibold transition-colors ${
+                                filters.operation === 'Vendas' 
+                                    ? 'border-b-2 border-primary-orange text-primary-orange' 
+                                    : 'text-gray-500 hover:text-dark-text'
+                            }`}
+                        >
+                            VENDAS
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleInputChange({ target: { name: 'operation', value: 'Aluguel' } } as React.ChangeEvent<HTMLSelectElement>)}
+                            className={`py-1 px-3 text-xs font-semibold transition-colors ${
+                                filters.operation === 'Aluguel' 
+                                    ? 'border-b-2 border-primary-orange text-primary-orange' 
+                                    : 'text-gray-500 hover:text-dark-text'
+                            }`}
+                        >
+                            ALUGUEL
+                        </button>
+                    </div>
+
+                    {/* Campos de Filtro */}
+                    <div className="grid grid-cols-2 gap-3">
+                        
+                        {/* Bairro */}
+                        {renderSelect('neighborhood', neighborhoods, 'Bairro')}
+                        
+                        {/* Tipo */}
+                        {renderSelect('type', propertyTypes, 'Tipo')}
+                        
+                        {/* Quartos */}
+                        {renderSelect('rooms', roomOptions, 'Quartos')}
+                        
+                        {/* Vagas */}
+                        {renderSelect('garages', roomOptions, 'Vagas')}
+                        
+                        {/* Preço Mínimo */}
+                        {renderPriceInput('minPrice', 'R$ Mín')}
+                        
+                        {/* Preço Máximo */}
+                        {renderPriceInput('maxPrice', 'R$ Máx')}
+                        
+                    </div>
+                    
+                    {/* Botão de Busca */}
+                    <Button
+                        type="submit"
+                        className="w-full bg-primary-orange hover:bg-secondary-orange text-white font-medium px-4 py-2 flex items-center justify-center h-10 flex-shrink-0"
+                    >
+                        <Search className="w-4 h-4 mr-2" /> Aplicar Filtros
+                    </Button>
+                </div>
+            )}
         </form>
     );
 };
