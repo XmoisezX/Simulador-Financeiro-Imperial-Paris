@@ -13,15 +13,23 @@ interface NavItemProps {
 const NavItem: React.FC<NavItemProps> = ({ to, icon, label, isSidebarOpen, onClick }) => {
     const location = useLocation();
     const isActive = location.pathname === to;
+    
+    // Cores para o modo expandido (fundo escuro)
+    const expandedClasses = isActive 
+        ? 'bg-blue-600 text-white font-semibold' 
+        : 'text-white hover:bg-blue-700';
+        
+    // Cores para o modo recolhido (fundo claro)
+    const collapsedClasses = isActive 
+        ? 'bg-blue-100 text-blue-800 font-semibold' 
+        : 'text-slate-600 hover:bg-gray-100';
 
     return (
         <Link 
             to={to} 
             onClick={onClick}
             className={`flex items-center p-3 rounded-lg transition-colors duration-150 ${
-                isActive 
-                ? 'bg-blue-100 text-blue-800 font-semibold' 
-                : 'text-slate-600 hover:bg-gray-100'
+                isSidebarOpen ? expandedClasses : collapsedClasses
             } ${isSidebarOpen ? 'justify-start' : 'justify-center'}`}
             title={label}
         >
@@ -71,10 +79,11 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                 ></div>
             )}
 
-            {/* Sidebar Principal */}
+            {/* Sidebar Principal (Desktop) */}
             <aside className={`
                 ${sidebarWidth} 
-                bg-white border-r border-gray-200 flex-shrink-0 overflow-y-auto h-full 
+                ${isOpen ? 'bg-blue-900 text-white' : 'bg-white border-r border-gray-200'} 
+                flex-shrink-0 overflow-y-auto h-full 
                 transition-all duration-300 
                 hidden lg:block sticky top-[88px] 
                 ${isOpen ? 'lg:w-64' : 'lg:w-20'}
@@ -83,17 +92,17 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                     {/* Botão de Toggle (Apenas para Desktop) */}
                     <button 
                         onClick={toggleSidebar}
-                        className={`flex items-center p-3 rounded-lg transition-colors duration-150 w-full text-slate-600 hover:bg-gray-100 ${isOpen ? 'justify-end' : 'justify-center'}`}
+                        className={`flex items-center p-3 rounded-lg transition-colors duration-150 w-full ${isOpen ? 'justify-end text-white hover:bg-blue-700' : 'justify-center text-slate-600 hover:bg-gray-100'}`}
                         title={isOpen ? 'Recolher Menu' : 'Expandir Menu'}
                     >
                         <Menu className="w-5 h-5" />
                     </button>
 
-                    {isOpen && <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1 px-3">Navegação</h3>}
+                    {isOpen && <h3 className="text-xs font-semibold uppercase text-blue-300 pt-4 pb-1 px-3">Navegação</h3>}
                     
                     <NavItem to="/crm/dashboard" icon={<Home className="w-5 h-5" />} label="Início" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     
-                    {isOpen && <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1 px-3">Imóveis & Vendas</h3>}
+                    {isOpen && <h3 className="text-xs font-semibold uppercase text-blue-300 pt-4 pb-1 px-3">Imóveis & Vendas</h3>}
                     {!isOpen && <div className="h-4"></div>}
                     <NavItem to="/crm/imoveis" icon={<Building className="w-5 h-5" />} label="Imóveis" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     <NavItem to="/crm/chaves" icon={<Key className="w-5 h-5" />} label="Chaves" isSidebarOpen={isOpen} onClick={handleNavClick} />
@@ -101,12 +110,12 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                     <NavItem to="/crm/leads" icon={<Zap className="w-5 h-5" />} label="Leads" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     <NavItem to="/crm/oportunidades" icon={<Briefcase className="w-5 h-5" />} label="Oportunidades" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     
-                    {isOpen && <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1 px-3">Pessoas & Rotinas</h3>}
+                    {isOpen && <h3 className="text-xs font-semibold uppercase text-blue-300 pt-4 pb-1 px-3">Pessoas & Rotinas</h3>}
                     {!isOpen && <div className="h-4"></div>}
                     <NavItem to="/crm/pessoas" icon={<Users className="w-5 h-5" />} label="Pessoas" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     <NavItem to="/crm/atividades" icon={<CalendarCheck className="w-5 h-5" />} label="Atividades" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     
-                    {isOpen && <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1 px-3">Ferramentas</h3>}
+                    {isOpen && <h3 className="text-xs font-semibold uppercase text-blue-300 pt-4 pb-1 px-3">Ferramentas</h3>}
                     {!isOpen && <div className="h-4"></div>}
                     <NavItem to="/simulador" icon={<DollarSign className="w-5 h-5" />} label="Simulador Financeiro" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     <NavItem to="/analise-de-mercado" icon={<Building className="w-5 h-5" />} label="Análise de Mercado" isSidebarOpen={isOpen} onClick={handleNavClick} />
@@ -114,7 +123,7 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                     <NavItem to="/mapa-teste" icon={<Map className="w-5 h-5" />} label="Teste de Mapa" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     
                     {/* NOVO: Menu Sistema */}
-                    {isOpen && <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1 px-3">Administração</h3>}
+                    {isOpen && <h3 className="text-xs font-semibold uppercase text-blue-300 pt-4 pb-1 px-3">Administração</h3>}
                     {!isOpen && <div className="h-4"></div>}
                     
                     <div className="relative">
@@ -122,8 +131,8 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                             onClick={handleSystemClick}
                             className={`flex items-center p-3 rounded-lg transition-colors duration-150 w-full ${
                                 isSystemOpen 
-                                ? 'bg-blue-100 text-blue-800 font-semibold' 
-                                : 'text-slate-600 hover:bg-gray-100'
+                                ? 'bg-blue-600 text-white font-semibold' 
+                                : (isOpen ? 'text-white hover:bg-blue-700' : 'text-slate-600 hover:bg-gray-100')
                             } ${isOpen ? 'justify-start' : 'justify-center'}`}
                             title="Sistema"
                         >
@@ -142,7 +151,7 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                 </div>
             </aside>
             
-            {/* Sidebar para Mobile (Overlay) */}
+            {/* Sidebar para Mobile (Overlay) - Mantém o fundo branco para melhor legibilidade no overlay */}
             <aside className={`
                 ${mobileClasses} 
                 bg-white border-r border-gray-200 flex-shrink-0 overflow-y-auto h-full 
@@ -157,29 +166,47 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                     </div>
                     
                     <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1 px-3">Navegação</h3>
-                    <NavItem to="/crm/dashboard" icon={<Home className="w-5 h-5" />} label="Início" isSidebarOpen={true} onClick={handleNavClick} />
+                    <NavItem to="/crm/dashboard" icon={<Home className="w-5 h-5" />} label="Início" isSidebarOpen={false} onClick={handleNavClick} />
                     
                     <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1 px-3">Imóveis & Vendas</h3>
-                    <NavItem to="/crm/imoveis" icon={<Building className="w-5 h-5" />} label="Imóveis" isSidebarOpen={true} onClick={handleNavClick} />
-                    <NavItem to="/crm/chaves" icon={<Key className="w-5 h-5" />} label="Chaves" isSidebarOpen={true} onClick={handleNavClick} />
-                    <NavItem to="/crm/propostas" icon={<FileText className="w-5 h-5" />} label="Propostas" isSidebarOpen={true} onClick={handleNavClick} />
-                    <NavItem to="/crm/leads" icon={<Zap className="w-5 h-5" />} label="Leads" isSidebarOpen={true} onClick={handleNavClick} />
-                    <NavItem to="/crm/oportunidades" icon={<Briefcase className="w-5 h-5" />} label="Oportunidades" isSidebarOpen={true} onClick={handleNavClick} />
+                    <NavItem to="/crm/imoveis" icon={<Building className="w-5 h-5" />} label="Imóveis" isSidebarOpen={false} onClick={handleNavClick} />
+                    <NavItem to="/crm/chaves" icon={<Key className="w-5 h-5" />} label="Chaves" isSidebarOpen={false} onClick={handleNavClick} />
+                    <NavItem to="/crm/propostas" icon={<FileText className="w-5 h-5" />} label="Propostas" isSidebarOpen={false} onClick={handleNavClick} />
+                    <NavItem to="/crm/leads" icon={<Zap className="w-5 h-5" />} label="Leads" isSidebarOpen={false} onClick={handleNavClick} />
+                    <NavItem to="/crm/oportunidades" icon={<Briefcase className="w-5 h-5" />} label="Oportunidades" isSidebarOpen={false} onClick={handleNavClick} />
                     
                     <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1 px-3">Pessoas & Rotinas</h3>
-                    <NavItem to="/crm/pessoas" icon={<Users className="w-5 h-5" />} label="Pessoas" isSidebarOpen={true} onClick={handleNavClick} />
-                    <NavItem to="/crm/atividades" icon={<CalendarCheck className="w-5 h-5" />} label="Atividades" isSidebarOpen={true} onClick={handleNavClick} />
+                    <NavItem to="/crm/pessoas" icon={<Users className="w-5 h-5" />} label="Pessoas" isSidebarOpen={false} onClick={handleNavClick} />
+                    <NavItem to="/crm/atividades" icon={<CalendarCheck className="w-5 h-5" />} label="Atividades" isSidebarOpen={false} onClick={handleNavClick} />
                     
                     <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1 px-3">Ferramentas</h3>
-                    <NavItem to="/simulador" icon={<DollarSign className="w-5 h-5" />} label="Simulador Financeiro" isSidebarOpen={true} onClick={handleNavClick} />
-                    <NavItem to="/analise-de-mercado" icon={<Building className="w-5 h-5" />} label="Análise de Mercado" isSidebarOpen={true} onClick={handleNavClick} />
-                    <NavItem to="/metas-agenciamento" icon={<Target className="w-5 h-5" />} label="Metas Agenciamento" isSidebarOpen={true} onClick={handleNavClick} />
-                    <NavItem to="/mapa-teste" icon={<Map className="w-5 h-5" />} label="Teste de Mapa" isSidebarOpen={true} onClick={handleNavClick} />
+                    <NavItem to="/simulador" icon={<DollarSign className="w-5 h-5" />} label="Simulador Financeiro" isSidebarOpen={false} onClick={handleNavClick} />
+                    <NavItem to="/analise-de-mercado" icon={<Building className="w-5 h-5" />} label="Análise de Mercado" isSidebarOpen={false} onClick={handleNavClick} />
+                    <NavItem to="/metas-agenciamento" icon={<Target className="w-5 h-5" />} label="Metas Agenciamento" isSidebarOpen={false} onClick={handleNavClick} />
+                    <NavItem to="/mapa-teste" icon={<Map className="w-5 h-5" />} label="Teste de Mapa" isSidebarOpen={false} onClick={handleNavClick} />
                     
                     <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1 px-3">Administração</h3>
-                    <NavItem to="/crm/sistema" icon={<Settings className="w-5 h-5" />} label="Sistema" isSidebarOpen={true} onClick={handleNavClick} />
-                    <NavItem to="/crm/sistema/site" icon={<Globe className="w-5 h-5" />} label="Site" isSidebarOpen={true} onClick={handleNavClick} />
-                    <NavItem to="/crm/sistema/geral" icon={<Settings className="w-5 h-5" />} label="Geral (Mock)" isSidebarOpen={true} onClick={handleNavClick} />
+                    <div className="relative">
+                        <button
+                            onClick={handleSystemClick}
+                            className={`flex items-center p-3 rounded-lg transition-colors duration-150 w-full ${
+                                isSystemOpen 
+                                ? 'bg-blue-100 text-blue-800 font-semibold' 
+                                : 'text-slate-600 hover:bg-gray-100'
+                            } justify-start`}
+                            title="Sistema"
+                        >
+                            <Settings className="w-5 h-5" />
+                            <span className="ml-3 text-sm whitespace-nowrap">Sistema</span>
+                        </button>
+                        
+                        {isSystemOpen && (
+                            <div className="pl-4 pt-1 space-y-1">
+                                <NavItem to="/crm/sistema/site" icon={<Globe className="w-5 h-5" />} label="Site" isSidebarOpen={false} onClick={handleNavClick} />
+                                <NavItem to="/crm/sistema/geral" icon={<Settings className="w-5 h-5" />} label="Geral (Mock)" isSidebarOpen={false} onClick={handleNavClick} />
+                            </div>
+                        )}
+                    </div>
                 </div>
             </aside>
         </>
