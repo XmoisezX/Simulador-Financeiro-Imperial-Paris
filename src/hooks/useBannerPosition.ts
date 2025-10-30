@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../integrations/supabase/client';
 import { DeviceType, ImageTransform } from '../components/ImageManipulator';
 
-const BANNER_SETTINGS_KEY = 'hero_settings';
-const DEFAULT_TRANSFORM: ImageTransform = { scale: 1.0, offsetX: 0, offsetY: 0 }; // Alterado para 0/0
+// Configuração de Posição Padrão (Hardcoded)
+const DEFAULT_TRANSFORM: ImageTransform = { scale: 1.0, offsetX: 0, offsetY: 0 };
 
 interface BannerSettings {
     desktop: ImageTransform;
@@ -11,42 +10,31 @@ interface BannerSettings {
     mobile: ImageTransform;
 }
 
-const initialSettings: BannerSettings = {
-    desktop: DEFAULT_TRANSFORM,
-    tablet: DEFAULT_TRANSFORM,
-    mobile: DEFAULT_TRANSFORM,
+// **CONFIGURAÇÕES ATUAIS DO BANNER (EDITAR ESTE OBJETO PARA SALVAR)**
+const STATIC_BANNER_SETTINGS: BannerSettings = {
+    desktop: { scale: 1.0, offsetX: 0, offsetY: 0 },
+    tablet: { scale: 1.0, offsetX: 0, offsetY: 0 },
+    mobile: { scale: 1.0, offsetX: 0, offsetY: 0 },
 };
 
 export const useBannerPosition = () => {
-    const [settings, setSettings] = useState<BannerSettings>(initialSettings);
-    const [isLoading, setIsLoading] = useState(true);
+    const [settings, setSettings] = useState<BannerSettings>(STATIC_BANNER_SETTINGS);
+    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchSettings = useCallback(async () => {
-        setIsLoading(true);
-        setError(null);
-        
-        // Busca a configuração de posição
-        const { data, error } = await supabase
-            .from('site_settings')
-            .select('setting_value')
-            .eq('setting_key', BANNER_SETTINGS_KEY)
-            .single();
-
-        if (error && error.code !== 'PGRST116') { // Ignora 'Row not found'
-            console.error('Error fetching banner settings:', error);
-            setError('Falha ao carregar a configuração do banner.');
-        } else if (data) {
-            setSettings(data.setting_value as BannerSettings);
-        } else {
-            setSettings(initialSettings);
-        }
-        setIsLoading(false);
+    const fetchSettings = useCallback(() => {
+        setSettings(STATIC_BANNER_SETTINGS);
     }, []);
 
     useEffect(() => {
         fetchSettings();
     }, [fetchSettings]);
 
-    return { settings, isLoading, error };
+    const saveSettings = useCallback(async (newSettings: BannerSettings) => {
+        // Esta função será interceptada pelo Dyad para gerar o novo código.
+        console.log('Simulating saving settings to code:', newSettings);
+        return true;
+    }, []);
+
+    return { settings, isLoading, error, saveSettings };
 };
