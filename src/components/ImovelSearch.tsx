@@ -10,6 +10,7 @@ const searchTabs = [
 ];
 
 const ImovelSearch: React.FC = () => {
+    // Mantemos o estado, mas forçamos a aba 'imoveis' como ativa, já que as outras não serão renderizadas.
     const [activeTab, setActiveTab] = useState('imoveis');
 
     // Mock data for dropdowns
@@ -43,26 +44,12 @@ const ImovelSearch: React.FC = () => {
                 Para comprar e alugar a Imperial Paris é o lugar
             </h1>
 
-            {/* Abas de Busca */}
-            <div className="flex flex-wrap justify-center gap-2 mb-6">
-                {searchTabs.map(tab => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`px-4 py-2 text-sm font-medium rounded-lg text-white transition-colors ${
-                            activeTab === tab.id ? tab.color : 'bg-gray-400 hover:bg-gray-500'
-                        }`}
-                    >
-                        {tab.label}
-                    </button>
-                ))}
-                <button className="px-4 py-2 text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700">
-                    3077 - imóveis disponíveis
-                </button>
-            </div>
+            {/* Abas de Busca - REMOVIDAS */}
+            {/* Botão de Contagem - REMOVIDO */}
 
             {/* Formulário de Busca Principal */}
             <div className="bg-white p-6 rounded-lg shadow-xl border border-gray-200 max-w-5xl mx-auto">
+                {/* Renderiza apenas o conteúdo da aba 'imoveis' */}
                 {activeTab === 'imoveis' && (
                     <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
                         {/* Linha 1 */}
