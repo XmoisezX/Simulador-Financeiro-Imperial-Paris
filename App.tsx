@@ -13,6 +13,9 @@ import PessoasPage from './src/pages/PessoasPage';
 import MapTestPage from './src/pages/MapTestPage';
 import SystemSettingsPage from './src/pages/SystemSettingsPage'; // NOVO
 import SiteSettingsPage from './src/pages/SiteSettingsPage'; // NOVO
+import CondominiosPage from './src/pages/CondominiosPage'; // NOVO
+import NewCondominioPage from './src/pages/NewCondominioPage'; // NOVO
+import ViewCondominioPage from './src/pages/ViewCondominioPage'; // NOVO
 import CRMLayout from './src/components/CRMLayout';
 import PublicHomePage from './src/pages/PublicHomePage';
 import PublicLayout from './src/layouts/PublicLayout';
@@ -50,9 +53,17 @@ const AppContent: React.FC = () => {
                 
                 {/* Páginas do CRM */}
                 <Route path="/crm/dashboard" element={<DashboardPage />} />
+                
+                {/* Rotas de Imóveis */}
                 <Route path="/crm/imoveis" element={<ImoveisPage />} />
                 <Route path="/crm/imoveis/novo" element={<NewImovelPage />} />
                 <Route path="/crm/imoveis/:id" element={<ViewImovelPage />} />
+                
+                {/* Rotas de Condomínios (NOVO) */}
+                <Route path="/crm/condominios" element={<CondominiosPage />} />
+                <Route path="/crm/condominios/novo" element={<NewCondominioPage />} />
+                <Route path="/crm/condominios/:id" element={<ViewCondominioPage />} />
+                
                 <Route path="/crm/pessoas" element={<PessoasPage />} />
                 
                 {/* Rotas de Sistema */}

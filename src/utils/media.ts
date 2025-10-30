@@ -1,5 +1,5 @@
 import { supabase } from '../integrations/supabase/client';
-import { ImovelImage } from '../../types'; // Importando o tipo de imagem
+import { ImovelImage, CondominioMedia } from '../../types'; // Importando o tipo de imagem
 
 // Simula a otimização e retorna um novo nome de arquivo (simulando WebP)
 const simulateOptimization = (file: File): File => {
@@ -26,7 +26,6 @@ export const uploadImovelMedia = async (images: ImovelImage[], userId: string, i
     for (const image of images) {
         // Se a imagem não tem um arquivo, significa que já existe no storage e não precisa ser reenviada
         if (!image.file) {
-            // Isso não deve acontecer no fluxo de upload de novas imagens, mas é um bom fallback
             continue;
         }
 
@@ -34,7 +33,6 @@ export const uploadImovelMedia = async (images: ImovelImage[], userId: string, i
         const optimizedFile = simulateOptimization(image.file as File);
         
         // 2. Definir o caminho no Storage
-        // Usamos o ID do imóvel e o ID da imagem para garantir unicidade e organização
         const filePath = `imoveis/${imovelId}/${image.id}-${optimizedFile.name}`;
 
         // 3. Upload para o Storage
@@ -47,7 +45,6 @@ export const uploadImovelMedia = async (images: ImovelImage[], userId: string, i
 
         if (uploadError) {
             console.error(`Erro ao fazer upload da imagem ${image.id}:`, uploadError);
-            // Continuamos para a próxima imagem, mas registramos o erro
             continue;
         }
 
@@ -92,4 +89,94 @@ export const saveMediaMetadata = async (imovelId: string, userId: string, media:
         .insert(dataToInsert);
         
     return { error };
+};
+
+// --- Condominio Media Utilities ---
+
+/**
+ * Faz o upload de mídias de condomínio (imagens/logo) para o Supabase Storage.
+ */
+export const uploadCondominioMedia = async (media: CondominioMedia[], userId: string, condominioId: string) => {
+    const uploadedMedia: { id: string, url: string, tipo: 'imagem' | 'video', destaque: boolean, ordem: number }[] = [];
+
+    for (const item of media) {
+        if (!item.file) continue;
+
+        const optimizedFile = simulateOptimization(item.file as File);
+        const filePath = `condominios/${condominioId}/${item.id}-${optimizedFile.name}`;
+
+        const { error: uploadError } = await supabase.storage
+            .from('condominio-media') // Novo bucket assumido
+            .upload(filePath, optimizedFile, {
+                cacheControl: '3600',
+                upsert: false,
+            });
+
+        if (uploadError) {
+            console.error(`Erro ao fazer upload da mídia ${item.id}:`, uploadError);
+            continue;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+            .from('condominio-media')
+            .getPublicUrl(filePath);
+            
+        uploadedMedia.push({
+            id: item.id,
+            url: publicUrl,
+            tipo: item.tipo,
+            destaque: item.destaque,
+            ordem: item.ordem,
+        });
+    }
+    
+    return uploadedMedia;
+};
+
+/**
+ * Salva os metadados das mídias na tabela condominio_midias.
+ */
+export const saveCondominioMediaMetadata = async (condominioId: string, media: { id: string, url: string, tipo: 'imagem' | 'video', destaque: boolean, ordem: number }[]) => {
+    if (media.length === 0) return { error: null };
+    
+    const dataToInsert = media.map(m => ({
+        id: m.id,
+        condominio_id: condominioId,
+        tipo: m.tipo,
+        arquivo_url: m.url,
+        destaque: m.destaque,
+        ordem: m.ordem,
+    }));
+    
+    const { error } = await supabase
+        .from('condominio_midias')
+        .insert(dataToInsert);
+        
+    return { error };
+};
+
+/**
+ * Faz o upload de um logo para o Condomínio.
+ */
+export const uploadCondominioLogo = async (file: File, condominioId: string) => {
+    const optimizedFile = simulateOptimization(file);
+    const filePath = `condominios/${condominioId}/logo-${optimizedFile.name}`;
+
+    const { error: uploadError } = await supabase.storage
+        .from('condominio-media')
+        .upload(filePath, optimizedFile, {
+            cacheControl: '3600',
+            upsert: true,
+        });
+
+    if (uploadError) {
+        console.error('Erro ao fazer upload do logo:', uploadError);
+        return { url: null, error: uploadError };
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+        .from('condominio-media')
+        .getPublicUrl(filePath);
+        
+    return { url: publicUrl, error: null };
 };

@@ -246,7 +246,7 @@ export interface ImovelInput {
   observacoes_aprovacao: string;
 }
 
-// --- Tipos para Mídias ---
+// --- Tipos para Mídias de Imóvel ---
 export interface ImovelImage {
     id: string;
     url: string;
@@ -255,4 +255,88 @@ export interface ImovelImage {
     isVisible: boolean;
     rotation: number;
     ordem: number; // NOVO CAMPO
+}
+
+// --- Condomínio Cadastro Types ---
+
+export interface CondominioInput {
+  // 1. Dados do condomínio
+  nome: string;
+  ficha: boolean;
+  loteamento: boolean;
+  incorporadora_id: number | null; // FK para incorporadoras (INT)
+  area_terreno_m2: number;
+  ano_termino: number;
+  arquitetura: string;
+  logo_url: string; // URL do logo
+
+  // 2. Localização
+  cep: string;
+  endereco: string;
+  numero: string;
+  complemento: string;
+  cidade: string;
+  estado: string;
+  bairro: string;
+  referencia: string;
+  latitude: number | null;
+  longitude: number | null;
+
+  // 3. Características (IDs das características selecionadas)
+  caracteristicas_ids: number[]; 
+
+  // 4. Descrição
+  descricao: string;
+
+  // 5. Website
+  website_url: string;
+  meta_description: string;
+  slug: string;
+
+  // 8. Andamento de obra (CondominioObra)
+  estagio: string;
+  destaque_obra: boolean;
+  entrega_obra: string; // Date string
+  percentual_projeto: number;
+  percentual_terraplanagem: number;
+  percentual_fundacao: number;
+  percentual_estrutura: number;
+  percentual_alvenaria: number;
+  percentual_instalacoes: number;
+  percentual_acabamento: number;
+  percentual_paisagismo: number;
+
+  // 9. Informações complementares
+  administradora: string;
+  sindico: string;
+  construtora: string;
+  incorporadora: string;
+  projeto_arquitetonico: string;
+  projeto_engenharia: string;
+  projeto_decoracao: string;
+  decoradora: string;
+  ocupacao_interna: string;
+
+  // 10. Visibilidade no site
+  andamento_obra_visivel: boolean;
+  album_visivel: boolean;
+  entregas_visivel: boolean;
+  ficha_tecnica_visivel: boolean;
+  plantas_visivel: boolean;
+  projecoes_visivel: boolean;
+  tipologias_visivel: boolean;
+  transacoes_visivel: boolean;
+
+  // 11. Anexar ao caso lançamento
+  vincular_lancamento: boolean;
+  lancamento_id: number | null; // FK para lançamentos (INT)
+}
+
+export interface CondominioMedia {
+    id: string;
+    url: string;
+    file: File | null;
+    tipo: 'imagem' | 'video';
+    destaque: boolean;
+    ordem: number;
 }
