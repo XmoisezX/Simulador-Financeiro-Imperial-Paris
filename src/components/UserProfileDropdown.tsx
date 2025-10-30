@@ -30,6 +30,7 @@ const UserProfileDropdown: React.FC = () => {
                 // Se for o erro específico de sessão ausente, tratamos como sucesso.
                 if (error.message.includes('Auth session missing!')) {
                     console.warn('Sessão já estava ausente, logout concluído.');
+                    // Não lançamos erro, mas permitimos que o fluxo continue.
                     return;
                 }
                 
