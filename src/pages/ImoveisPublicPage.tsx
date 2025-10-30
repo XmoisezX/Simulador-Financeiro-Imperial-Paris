@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'; // Importando useSearchParams
 import { Home, MapPin, DollarSign, Bed, Bath, Car, Maximize2, Loader2, ArrowRight } from 'lucide-react';
 import { useImovelLocations } from '../hooks/useImovelLocations';
 import ClientOnly from '../components/ClientOnly';
 import { Button } from '../components/ui/Button';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import CompactSearchForm from '../components/CompactSearchForm'; // Importando o formulário compacto
+import CompactSearchForm from '../components/CompactSearchForm';
 
 // Ícone customizado para o mapa
 const CustomIcon = L.divIcon({
@@ -147,7 +147,32 @@ const ImovelListItem: React.FC<ImovelListItemProps> = ({ imovel, isHighlighted, 
 const ImoveisPublicPage: React.FC = () => {
     const { imoveis, isLoading, error } = useImovelLocations();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams(); // Hook para ler a URL
     const [highlightedId, setHighlightedId] = useState<string | null>(null);
+    
+    // Converte URLSearchParams para um objeto de filtros
+    const initialFilters = React.useMemo(() => {
+        const filters: Record<string, string> = {};
+        for (const [key, value] of searchParams.entries()) {
+            filters[key] = value;
+        }
+        return filters;
+    }, [searchParams]);
+    
+    // Mock de função para reagir a mudanças no filtro compacto
+    const handleCompactFilterChange = useCallback((newFilters: any) => {
+        // Aqui você implementaria a lógica de re-filtragem da lista de imóveis
+        console.log("Filtros atualizados no CompactSearchForm:", newFilters);
+        
+        // Opcional: Atualizar a URL com os novos filtros
+        const params = new URLSearchParams();
+        Object.entries(newFilters).forEach(([key, value]) => {
+            if (value !== '' && value !== '0') {
+                params.append(key, String(value));
+            }
+        });
+        navigate(`?${params.toString()}`, { replace: true });
+    }, [navigate]);
     
     const handleMarkerClick = useCallback((id: string) => {
         setHighlightedId(id);
@@ -171,7 +196,10 @@ const ImoveisPublicPage: React.FC = () => {
             <div className="lg:col-span-1 w-full flex-shrink-0 overflow-y-auto p-4 sm:p-6 space-y-6 bg-white shadow-lg lg:shadow-none">
                 
                 {/* Filtro Compacto (Ocupa 100% da largura do padding) */}
-                <CompactSearchForm />
+                <CompactSearchForm 
+                    initialFilters={initialFilters} 
+                    onFilterChange={handleCompactFilterChange}
+                />
                 
                 <h1 className="text-2xl font-bold text-dark-text flex items-center border-t pt-4">
                     <Home className="w-5 h-5 mr-2 text-primary-orange" /> Imóveis para Venda ({imoveis.length})

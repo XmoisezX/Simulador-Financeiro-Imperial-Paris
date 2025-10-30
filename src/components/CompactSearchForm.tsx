@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, ChevronDown } from 'lucide-react';
 import { Button } from './ui/Button';
 
@@ -18,7 +18,7 @@ interface FilterState {
     maxPrice: string;
 }
 
-const initialFilters: FilterState = {
+const defaultInitialFilters: FilterState = {
     operation: 'Vendas', // Padrão para a página de Imóveis Públicos
     city: 'Pelotas',
     type: '',
@@ -29,12 +29,28 @@ const initialFilters: FilterState = {
     maxPrice: '300000',
 };
 
-const CompactSearchForm: React.FC = () => {
-    const [filters, setFilters] = useState<FilterState>(initialFilters);
+interface CompactSearchFormProps {
+    initialFilters?: Partial<FilterState>;
+    onFilterChange?: (filters: FilterState) => void; // Adicionado para permitir que o pai reaja às mudanças
+}
+
+const CompactSearchForm: React.FC<CompactSearchFormProps> = ({ initialFilters = {}, onFilterChange }) => {
+    const [filters, setFilters] = useState<FilterState>({ ...defaultInitialFilters, ...initialFilters });
+
+    // Sincroniza o estado interno se as props iniciais mudarem (ex: ao navegar com novos params)
+    useEffect(() => {
+        setFilters(prev => ({ ...defaultInitialFilters, ...prev, ...initialFilters }));
+    }, [initialFilters]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setFilters(prev => ({ ...prev, [name]: value }));
+        setFilters(prev => {
+            const newFilters = { ...prev, [name]: value } as FilterState;
+            if (onFilterChange) {
+                onFilterChange(newFilters);
+            }
+            return newFilters;
+        });
     };
 
     const handleSearch = (e: React.FormEvent) => {
@@ -91,7 +107,7 @@ const CompactSearchForm: React.FC = () => {
             <div className="flex border-b border-gray-200">
                 <button
                     type="button"
-                    onClick={() => setFilters(prev => ({ ...prev, operation: 'Vendas' }))}
+                    onClick={() => handleInputChange({ target: { name: 'operation', value: 'Vendas' } } as React.ChangeEvent<HTMLSelectElement>)}
                     className={`py-1 px-3 text-xs font-semibold transition-colors ${
                         filters.operation === 'Vendas' 
                             ? 'border-b-2 border-primary-orange text-primary-orange' 
@@ -102,7 +118,7 @@ const CompactSearchForm: React.FC = () => {
                 </button>
                 <button
                     type="button"
-                    onClick={() => setFilters(prev => ({ ...prev, operation: 'Aluguel' }))}
+                    onClick={() => handleInputChange({ target: { name: 'operation', value: 'Aluguel' } } as React.ChangeEvent<HTMLSelectElement>)}
                     className={`py-1 px-3 text-xs font-semibold transition-colors ${
                         filters.operation === 'Aluguel' 
                             ? 'border-b-2 border-primary-orange text-primary-orange' 

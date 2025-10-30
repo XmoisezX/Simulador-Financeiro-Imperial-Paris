@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Search, ChevronDown, ChevronUp, DollarSign } from 'lucide-react';
 import { HomeIcon, MapPinIcon, BuildingOffice2Icon, CodeBracketIcon, BedIcon, CarIcon } from './icons';
-import TextInput from './TextInput'; // Usando TextInput para campos de código e preço
+import TextInput from './TextInput';
+import { useNavigate } from 'react-router-dom'; // Importando useNavigate
 
 // Mock Data
 const propertyTypes = ['Apartamento', 'Casa', 'Terreno', 'Comercial', 'Rural'];
@@ -32,24 +33,28 @@ const initialFilters: FilterState = {
     maxPrice: '300000',
 };
 
-interface FloatingSearchFormProps {
-    isPreview?: boolean;
-}
-
-const FloatingSearchForm: React.FC<FloatingSearchFormProps> = ({ isPreview = false }) => {
+const FloatingSearchForm: React.FC = () => {
     const [filters, setFilters] = useState<FilterState>(initialFilters);
+    const navigate = useNavigate();
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        if (isPreview) return;
         const { name, value } = e.target;
         setFilters(prev => ({ ...prev, [name]: value }));
     };
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        if (isPreview) return;
-        console.log('Searching with filters:', filters);
-        alert(`Buscando: ${filters.operation} em ${filters.neighborhood || 'toda a cidade'}`);
+        
+        // Constrói os parâmetros de busca
+        const params = new URLSearchParams();
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value !== '' && value !== '0') {
+                params.append(key, String(value));
+            }
+        });
+        
+        // Redireciona para a página de imóveis com os filtros
+        navigate(`/imoveis?${params.toString()}`);
     };
     
     const renderSelect = (name: keyof FilterState, label: string, options: (string | number)[], placeholder: string) => (
@@ -60,8 +65,7 @@ const FloatingSearchForm: React.FC<FloatingSearchFormProps> = ({ isPreview = fal
                 name={name}
                 value={filters[name]}
                 onChange={handleInputChange}
-                className="w-full p-3 border border-gray-300 rounded-lg bg-white text-sm text-dark-text focus:ring-primary-orange focus:border-primary-orange appearance-none cursor-pointer shadow-sm disabled:bg-gray-100"
-                disabled={isPreview}
+                className="w-full p-3 border border-gray-300 rounded-lg bg-white text-sm text-dark-text focus:ring-primary-orange focus:border-primary-orange appearance-none cursor-pointer shadow-sm"
             >
                 <option value="" disabled>{placeholder}</option>
                 {options.map((opt, index) => (
@@ -82,14 +86,13 @@ const FloatingSearchForm: React.FC<FloatingSearchFormProps> = ({ isPreview = fal
                 value={filters[name]}
                 onChange={handleInputChange}
                 placeholder={placeholder}
-                className="w-full p-3 border border-gray-300 rounded-lg shadow-sm text-sm focus:ring-primary-orange focus:border-primary-orange disabled:bg-gray-100"
-                disabled={isPreview}
+                className="w-full p-3 border border-gray-300 rounded-lg shadow-sm text-sm focus:ring-primary-orange focus:border-primary-orange"
             />
         </div>
     );
 
     return (
-        <form onSubmit={handleSearch} className={`w-full max-w-md bg-white p-8 rounded-xl shadow-2xl ${isPreview ? 'pointer-events-none opacity-90' : ''}`}>
+        <form onSubmit={handleSearch} className="w-full max-w-md bg-white p-8 rounded-xl shadow-2xl">
             
             <h1 className="text-2xl font-bold text-blue-800">A sua imobiliária</h1>
             <h2 className="text-3xl font-bold text-blue-800 mb-2">Encontre seu imóvel</h2>
@@ -105,7 +108,6 @@ const FloatingSearchForm: React.FC<FloatingSearchFormProps> = ({ isPreview = fal
                             ? 'border-b-2 border-primary-orange text-primary-orange' 
                             : 'text-gray-500 hover:text-dark-text'
                     }`}
-                    disabled={isPreview}
                 >
                     ALUGUEL
                 </button>
@@ -117,7 +119,6 @@ const FloatingSearchForm: React.FC<FloatingSearchFormProps> = ({ isPreview = fal
                             ? 'border-b-2 border-primary-orange text-primary-orange' 
                             : 'text-gray-500 hover:text-dark-text'
                     }`}
-                    disabled={isPreview}
                 >
                     VENDAS
                 </button>
@@ -167,7 +168,6 @@ const FloatingSearchForm: React.FC<FloatingSearchFormProps> = ({ isPreview = fal
                         onChange={handleInputChange} 
                         placeholder="Cod. Imóvel"
                         className="w-full p-3 border border-gray-300 rounded-lg shadow-sm text-sm focus:ring-primary-orange focus:border-primary-orange disabled:bg-gray-100"
-                        disabled={isPreview}
                     />
                     
                     {renderSelect('garages', 'Vagas', roomOptions, 'Vagas')}
@@ -183,8 +183,7 @@ const FloatingSearchForm: React.FC<FloatingSearchFormProps> = ({ isPreview = fal
             {/* Botão de Busca */}
             <button
                 type="submit"
-                className="w-full mt-6 bg-[#ffc107] hover:bg-[#ffb300] text-dark-text font-bold px-6 py-3 rounded-lg shadow-md transition-colors disabled:opacity-50"
-                disabled={isPreview}
+                className="w-full mt-6 bg-[#ffc107] hover:bg-[#ffb300] text-dark-text font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
             >
                 BUSCAR
             </button>
