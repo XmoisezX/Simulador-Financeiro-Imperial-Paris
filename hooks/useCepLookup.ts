@@ -41,32 +41,29 @@ export const useCepLookup = (): UseCepLookupResult => {
 
         try {
             const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+            // Adicionamos uma verificação de 'ok' para erros de rede (ex: 404, 500)
+            if (!response.ok) {
+                throw new Error('Falha na requisição à API.');
+            }
+            
             const result = await response.json();
 
             if (result.erro) {
                 setError('CEP não encontrado.');
-                return;
+                return; // Retorna aqui, 'finally' ainda será executado
             }
 
-            setData({
-                cep: result.cep,
-                logradouro: result.logradouro,
-                complemento: result.complemento,
-                bairro: result.bairro,
-                localidade: result.localidade,
-                uf: result.uf,
-                ibge: result.ibge,
-                gia: result.gia,
-                ddd: result.ddd,
-                siafi: result.siafi,
-            });
+            // --- SIMPLIFICAÇÃO APLICADA AQUI ---
+            // A resposta 'result' já corresponde à interface 'CepData'
+            setData(result);
 
         } catch (err) {
-            setError('Erro ao buscar CEP. Verifique sua conexão.');
+            // Tratamento de erro um pouco mais genérico
+            setError('Erro ao buscar CEP. Verifique sua conexão ou a API.');
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, []); // O array de dependências vazio está correto
 
     return { data, loading, error, lookup };
 };
