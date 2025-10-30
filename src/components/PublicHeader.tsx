@@ -15,8 +15,6 @@ const PublicHeader: React.FC = () => {
 
     return (
         <header className="sticky top-0 z-20 bg-white/30 backdrop-blur-md shadow-md">
-            {/* Barra Superior Azul Escura - REMOVIDA */}
-
             {/* Barra Principal (Logo e Navegação) */}
             <div className="container mx-auto p-4 flex items-center justify-between">
                 <Link to="/" className="flex items-center">
@@ -39,17 +37,7 @@ const PublicHeader: React.FC = () => {
 
                 {/* Botões de Ação (Movidos para a direita) */}
                 <div className="flex items-center space-x-4">
-                    {/* Ícone de Busca (Adicionado para manter a funcionalidade) */}
-                    <div className="hidden sm:flex items-center bg-gray-100 rounded-md overflow-hidden border border-gray-300">
-                        <input 
-                            type="text" 
-                            placeholder="Buscar imóvel..." 
-                            className="p-1.5 text-sm text-gray-800 focus:outline-none w-40 bg-transparent"
-                        />
-                        <button className="bg-red-600 hover:bg-red-700 p-1.5">
-                            <Search className="w-5 h-5 text-white" />
-                        </button>
-                    </div>
+                    {/* Ícone de Busca (REMOVIDO) */}
                     
                     {/* Módulo de Login/CRM */}
                     {session ? (

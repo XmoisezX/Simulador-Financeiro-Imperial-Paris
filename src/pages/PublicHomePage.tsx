@@ -27,12 +27,12 @@ const PublicHomePage: React.FC = () => {
         <div className="bg-white">
             {/* 1. Seção de Busca com Background */}
             <div 
-                className="relative w-full bg-cover bg-center pt-12 pb-24" 
+                className="relative w-full bg-cover bg-center pb-24" 
                 style={{ 
                     backgroundImage: `url('${SUPABASE_HERO_IMAGE_URL}')`,
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
-                    minHeight: '400px' // Garante altura mínima
+                    minHeight: '450px' // Aumentei a altura mínima para compensar a remoção do padding
                 }}
             >
                 {/* Overlay para escurecer a imagem e melhorar a legibilidade */}
