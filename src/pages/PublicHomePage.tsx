@@ -5,6 +5,7 @@ import TextInput from '../components/TextInput';
 import { Link } from 'react-router-dom';
 import ImovelSearch from '../components/ImovelSearch';
 import { usePublicImoveis } from '../hooks/usePublicImoveis'; // Importando o hook
+import { useBannerPosition } from '../hooks/useBannerPosition'; // NOVO HOOK
 import ClientOnly from '../components/ClientOnly'; // Importando ClientOnly
 
 // URL pública da imagem no Supabase Storage
@@ -19,7 +20,8 @@ const stats = [
 ];
 
 const PublicHomePage: React.FC = () => {
-    const { imoveis, isLoading, error } = usePublicImoveis();
+    const { imoveis, isLoading: isImoveisLoading } = usePublicImoveis();
+    const { position: bannerPosition, isLoading: isPositionLoading } = useBannerPosition(); // Usando o novo hook
 
     const formatCurrency = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -31,7 +33,7 @@ const PublicHomePage: React.FC = () => {
                 style={{ 
                     backgroundImage: `url('${SUPABASE_HERO_IMAGE_URL}')`,
                     backgroundSize: 'cover',
-                    backgroundPosition: 'center',
+                    backgroundPosition: bannerPosition, // APLICANDO A POSIÇÃO
                     minHeight: '450px'
                 }}
             >
@@ -60,7 +62,7 @@ const PublicHomePage: React.FC = () => {
             <div className="container mx-auto p-8 mt-8">
                 <h2 className="text-3xl font-bold text-dark-text mb-8 border-b pb-2">Imóveis em Destaque</h2>
                 
-                {isLoading && (
+                {isImoveisLoading && (
                     <div className="flex items-center justify-center py-10">
                         <Loader2 className="w-6 h-6 animate-spin text-primary-orange mr-3" />
                         <p className="ml-3 text-gray-600">Carregando imóveis...</p>
@@ -71,7 +73,7 @@ const PublicHomePage: React.FC = () => {
                     <div className="text-red-600 p-4 bg-red-50 rounded-md">Erro ao carregar destaques: {error}</div>
                 )}
                 
-                {!isLoading && imoveis.length === 0 && (
+                {!isImoveisLoading && imoveis.length === 0 && (
                     <div className="text-center py-10 text-gray-500">
                         <p className="text-lg">Nenhum imóvel aprovado e disponível encontrado para destaque.</p>
                     </div>
