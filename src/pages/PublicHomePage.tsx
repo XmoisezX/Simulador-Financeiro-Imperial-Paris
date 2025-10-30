@@ -3,7 +3,7 @@ import { Search, Home, DollarSign, MapPin, CheckCircle, ArrowRight, User, Loader
 import { Button } from '../components/ui/Button';
 import TextInput from '../components/TextInput';
 import { Link } from 'react-router-dom';
-import ImovelSearch from '../components/ImovelSearch';
+import FloatingSearchForm from '../components/FloatingSearchForm'; // NOVO COMPONENTE
 import { usePublicImoveis } from '../hooks/usePublicImoveis'; // Importando o hook
 import { useBannerPosition } from '../hooks/useBannerPosition'; // NOVO HOOK
 import ClientOnly from '../components/ClientOnly'; // Importando ClientOnly
@@ -41,7 +41,8 @@ const PublicHomePage: React.FC = () => {
                 <div className="absolute inset-0 bg-black opacity-40"></div> 
                 <div className="relative z-10">
                     <ClientOnly>
-                        <ImovelSearch />
+                        {/* NOVO COMPONENTE DE BUSCA */}
+                        <FloatingSearchForm />
                     </ClientOnly>
                 </div>
             </div>
