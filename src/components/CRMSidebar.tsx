@@ -89,7 +89,8 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                 hidden lg:block sticky top-[88px] 
                 ${isOpen ? 'lg:w-64' : 'lg:w-20'}
             `}>
-                <div className="p-4 space-y-1">
+                {/* Removendo p-4 do div principal e aplicando padding interno onde necessário */}
+                <div className="space-y-1 px-4 pb-4"> 
                     {/* Botão de Toggle (Apenas para Desktop) */}
                     <button 
                         onClick={toggleSidebar}
@@ -100,11 +101,11 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                         <Menu className={`w-5 h-5 text-slate-600`} />
                     </button>
 
-                    {isOpen && <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1 px-3">Navegação</h3>}
+                    {isOpen && <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1">Navegação</h3>}
                     
                     <NavItem to="/crm/dashboard" icon={<Home className="w-5 h-5" />} label="Início" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     
-                    {isOpen && <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1 px-3">Imóveis & Vendas</h3>}
+                    {isOpen && <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1">Imóveis & Vendas</h3>}
                     {!isOpen && <div className="h-4"></div>}
                     <NavItem to="/crm/imoveis" icon={<Building className="w-5 h-5" />} label="Imóveis" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     <NavItem to="/crm/chaves" icon={<Key className="w-5 h-5" />} label="Chaves" isSidebarOpen={isOpen} onClick={handleNavClick} />
@@ -112,12 +113,12 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                     <NavItem to="/crm/leads" icon={<Zap className="w-5 h-5" />} label="Leads" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     <NavItem to="/crm/oportunidades" icon={<Briefcase className="w-5 h-5" />} label="Oportunidades" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     
-                    {isOpen && <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1 px-3">Pessoas & Rotinas</h3>}
+                    {isOpen && <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1">Pessoas & Rotinas</h3>}
                     {!isOpen && <div className="h-4"></div>}
                     <NavItem to="/crm/pessoas" icon={<Users className="w-5 h-5" />} label="Pessoas" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     <NavItem to="/crm/atividades" icon={<CalendarCheck className="w-5 h-5" />} label="Atividades" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     
-                    {isOpen && <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1 px-3">Ferramentas</h3>}
+                    {isOpen && <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1">Ferramentas</h3>}
                     {!isOpen && <div className="h-4"></div>}
                     <NavItem to="/simulador" icon={<DollarSign className="w-5 h-5" />} label="Simulador Financeiro" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     <NavItem to="/analise-de-mercado" icon={<Building className="w-5 h-5" />} label="Análise de Mercado" isSidebarOpen={isOpen} onClick={handleNavClick} />
@@ -125,7 +126,7 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                     <NavItem to="/mapa-teste" icon={<Map className="w-5 h-5" />} label="Teste de Mapa" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     
                     {/* NOVO: Menu Sistema */}
-                    {isOpen && <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1 px-3">Administração</h3>}
+                    {isOpen && <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1">Administração</h3>}
                     {!isOpen && <div className="h-4"></div>}
                     
                     <div className="relative">
