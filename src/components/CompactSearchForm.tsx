@@ -83,7 +83,6 @@ const CompactSearchForm: React.FC = () => {
         <form 
             onSubmit={handleSearch} 
             className="w-full bg-white p-4 rounded-lg shadow-md border border-gray-100 space-y-3"
-            style={{ maxWidth: '350px', maxHeight: '300px', overflowY: 'auto' }}
         >
             
             <h2 className="text-lg font-bold text-dark-text border-b pb-2">Filtros de Busca</h2>
