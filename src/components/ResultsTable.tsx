@@ -22,6 +22,7 @@ const formatPercent = (value: number) => {
     return `${(value).toFixed(2)}%`;
 };
 
+// Nova função auxiliar para DRY (Don't Repeat Yourself)
 const formatBasic = (value: number, isInteger: boolean) => {
     if (isInteger) return value.toFixed(0);
     return value.toFixed(2);
@@ -96,11 +97,13 @@ const EditableCell: React.FC<EditableCellProps> = React.memo(({ month, field, pr
         onActualDataChange(month, field, numericValue);
     };
     
+    // Simplificado usando a nova função 'formatBasic'
     if (!isPastMonth) {
         const display = isCurrency ? formatCurrency(projectedValue) : formatBasic(projectedValue, isInteger);
         return <TD className={`text-right ${isCurrency ? '' : 'text-center'}`}>{display}</TD>;
     }
 
+    // Para meses passados
     const inputValue = actualValue !== null 
         ? (isCurrency ? new Intl.NumberFormat('pt-BR').format(actualValue) : formatBasic(actualValue, isInteger))
         : '';
@@ -131,12 +134,15 @@ const EditableCell: React.FC<EditableCellProps> = React.memo(({ month, field, pr
 
 const ResultsTable: React.FC<ResultsTableProps> = ({ monthlyData, totals, taxRate, startDate, onActualDataChange, actualData }) => {
     
+    // Cálculo memoizado: só recalcula se 'startDate' mudar
     const currentMonthIndex = React.useMemo(() => getCurrentMonthIndex(startDate), [startDate]);
     
+    // Função memoizada: só recria se 'startDate' mudar
     const getMonthDateCallback = React.useCallback((monthIndex: number) => {
         return getMonthDate(startDate, monthIndex);
     }, [startDate]);
 
+    // Headers e Tooltips memoizados: não recria a cada renderização
     const headers = React.useMemo(() => [
         "Mês", "Data", "Nº Vendas Total", "Nº Vendas (Sócio)", "Nº Vendas (Corr.)", "VGV", "Nº Aluguéis", "Fat Bruto Venda", "Fat Bruto Alug (1º)", "Fat Bruto Alug (Adm)", "Fat Bruto Reg.", "Fat Bruto Total",
         `Imposto SN (${taxRate}%)`, "Com Var Venda (S)", "Com Var Venda (C)", "Com Var Alug (1º S)", "Com Var Alug (Estag.)",
@@ -172,6 +178,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ monthlyData, totals, taxRat
         "Ponto Equil.": "Ponto de Equilíbrio. (Custo Fixo Total / % Margem Contrib.). Indica o faturamento mínimo necessário no mês para cobrir todos os custos."
     }), [taxRate]);
 
+    // Cálculos do rodapé memoizados: só recalcula se 'monthlyData' ou 'totals' mudarem
     const totalSalesBrokers = React.useMemo(() => 
         monthlyData.reduce((acc, row) => acc + row.salesCountBrokers, 0),
     [monthlyData]);
@@ -198,6 +205,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ monthlyData, totals, taxRat
                         const isPastMonth = row.month < currentMonthIndex;
                         const monthDate = getMonthDateCallback(row.month);
                         
+                        // Objeto de props comuns para 'EditableCell'
                         const commonEditableProps = {
                             month: row.month,
                             onActualDataChange: onActualDataChange,
@@ -285,6 +293,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ monthlyData, totals, taxRat
                         <TD className="text-left">Total/Média</TD>
                         <TD>-</TD> {/* Data column */}
                         <TD className="text-center">{totals.totalSalesCount}</TD>
+                        {/* Usando os valores memoizados */}
                         <TD className="text-center">{totalSalesPartners}</TD>
                         <TD className="text-center">{totalSalesBrokers}</TD>
                         <TD>{formatCurrency(totals.totalVgv)}</TD>
