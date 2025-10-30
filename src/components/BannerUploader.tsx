@@ -14,7 +14,7 @@ const PUBLIC_URL = `https://pqievwbfrbiqhvdyalrh.supabase.co/storage/v1/object/p
 
 // Configuração de Posição
 const BANNER_SETTINGS_KEY = 'hero_settings';
-const DEFAULT_TRANSFORM: ImageTransform = { scale: 1.0, offsetX: 0, offsetY: 0 };
+const DEFAULT_TRANSFORM: ImageTransform = { scale: 1.1, offsetX: 0, offsetY: 0 }; // Ajustado para 1.1
 
 interface BannerSettings {
     desktop: ImageTransform;
@@ -111,6 +111,9 @@ const BannerUploader: React.FC = () => {
                 console.error('Error fetching banner settings:', error);
             } else if (data) {
                 setTransformSettings(data.setting_value as BannerSettings);
+            } else {
+                // Se não encontrar, usa o default (1.1)
+                setTransformSettings(initialSettings);
             }
             setIsSettingsLoading(false);
         };
@@ -196,9 +199,6 @@ const BannerUploader: React.FC = () => {
         setSuccess(null);
         
         // Recarrega as configurações iniciais
-        // Nota: Para recarregar as configurações iniciais, precisaríamos do estado inicial
-        // que foi buscado do banco. Como não temos o estado inicial salvo, vamos apenas
-        // resetar para o DEFAULT_TRANSFORM para cada dispositivo.
         setTransformSettings(initialSettings);
     };
     
