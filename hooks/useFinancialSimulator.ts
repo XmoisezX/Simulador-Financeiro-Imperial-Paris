@@ -1,26 +1,7 @@
 import { useCallback } from 'react';
 import { SimulationInput, MonthlyResult, SimulationResult } from '../types';
 import { INSS_PRO_LABORE_COST } from '../constants';
-
-// Helper function to determine the current month index (1-indexed)
-const getCurrentMonthIndex = (startDateStr: string): number => {
-    // Ensure date string is parsed correctly (YYYY-MM-DD)
-    const start = new Date(startDateStr + 'T00:00:00');
-    const now = new Date();
-    
-    // Calculate difference in months
-    const diffYears = now.getFullYear() - start.getFullYear();
-    const diffMonths = now.getMonth() - start.getMonth();
-    
-    // If today is before the start date, month index is 1.
-    if (diffYears < 0 || (diffYears === 0 && diffMonths < 0)) {
-        return 1;
-    }
-    
-    // Month index is 1-based.
-    return (diffYears * 12) + diffMonths + 1;
-};
-
+import { getCurrentMonthIndex } from '../src/utils/date';
 
 export const useFinancialSimulator = () => {
     const calculateSimulation = useCallback((

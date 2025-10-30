@@ -6,9 +6,11 @@ import { useAuth } from '../contexts/AuthContext';
 import ImovelStep from '../components/ImovelStep';
 import { Button } from '../components/ui/Button';
 import { useCepLookup } from '../../hooks/useCepLookup';
+import { useNominatimLookup } from '../../hooks/useNominatimLookup';
 import { uploadImovelMedia, saveMediaMetadata } from '../utils/media';
 import { useUnsavedChangesWarning } from '../hooks/useUnsavedChangesWarning';
-import ImovelFormSteps from '../components/ImovelFormSteps'; // NOVO COMPONENTE
+import ImovelFormSteps from '../components/ImovelFormSteps';
+import { validateImovelStep } from '../utils/imovelValidation';
 
 // --- Mock Data ---
 const propertyTypes = [
@@ -143,6 +145,12 @@ const NewImovelPage: React.FC = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     
     const { data: cepData, lookup: lookupCep } = useCepLookup();
+    const { 
+        location: nominatimLocation, 
+        loading: nominatimLoading, 
+        error: nominatimError, 
+        lookup: lookupNominatim 
+    } = useNominatimLookup();
     
     // Estado inicial para comparação (usamos uma cópia do estado inicial)
     const initialFormState = useRef(getInitialState());
@@ -311,60 +319,19 @@ const NewImovelPage: React.FC = () => {
         }
     }, [cepData]);
 
-
-    const validateStep = useCallback((currentData: ImovelInput, currentStep: number, shouldSetError: boolean = true): boolean => {
-        let errors: string[] = [];
-
-        switch (currentStep) {
-            case 1:
-                if (!currentData.tipo_imovel) errors.push('O tipo do imóvel é obrigatório.');
-                if (!currentData.codigo) errors.push('O código do imóvel é obrigatório.');
-                
-                const activeCount = (currentData.venda_ativo ? 1 : 0) + (currentData.locacao_ativo ? 1 : 0) + (currentData.temporada_ativo ? 1 : 0);
-                if (activeCount === 0) {
-                    errors.push('Pelo menos uma finalidade deve estar ativa.');
-                }
-                
-                if (currentData.venda_ativo && currentData.venda_disponibilidade === 'Indisponível' && !currentData.venda_motivo_indisponibilidade) {
-                    errors.push('O motivo de indisponibilidade de venda é obrigatório.');
-                }
-                if (currentData.locacao_ativo && currentData.locacao_disponibilidade === 'Indisponível' && !currentData.locacao_motivo_indisponibilidade) {
-                    errors.push('O motivo de indisponibilidade de locação é obrigatório.');
-                }
-                if (currentData.temporada_ativo && currentData.temporada_disponibilidade === 'Indisponível' && !currentData.temporada_motivo_indisponibilidade) {
-                    errors.push('O motivo de indisponibilidade de temporada é obrigatório.');
-                }
-                break;
-            case 2:
-                if (!currentData.cep || currentData.cep.replace(/\D/g, '').length !== 8) errors.push('O CEP é obrigatório e deve ter 8 dígitos.');
-                if (!currentData.bairro) errors.push('O bairro é obrigatório.');
-                if (!currentData.logradouro) errors.push('O logradouro é obrigatório.');
-                if (!currentData.numero) errors.push('O número é obrigatório.');
-                break;
-            case 3:
-                if (currentData.venda_ativo && currentData.valor_venda <= 0) errors.push('O valor de venda deve ser maior que zero se a venda estiver ativa.');
-                if (currentData.locacao_ativo && currentData.valor_locacao <= 0) errors.push('O valor de locação deve ser maior que zero se a locação estiver ativa.');
-                if (!currentData.financiavel) errors.push('O campo Financiável é obrigatório.');
-                break;
-            case 5:
-                if (!currentData.proprietario_id) errors.push('O proprietário é obrigatório.');
-                if (!currentData.agenciador_id) errors.push('O agenciador é obrigatório.');
-                if (!currentData.responsavel_id) errors.push('O responsável é obrigatório.');
-                if (!currentData.data_agenciamento) errors.push('A data de agenciamento é obrigatória.');
-                if (!currentData.ocupacao) errors.push('O campo Ocupação é obrigatório.');
-                break;
-            case 9:
-                if (currentData.dormitorios === undefined || currentData.dormitorios < 0) errors.push('O número de dormitórios é obrigatório.');
-                if (currentData.suites === undefined || currentData.suites < 0) errors.push('O número de suítes é obrigatório.');
-                if (currentData.banheiros === undefined || currentData.banheiros < 0) errors.push('O número de banheiros é obrigatório.');
-                if (currentData.vagas_garagem === undefined || currentData.vagas_garagem < 0) errors.push('O número de vagas de garagem é obrigatório.');
-                if (currentData.area_privativa_m2 === undefined || currentData.area_privativa_m2 <= 0) errors.push('A área privativa é obrigatória.');
-                if (!currentData.condicao) errors.push('A condição do imóvel é obrigatória.');
-                break;
-            case 11:
-                if (!currentData.status_aprovacao) errors.push('O status de aprovação é obrigatório.');
-                break;
+    // Efeito para geocodificar o endereço completo
+    useEffect(() => {
+        const fullAddress = `${formData.logradouro}, ${formData.numero} - ${formData.bairro}, ${formData.cidade} - ${formData.estado}`;
+        const isAddressValid = formData.cep.replace(/\D/g, '').length === 8 && formData.bairro && formData.logradouro && formData.numero;
+        
+        if (isAddressValid) {
+            lookupNominatim(fullAddress);
         }
+    }, [formData.logradouro, formData.numero, formData.bairro, formData.cidade, formData.estado, formData.cep, lookupNominatim]);
+
+
+    const checkStepValidity = useCallback((currentData: ImovelInput, currentStep: number, shouldSetError: boolean = true): boolean => {
+        const errors = validateImovelStep(currentData, currentStep);
 
         if (errors.length > 0) {
             if (shouldSetError) {
@@ -379,9 +346,9 @@ const NewImovelPage: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        const isValid = validateStep(formData, step, false);
+        const isValid = checkStepValidity(formData, step, false);
         setIsCurrentStepValid(isValid);
-    }, [formData, step, validateStep]);
+    }, [formData, step, checkStepValidity]);
 
     // Scroll to the active step whenever it changes
     useEffect(() => {
@@ -393,7 +360,7 @@ const NewImovelPage: React.FC = () => {
 
 
     const handleNext = () => {
-        if (validateStep(formData, step, true)) {
+        if (checkStepValidity(formData, step, true)) {
             setStep(prev => Math.min(prev + 1, TOTAL_STEPS));
         }
     };
@@ -404,7 +371,7 @@ const NewImovelPage: React.FC = () => {
     };
     
     const handleSubmit = async () => {
-        if (!validateStep(formData, TOTAL_STEPS, true)) return;
+        if (!checkStepValidity(formData, TOTAL_STEPS, true)) return;
         if (!session) {
             alert('Você precisa estar logado para salvar o imóvel.');
             return;
@@ -560,6 +527,10 @@ const NewImovelPage: React.FC = () => {
                             handleLegendUpdate={handleLegendUpdate}
                             handleAction={handleAction}
                             handleSelectAll={handleSelectAll}
+                            // Props de Geocodificação
+                            nominatimLocation={nominatimLocation}
+                            nominatimLoading={nominatimLoading}
+                            nominatimError={nominatimError}
                         />
                     </ImovelStep>
                 </div>

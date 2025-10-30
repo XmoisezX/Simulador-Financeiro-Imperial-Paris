@@ -1,5 +1,6 @@
 import React from 'react';
 import { MonthlyResult, SimulationTotals } from '../types';
+import { getCurrentMonthIndex, getMonthDate } from '../src/utils/date';
 
 interface ResultsTableProps {
     monthlyData: MonthlyResult[];
@@ -28,26 +29,7 @@ const formatBasic = (value: number, isInteger: boolean) => {
     return value.toFixed(2);
 };
 
-const getMonthDate = (startDateStr: string, monthIndex: number): string => {
-    const start = new Date(startDateStr + 'T00:00:00');
-    const targetDate = new Date(start.getFullYear(), start.getMonth() + monthIndex - 1, 1);
-    
-    return targetDate.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
-};
-
-const getCurrentMonthIndex = (startDateStr: string): number => {
-    const start = new Date(startDateStr + 'T00:00:00');
-    const now = new Date();
-    
-    const diffYears = now.getFullYear() - start.getFullYear();
-    const diffMonths = now.getMonth() - start.getMonth();
-    
-    if (diffYears < 0 || (diffYears === 0 && diffMonths < 0)) {
-        return 1;
-    }
-    
-    return (diffYears * 12) + diffMonths + 1;
-};
+// REMOVIDO: getMonthDate e getCurrentMonthIndex
 
 // --- Componentes Auxiliares Memoizados ---
 

@@ -10,8 +10,6 @@ import ImageCard from './ImageCard';
 import ActionsDropdown from './ActionsDropdown';
 import PersonSelect from './PersonSelect';
 import UserSelect from './UserSelect';
-import { useCepLookup } from '../../hooks/useCepLookup';
-import { useNominatimLookup } from '../../hooks/useNominatimLookup';
 import MapDisplay from './MapDisplay';
 
 // --- Mock Data ---
@@ -68,6 +66,11 @@ interface ImovelFormStepsProps {
     handleLegendUpdate: (id: string, legend: string) => void;
     handleAction: (action: string) => void;
     handleSelectAll: (checked: boolean) => void;
+    
+    // Props de Geocodificação (Recebidas do pai)
+    nominatimLocation: { lat: number, lng: number, display_name: string } | null;
+    nominatimLoading: boolean;
+    nominatimError: string | null;
 }
 
 const ImovelFormSteps: React.FC<ImovelFormStepsProps> = ({
@@ -89,41 +92,15 @@ const ImovelFormSteps: React.FC<ImovelFormStepsProps> = ({
     handleLegendUpdate,
     handleAction,
     handleSelectAll,
+    nominatimLocation,
+    nominatimLoading,
+    nominatimError,
 }) => {
     
-    // --- Geocodificação (Mantida aqui para usar os hooks) ---
-    const { data: cepData, loading: cepLoading, error: cepError, lookup: lookupCep } = useCepLookup();
-    const { 
-        location: nominatimLocation, 
-        loading: nominatimLoading, 
-        error: nominatimError, 
-        lookup: lookupNominatim 
-    } = useNominatimLookup();
+    // A lógica de geocodificação e CEP lookup foi movida para o componente pai.
+    // Aqui, apenas usamos os resultados passados via props.
     
-    // Efeito para preencher o formulário quando o CEP é encontrado
-    useEffect(() => {
-        if (cepData) {
-            // Nota: O handleCepChange já chama o lookupCep, mas este efeito garante que o preenchimento
-            // ocorra após a resposta da API.
-            // No entanto, para evitar loops, vamos garantir que o handleCepChange no componente pai
-            // seja o único a atualizar o estado do formulário.
-            // Se o CEP lookup for chamado no pai, o pai deve passar o cepData para cá ou gerenciar o preenchimento.
-            // Como o `handleCepChange` está no pai, vamos assumir que ele já faz o preenchimento.
-        }
-    }, [cepData]);
-    
-    // Efeito para geocodificar o endereço completo no Passo 2
-    useEffect(() => {
-        if (step === 2) {
-            const fullAddress = `${formData.logradouro}, ${formData.numero} - ${formData.bairro}, ${formData.cidade} - ${formData.estado}`;
-            const isAddressValid = formData.cep.replace(/\D/g, '').length === 8 && formData.bairro && formData.logradouro && formData.numero;
-            
-            if (isAddressValid) {
-                lookupNominatim(fullAddress);
-            }
-        }
-    }, [step, formData.logradouro, formData.numero, formData.bairro, formData.cidade, formData.estado, formData.cep, lookupNominatim]);
-    // --- Fim Geocodificação ---
+    const RequiredAsterisk = () => <span className="text-red-500 ml-1">*</span>;
 
     // Helper function to render radio groups
     const renderRadioGroup = (name: keyof ImovelInput, options: (string | number)[], required = false) => (
@@ -163,8 +140,6 @@ const ImovelFormSteps: React.FC<ImovelFormStepsProps> = ({
         </div>
     );
     
-    const RequiredAsterisk = () => <span className="text-red-500 ml-1">*</span>;
-
     const isAddressValid = formData.cep.replace(/\D/g, '').length === 8 && formData.bairro && formData.logradouro && formData.numero;
     const fullAddress = `${formData.logradouro}, ${formData.numero} - ${formData.bairro}, ${formData.cidade} - ${formData.estado}`;
 
@@ -309,38 +284,33 @@ const ImovelFormSteps: React.FC<ImovelFormStepsProps> = ({
                                 maxLength={9}
                                 disabled={!isEditing}
                             />
-                            {cepLoading && (
-                                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pt-6">
-                                    <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
-                                </div>
-                            )}
-                            {cepError && <p className="text-xs text-red-500 mt-1">{cepError}</p>}
+                            {/* Removido cepLoading, pois o pai gerencia o estado e o preenchimento */}
                         </div>
                         
                         <div className="space-y-2">
                             <label className="block text-sm font-medium text-light-text">Estado <RequiredAsterisk /></label>
-                            <select id="estado" value={formData.estado} onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100" disabled={!isEditing || cepLoading || !!cepData}>
+                            <select id="estado" value={formData.estado} onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100" disabled={!isEditing}>
                                 <option value={formData.estado}>{formData.estado}</option>
                             </select>
                         </div>
                         <div className="space-y-2">
                             <label className="block text-sm font-medium text-light-text">Cidade <RequiredAsterisk /></label>
-                            <select id="cidade" value={formData.cidade} onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100" disabled={!isEditing || cepLoading || !!cepData}>
+                            <select id="cidade" value={formData.cidade} onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100" disabled={!isEditing}>
                                 <option value={formData.cidade}>{formData.cidade}</option>
                             </select>
                         </div>
                         <div className="space-y-2">
                             <label className="block text-sm font-medium text-light-text">Bairro <RequiredAsterisk /></label>
-                            <select id="bairro" value={formData.bairro} onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100" disabled={!isEditing || cepLoading || !!cepData}>
+                            <select id="bairro" value={formData.bairro} onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100" disabled={!isEditing}>
                                 <option value={formData.bairro}>{formData.bairro}</option>
                                 {/* Mock de bairros se não houver CEP data */}
-                                {!cepData && neighborhoods.map(b => <option key={b} value={b}>{b}</option>)}
+                                {neighborhoods.map(b => <option key={b} value={b}>{b}</option>)}
                             </select>
                         </div>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
-                        <TextInput label={<span>Logradouro <RequiredAsterisk /></span>} id="logradouro" value={formData.logradouro} onChange={handleInputChange} placeholder="Informe o logradouro" disabled={!isEditing || cepLoading || !!cepData} />
+                        <TextInput label={<span>Logradouro <RequiredAsterisk /></span>} id="logradouro" value={formData.logradouro} onChange={handleInputChange} placeholder="Informe o logradouro" disabled={!isEditing} />
                         <TextInput label={<span>Número <RequiredAsterisk /></span>} id="numero" value={formData.numero} onChange={handleInputChange} placeholder="Informe o número" disabled={!isEditing} />
                         <TextInput label="Complemento" id="complemento" value={formData.complemento} onChange={handleInputChange} placeholder="Informe o complemento" disabled={!isEditing} />
                         <TextInput label="Ponto de referência" id="referencia" value={formData.referencia} onChange={handleInputChange} placeholder="Ex: Ao lado da igreja" disabled={!isEditing} />
@@ -518,16 +488,6 @@ const ImovelFormSteps: React.FC<ImovelFormStepsProps> = ({
                         <NumberInput label="Honorários Locação (%)" id="honorarios_locacao_percent" value={formData.honorarios_locacao_percent} onChange={handleInputChange} placeholder="0%" disabled={!formData.locacao_ativo || !isEditing} />
                         <NumberInput label="Honorários Temporada (%)" id="honorarios_temporada_percent" value={formData.honorarios_temporada_percent} onChange={handleInputChange} placeholder="0%" disabled={!formData.temporada_ativo || !isEditing} />
                         <TextInput label={<span>Data agenciamento <RequiredAsterisk /></span>} id="data_agenciamento" type="date" value={formData.data_agenciamento} onChange={handleInputChange} disabled={!isEditing} />
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
-                        <TextInput label="Nº da matrícula" id="numero_matricula" value={formData.numero_matricula} onChange={handleInputChange} placeholder="Informe o número" disabled={!isEditing} />
-                        <label className="flex items-center space-x-2 text-sm mt-6">
-                            <Checkbox id="nao_possui_matricula" checked={formData.nao_possui_matricula} onCheckedChange={(checked) => handleCheckboxGroupChange('nao_possui_matricula', checked as any)} disabled={!isEditing} />
-                            <span>Não possui matrícula</span>
-                        </label>
-                        <TextInput label="Nº do IPTU" id="numero_iptu" value={formData.numero_iptu} onChange={handleInputChange} placeholder="Informe o IPTU" disabled={!isEditing} />
-                        <TextInput label="Vencimento da exclusividade" id="vencimento_exclusividade" type="date" value={formData.vencimento_exclusividade} onChange={handleInputChange} disabled={!isEditing} />
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
