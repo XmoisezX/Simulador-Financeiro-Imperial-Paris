@@ -1,18 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Search } from 'lucide-react';
 import { Button } from './ui/Button';
 
-const searchTabs = [
-    { id: 'imoveis', label: 'Busca de Imóveis', color: 'bg-blue-600' },
-    { id: 'cod', label: 'Busca Por Cód./Ref.', color: 'bg-[#1e3a8a]' },
-    { id: 'condominio', label: 'Busca Edifício/Condomínio', color: 'bg-[#1e3a8a]' },
-    { id: 'lugares', label: 'Busca Próximo a Lugares', color: 'bg-[#1e3a8a]' },
-];
-
 const ImovelSearch: React.FC = () => {
-    // Mantemos o estado, mas forçamos a aba 'imoveis' como ativa, já que as outras não serão renderizadas.
-    const [activeTab, setActiveTab] = useState('imoveis');
-
     // Mock data for dropdowns
     const dropdownOptions = {
         operacao: ['Venda', 'Aluguel', 'Temporada'],
@@ -44,78 +34,28 @@ const ImovelSearch: React.FC = () => {
                 Para comprar e alugar a Imperial Paris é o lugar
             </h1>
 
-            {/* Abas de Busca - REMOVIDAS */}
-            {/* Botão de Contagem - REMOVIDO */}
-
-            {/* Formulário de Busca Principal */}
+            {/* Formulário de Busca Principal (Layout simplificado) */}
             <div className="bg-white p-6 rounded-lg shadow-xl border border-gray-200 max-w-5xl mx-auto">
-                {/* Renderiza apenas o conteúdo da aba 'imoveis' */}
-                {activeTab === 'imoveis' && (
-                    <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-                        {/* Linha 1 */}
-                        <div className="col-span-1 md:col-span-1">
-                            {renderDropdown('operacao', 'Operação', dropdownOptions.operacao)}
-                        </div>
-                        <div className="col-span-1 md:col-span-2">
-                            {renderDropdown('cidades', 'Cidades', dropdownOptions.cidades)}
-                        </div>
-                        <div className="col-span-1 md:col-span-2">
-                            {renderDropdown('tipos', 'Tipos', dropdownOptions.tipos)}
-                        </div>
-                        <div className="col-span-1 md:col-span-1">
-                            {renderDropdown('bairros', 'Bairros', dropdownOptions.bairros)}
-                        </div>
-                        
-                        {/* Linha 2 */}
-                        <div className="col-span-1 md:col-span-1">
-                            {renderDropdown('finalidade', 'Finalidade', dropdownOptions.finalidade)}
-                        </div>
-                        <div className="col-span-1 md:col-span-1">
-                            {renderDropdown('dormitorios', 'Dormitórios', dropdownOptions.dormitorios)}
-                        </div>
-                        <div className="col-span-1 md:col-span-1">
-                            {renderDropdown('garagem', 'Garagem', dropdownOptions.garagem)}
-                        </div>
-                        <div className="col-span-1 md:col-span-1">
-                            <input type="text" placeholder="Valor Mín." className="w-full p-3 rounded-md bg-gray-100 text-sm text-dark-text focus:outline-none" />
-                        </div>
-                        <div className="col-span-1 md:col-span-1">
-                            <input type="text" placeholder="Valor Máx." className="w-full p-3 rounded-md bg-gray-100 text-sm text-dark-text focus:outline-none" />
-                        </div>
-                        <div className="col-span-1 md:col-span-1">
-                            <Button className="w-full bg-red-600 hover:bg-red-700 text-white h-full py-3">
-                                Pesquisar
-                            </Button>
-                        </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {/* Operação */}
+                    <div className="col-span-1">
+                        {renderDropdown('operacao', 'Operação', dropdownOptions.operacao)}
                     </div>
-                )}
-                
-                {activeTab === 'cod' && (
-                    <div className="flex space-x-4">
-                        <TextInput label="" id="cod_ref" placeholder="Digite o Código ou Referência" className="flex-1" />
-                        <Button className="bg-red-600 hover:bg-red-700 text-white px-8">
-                            <Search className="w-5 h-5 mr-2" /> Buscar
+                    {/* Tipos */}
+                    <div className="col-span-1">
+                        {renderDropdown('tipos', 'Tipos', dropdownOptions.tipos)}
+                    </div>
+                    {/* Bairros */}
+                    <div className="col-span-2 md:col-span-1">
+                        {renderDropdown('bairros', 'Bairros', dropdownOptions.bairros)}
+                    </div>
+                    {/* Botão de Pesquisa */}
+                    <div className="col-span-2 md:col-span-1">
+                        <Button className="w-full bg-red-600 hover:bg-red-700 text-white h-full py-3">
+                            <Search className="w-5 h-5 mr-2" /> Pesquisar
                         </Button>
                     </div>
-                )}
-                
-                {activeTab === 'condominio' && (
-                    <div className="flex space-x-4">
-                        <TextInput label="" id="condominio_search" placeholder="Digite o nome do Edifício ou Condomínio" className="flex-1" />
-                        <Button className="bg-red-600 hover:bg-red-700 text-white px-8">
-                            <Search className="w-5 h-5 mr-2" /> Buscar
-                        </Button>
-                    </div>
-                )}
-                
-                {activeTab === 'lugares' && (
-                    <div className="flex space-x-4">
-                        <TextInput label="" id="lugares_search" placeholder="Ex: Próximo à UFPel, Shopping" className="flex-1" />
-                        <Button className="bg-red-600 hover:bg-red-700 text-white px-8">
-                            <Search className="w-5 h-5 mr-2" /> Buscar
-                        </Button>
-                    </div>
-                )}
+                </div>
             </div>
         </div>
     );

@@ -14,7 +14,7 @@ const PublicHeader: React.FC = () => {
     };
 
     return (
-        <header className="bg-white shadow-md sticky top-0 z-20">
+        <header className="sticky top-0 z-20 bg-white/30 backdrop-blur-md shadow-md">
             {/* Barra Superior Azul Escura */}
             <div className="bg-[#1e3a8a] text-white hidden sm:block">
                 <div className="container mx-auto px-4 py-2 flex items-center justify-end space-x-4 text-sm">
