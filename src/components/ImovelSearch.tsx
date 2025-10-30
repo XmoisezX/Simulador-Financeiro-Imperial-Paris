@@ -38,8 +38,6 @@ const ImovelSearch: React.FC = () => {
     return (
         <div className="container mx-auto p-4 sm:p-6 lg:p-8">
             <h1 className="text-2xl sm:text-3xl font-semibold text-white text-center mb-8">
-                A maior, melhor e mais bem avaliada imobiliária de Pelotas
-                <br />
                 Para comprar e alugar a Imperial Paris é o lugar
             </h1>
 
