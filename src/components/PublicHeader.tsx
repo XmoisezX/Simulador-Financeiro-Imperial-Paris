@@ -60,26 +60,39 @@ const PublicHeader: React.FC = () => {
             </div>
             
             {/* Menu Mobile Overlay */}
-            {isMenuOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 lg:hidden">
-                    {/* Painel do Menu: Garante fundo branco e texto escuro */}
-                    <div className="absolute right-0 top-0 w-64 h-full bg-white shadow-lg p-6 space-y-4 text-dark-text">
-                        <div className="flex justify-end">
-                            <button onClick={() => setIsMenuOpen(false)} className="text-gray-600 hover:text-red-600">
-                                <X className="w-6 h-6" />
-                            </button>
-                        </div>
-                        <Link to="/imoveis" className="block p-2 text-dark-text hover:bg-gray-100 rounded" onClick={() => setIsMenuOpen(false)}>ALUGAR</Link>
-                        <Link to="/imoveis" className="block p-2 text-dark-text hover:bg-gray-100 rounded" onClick={() => setIsMenuOpen(false)}>COMPRAR</Link>
-                        <Link to="/condominios" className="block p-2 text-dark-text hover:bg-gray-100 rounded" onClick={() => setIsMenuOpen(false)}>CONDOMÍNIOS</Link>
-                        <Link to="/manutencao" className="block p-2 text-dark-text hover:bg-gray-100 rounded" onClick={() => setIsMenuOpen(false)}>MANUTENÇÃO</Link>
-                        <Link to="/sobre" className="block p-2 text-dark-text hover:bg-gray-100 rounded" onClick={() => setIsMenuOpen(false)}>IMPERIAL</Link>
-                        <Link to={session ? "/crm/dashboard" : "/login"} className="block p-2 text-blue-600 hover:bg-blue-50 rounded" onClick={() => setIsMenuOpen(false)}>
-                            {session ? 'Acessar CRM' : 'Login / CRM'}
-                        </Link>
+            <div 
+                className={`fixed inset-0 z-50 lg:hidden transition-opacity duration-300 ${
+                    isMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                }`}
+            >
+                {/* Overlay de fundo */}
+                <div 
+                    className="absolute inset-0 bg-black transition-opacity duration-300"
+                    style={{ opacity: isMenuOpen ? 0.5 : 0 }}
+                    onClick={() => setIsMenuOpen(false)}
+                ></div>
+                
+                {/* Painel do Menu: Garante fundo branco e texto escuro */}
+                <div 
+                    className={`absolute right-0 top-0 w-64 h-full bg-white shadow-lg p-6 space-y-4 text-dark-text transition-transform duration-300 ${
+                        isMenuOpen ? 'translate-x-0' : 'translate-x-full'
+                    }`}
+                >
+                    <div className="flex justify-end">
+                        <button onClick={() => setIsMenuOpen(false)} className="text-gray-600 hover:text-red-600">
+                            <X className="w-6 h-6" />
+                        </button>
                     </div>
+                    <Link to="/imoveis" className="block p-2 text-dark-text hover:bg-gray-100 rounded" onClick={() => setIsMenuOpen(false)}>ALUGAR</Link>
+                    <Link to="/imoveis" className="block p-2 text-dark-text hover:bg-gray-100 rounded" onClick={() => setIsMenuOpen(false)}>COMPRAR</Link>
+                    <Link to="/condominios" className="block p-2 text-dark-text hover:bg-gray-100 rounded" onClick={() => setIsMenuOpen(false)}>CONDOMÍNIOS</Link>
+                    <Link to="/manutencao" className="block p-2 text-dark-text hover:bg-gray-100 rounded" onClick={() => setIsMenuOpen(false)}>MANUTENÇÃO</Link>
+                    <Link to="/sobre" className="block p-2 text-dark-text hover:bg-gray-100 rounded" onClick={() => setIsMenuOpen(false)}>IMPERIAL</Link>
+                    <Link to={session ? "/crm/dashboard" : "/login"} className="block p-2 text-blue-600 hover:bg-blue-50 rounded" onClick={() => setIsMenuOpen(false)}>
+                        {session ? 'Acessar CRM' : 'Login / CRM'}
+                    </Link>
                 </div>
-            )}
+            </div>
         </header>
     );
 };
