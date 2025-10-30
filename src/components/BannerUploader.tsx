@@ -162,12 +162,6 @@ export const useBannerPosition = () => {
         return true;
     }, [session, fileToUpload, transformSettings]);
 
-    // Função auxiliar para limpar pending state após Dyad processar (opcional)
-    const handleClearPending = useCallback(() => {
-        setPendingCodeToWrite(null);
-        setSuccess('Configurações escritas com sucesso.');
-    }, []);
-
     // Funções simples de UI para trocar device
     const renderDeviceButton = (device: DeviceType) => {
         const active = currentDevice === device;
