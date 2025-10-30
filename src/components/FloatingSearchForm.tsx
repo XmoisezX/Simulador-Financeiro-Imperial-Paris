@@ -45,11 +45,11 @@ const FloatingSearchForm: React.FC = () => {
         alert(`Buscando: ${filters.operation} em ${filters.neighborhood || 'toda a cidade'}`);
     };
     
-    const renderSelect = (name: keyof FilterState, label: string, options: (string | number)[], icon: React.FC) => (
+    const renderSelect = (name: keyof FilterState, label: string, options: (string | number)[], Icon: React.FC) => (
         <div className="relative">
             <label htmlFor={name} className="sr-only">{label}</label>
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                {icon({})}
+                <Icon />
             </div>
             <select
                 id={name}
@@ -69,10 +69,10 @@ const FloatingSearchForm: React.FC = () => {
         </div>
     );
     
-    const renderRadioGroup = (name: keyof FilterState, options: (string | number)[], icon: React.FC) => (
+    const renderRadioGroup = (name: keyof FilterState, options: (string | number)[], Icon: React.FC) => (
         <div className="space-y-2">
             <div className="flex items-center text-sm font-medium text-dark-text">
-                {icon({})}
+                <Icon />
                 <span className="ml-2">{name.charAt(0).toUpperCase() + name.slice(1)}</span>
             </div>
             <div className="flex flex-wrap gap-2">
