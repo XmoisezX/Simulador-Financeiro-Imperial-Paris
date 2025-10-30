@@ -203,6 +203,14 @@ const ViewImovelPage: React.FC = () => {
         if (!formData || !isEditing) return;
         
         const { id, value, type, checked } = e.target as HTMLInputElement;
+        
+        // Lógica para desmarcar isento se o valor for alterado
+        if (id === 'valor_condominio' && parseFloat(value) > 0) {
+            setFormData(prev => prev ? ({ ...prev, condominio_isento: false }) : null);
+        }
+        if (id === 'valor_iptu' && parseFloat(value) > 0) {
+            setFormData(prev => prev ? ({ ...prev, iptu_isento: false }) : null);
+        }
 
         setFormData(prev => {
             if (!prev) return null;
@@ -234,7 +242,7 @@ const ViewImovelPage: React.FC = () => {
         setValidationError(null);
     }, [formData, isEditing]);
     
-    const handleToggleChange = useCallback((name: 'vis_venda' | 'vis_locacao' | 'vis_temporada', checked: boolean) => {
+    const handleToggleChange = useCallback((name: 'vis_venda' | 'vis_locacao' | 'vis_temporada' | 'vis_iptu' | 'vis_condominio', checked: boolean) => {
         if (!formData || !isEditing) return;
         setFormData(prev => prev ? { ...prev, [name]: checked ? 'Visível' : 'Invisível' } : null);
         setValidationError(null);
@@ -246,6 +254,13 @@ const ViewImovelPage: React.FC = () => {
             if (!prev) return null;
             
             if (typeof value === 'boolean') {
+                // Lógica para isento
+                if (field === 'condominio_isento') {
+                    return { ...prev, [field]: value, valor_condominio: value ? 0 : prev.valor_condominio };
+                }
+                if (field === 'iptu_isento') {
+                    return { ...prev, [field]: value, valor_iptu: value ? 0 : prev.valor_iptu };
+                }
                 return { ...prev, [field]: value as any };
             }
             

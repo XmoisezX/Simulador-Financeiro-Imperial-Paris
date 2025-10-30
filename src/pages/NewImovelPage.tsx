@@ -11,6 +11,7 @@ import { uploadImovelMedia, saveMediaMetadata } from '../utils/media';
 import { useUnsavedChangesWarning } from '../hooks/useUnsavedChangesWarning';
 import ImovelFormSteps from '../components/ImovelFormSteps';
 import { validateImovelStep } from '../utils/imovelValidation';
+import { supabase } from '../integrations/supabase/client';
 
 // --- Mock Data ---
 const propertyTypes = [
@@ -134,7 +135,7 @@ const NewImovelPage: React.FC = () => {
     const { supabase, session } = useAuth();
     const navigate = useNavigate();
     const [step, setStep] = useState(1);
-    const [formData, setFormData] = useState<ImovelInput>(getInitialState());
+    const [formData, setFormData] = useState<ImovelInput>(getInitialState);
     const [isSaving, setIsSaving] = useState(false);
     const [validationError, setValidationError] = useState<string | null>(null);
     const [isCurrentStepValid, setIsCurrentStepValid] = useState(false);
@@ -232,7 +233,15 @@ const NewImovelPage: React.FC = () => {
     
     // --- Handlers de Formulário ---
     const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-        const { id, value, type, checked } = e.target as HTMLInputElement;
+        const { id, value, type } = e.target as HTMLInputElement;
+        
+        // Lógica para desmarcar isento se o valor for alterado
+        if (id === 'valor_condominio' && parseFloat(value) > 0) {
+            setFormData(prev => ({ ...prev, condominio_isento: false }));
+        }
+        if (id === 'valor_iptu' && parseFloat(value) > 0) {
+            setFormData(prev => ({ ...prev, iptu_isento: false }));
+        }
 
         setFormData(prev => {
             let newValue: any = value;
@@ -260,7 +269,7 @@ const NewImovelPage: React.FC = () => {
         setValidationError(null);
     }, []);
     
-    const handleToggleChange = useCallback((name: 'vis_venda' | 'vis_locacao' | 'vis_temporada', checked: boolean) => {
+    const handleToggleChange = useCallback((name: 'vis_venda' | 'vis_locacao' | 'vis_temporada' | 'vis_iptu' | 'vis_condominio', checked: boolean) => {
         setFormData(prev => ({ ...prev, [name]: checked ? 'Visível' : 'Invisível' }));
         setValidationError(null);
     }, []);
@@ -268,6 +277,13 @@ const NewImovelPage: React.FC = () => {
     const handleCheckboxGroupChange = useCallback((field: keyof ImovelInput, value: string | boolean) => {
         setFormData(prev => {
             if (typeof value === 'boolean') {
+                // Lógica para isento
+                if (field === 'condominio_isento') {
+                    return { ...prev, [field]: value, valor_condominio: value ? 0 : prev.valor_condominio };
+                }
+                if (field === 'iptu_isento') {
+                    return { ...prev, [field]: value, valor_iptu: value ? 0 : prev.valor_iptu };
+                }
                 return { ...prev, [field]: value as any };
             }
             

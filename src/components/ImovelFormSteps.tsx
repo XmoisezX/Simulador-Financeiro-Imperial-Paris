@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect } from 'react';
-import { Home, MapPin, DollarSign, Eye, Lock, Key, FileText, Image, List, CheckCircle, Zap, Loader2, Plus } from 'lucide-react';
+import { Home, MapPin, DollarSign, Eye, Lock, Key, FileText, Image, List, CheckCircle, Zap, Loader2, Plus, Building2, Link as LinkIcon } from 'lucide-react';
 import { ImovelInput, VisibilidadeMapa, Ocupacao, ImovelImage } from '../../types';
 import TextInput from './TextInput';
 import NumberInput from './NumberInput';
@@ -25,7 +25,7 @@ const neighborhoods = ['Centro', 'Laranjal', 'Areal', 'Porto', 'Fragata', 'Três
 const motives = ['Vendido', 'Alugado', 'Retirado pelo proprietário'];
 const indexOptions = ['IGP-M', 'IPCA', 'FIPE'];
 const occupationOptions: Ocupacao[] = ['Desocupado', 'Ocupado', 'Locado'];
-const floorOptions = ['Nenhum', 'Térreo', '1º Andar', '2º Andar', '3º Andar'];
+const floorOptions = ['Nenhum', 'Térreo', '1º Andar', '2º Andar', '3º Andar', '4º Andar']; // Adicionado 4º Andar
 const orientationOptions = ['Norte', 'Sul', 'Leste', 'Oeste'];
 const floorTypes = ['Aquecido', 'Carpete', 'Laminado', 'Tabuão', 'Ardósia', 'Cerâmico', 'Mármore', 'Usina', 'Associado', 'Flutuante', 'Parquet', 'Vinílico', 'Granito', 'Bruto', 'Porcelanato'];
 const booleanOptions = ['Sim', 'Não'];
@@ -55,8 +55,8 @@ interface ImovelFormStepsProps {
     handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
     handleCepChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     handleRadioChange: (name: keyof ImovelInput, value: string) => void;
-    handleToggleChange: (name: 'vis_venda' | 'vis_locacao' | 'vis_temporada', checked: boolean) => void;
-    handleCheckboxGroupChange: (field: keyof ImovelInput, value: string) => void;
+    handleToggleChange: (name: 'vis_venda' | 'vis_locacao' | 'vis_temporada' | 'vis_iptu' | 'vis_condominio', checked: boolean) => void; // Atualizado
+    handleCheckboxGroupChange: (field: keyof ImovelInput, value: string | boolean) => void; // Atualizado para aceitar boolean
     handleFinalidadeToggle: (field: 'venda_ativo' | 'locacao_ativo' | 'temporada_ativo', checked: boolean) => void;
     handlePersonSelectChange: (id: keyof ImovelInput, personId: string) => void;
     
@@ -344,6 +344,9 @@ const ImovelFormSteps: React.FC<ImovelFormStepsProps> = ({
                 </>
             );
         case 3:
+            const isCondominioDisabled = formData.condominio_isento || !isEditing;
+            const isIptuDisabled = formData.iptu_isento || !isEditing;
+
             return (
                 <>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -352,16 +355,44 @@ const ImovelFormSteps: React.FC<ImovelFormStepsProps> = ({
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                         <div className="flex space-x-2 items-center">
-                            <NumberInput label="Valor de condomínio" id="valor_condominio" isCurrency value={formData.valor_condominio} onChange={handleInputChange} placeholder="R$ 0,00" disabled={!isEditing} />
+                            <NumberInput 
+                                label="Valor de condomínio" 
+                                id="valor_condominio" 
+                                isCurrency 
+                                value={formData.valor_condominio} 
+                                onChange={handleInputChange} 
+                                placeholder="R$ 0,00" 
+                                disabled={isCondominioDisabled} 
+                                className={isCondominioDisabled ? 'opacity-50' : ''}
+                            />
                             <label className="flex items-center space-x-1 text-sm mt-6">
-                                <Checkbox id="condominio_isento" checked={formData.condominio_isento} onCheckedChange={(checked) => handleCheckboxGroupChange('condominio_isento', checked as any)} disabled={!isEditing} />
+                                <Checkbox 
+                                    id="condominio_isento" 
+                                    checked={formData.condominio_isento} 
+                                    onCheckedChange={(checked) => handleCheckboxGroupChange('condominio_isento', checked as any)} 
+                                    disabled={!isEditing}
+                                />
                                 <span>Isento</span>
                             </label>
                         </div>
                         <div className="flex space-x-2 items-center">
-                            <NumberInput label="Valor de IPTU" id="valor_iptu" isCurrency value={formData.valor_iptu} onChange={handleInputChange} placeholder="R$ 0,00" disabled={!isEditing} />
+                            <NumberInput 
+                                label="Valor de IPTU" 
+                                id="valor_iptu" 
+                                isCurrency 
+                                value={formData.valor_iptu} 
+                                onChange={handleInputChange} 
+                                placeholder="R$ 0,00" 
+                                disabled={isIptuDisabled} 
+                                className={isIptuDisabled ? 'opacity-50' : ''}
+                            />
                             <label className="flex items-center space-x-1 text-sm mt-6">
-                                <Checkbox id="iptu_isento" checked={formData.iptu_isento} onCheckedChange={(checked) => handleCheckboxGroupChange('iptu_isento', checked as any)} disabled={!isEditing} />
+                                <Checkbox 
+                                    id="iptu_isento" 
+                                    checked={formData.iptu_isento} 
+                                    onCheckedChange={(checked) => handleCheckboxGroupChange('iptu_isento', checked as any)} 
+                                    disabled={!isEditing}
+                                />
                                 <span>Isento</span>
                             </label>
                         </div>
@@ -433,9 +464,21 @@ const ImovelFormSteps: React.FC<ImovelFormStepsProps> = ({
                         />
                     </div>
                     
-                    <div className="grid grid-cols-3 gap-4 mt-4">
-                        <TextInput label="IPTU" id="vis_iptu" value={formData.vis_iptu} onChange={handleInputChange} placeholder="Invisível" disabled={!isEditing} />
-                        <TextInput label="Condomínio" id="vis_condominio" value={formData.vis_condominio} onChange={handleInputChange} placeholder="Invisível" disabled={!isEditing} />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                        <ToggleSwitch 
+                            label="IPTU" 
+                            id="vis_iptu" 
+                            checked={formData.vis_iptu === 'Visível'} 
+                            onChange={(checked) => handleToggleChange('vis_iptu', checked)}
+                            disabled={!isEditing}
+                        />
+                        <ToggleSwitch 
+                            label="Condomínio" 
+                            id="vis_condominio" 
+                            checked={formData.vis_condominio === 'Visível'} 
+                            onChange={(checked) => handleToggleChange('vis_condominio', checked)}
+                            disabled={!isEditing}
+                        />
                     </div>
                 </>
             );
