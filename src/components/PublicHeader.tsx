@@ -15,36 +15,7 @@ const PublicHeader: React.FC = () => {
 
     return (
         <header className="sticky top-0 z-20 bg-white/30 backdrop-blur-md shadow-md">
-            {/* Barra Superior Azul Escura */}
-            <div className="bg-[#1e3a8a] text-white hidden sm:block">
-                <div className="container mx-auto px-4 py-2 flex items-center justify-end space-x-4 text-sm">
-                    <span className="font-semibold">(53) 3025-8585</span>
-                    <div className="flex items-center bg-white rounded-md overflow-hidden">
-                        <input 
-                            type="text" 
-                            placeholder="Ex: comprar casa no centro" 
-                            className="p-1.5 text-sm text-gray-800 focus:outline-none w-48"
-                        />
-                        <button className="bg-red-600 hover:bg-red-700 p-1.5">
-                            <Search className="w-5 h-5 text-white" />
-                        </button>
-                    </div>
-                    <button className="p-1.5 hover:bg-blue-700 rounded-md">
-                        <Globe className="w-5 h-5" />
-                    </button>
-                    
-                    {/* Módulo de Login/CRM */}
-                    {session ? (
-                        <Link to="/crm/dashboard" className="text-white hover:text-primary-orange transition-colors">
-                            <User className="w-5 h-5" />
-                        </Link>
-                    ) : (
-                        <Link to="/login" className="text-white hover:text-primary-orange transition-colors">
-                            <LogIn className="w-5 h-5" />
-                        </Link>
-                    )}
-                </div>
-            </div>
+            {/* Barra Superior Azul Escura - REMOVIDA */}
 
             {/* Barra Principal (Logo e Navegação) */}
             <div className="container mx-auto p-4 flex items-center justify-between">
@@ -66,11 +37,35 @@ const PublicHeader: React.FC = () => {
                     <Link to="/sobre" className="hover:text-primary-orange transition-colors">IMPERIAL</Link>
                 </nav>
 
-                {/* Botão de Menu Mobile */}
-                <div className="flex items-center space-x-4 lg:hidden">
+                {/* Botões de Ação (Movidos para a direita) */}
+                <div className="flex items-center space-x-4">
+                    {/* Ícone de Busca (Adicionado para manter a funcionalidade) */}
+                    <div className="hidden sm:flex items-center bg-gray-100 rounded-md overflow-hidden border border-gray-300">
+                        <input 
+                            type="text" 
+                            placeholder="Buscar imóvel..." 
+                            className="p-1.5 text-sm text-gray-800 focus:outline-none w-40 bg-transparent"
+                        />
+                        <button className="bg-red-600 hover:bg-red-700 p-1.5">
+                            <Search className="w-5 h-5 text-white" />
+                        </button>
+                    </div>
+                    
+                    {/* Módulo de Login/CRM */}
+                    {session ? (
+                        <Link to="/crm/dashboard" className="text-gray-600 hover:text-primary-orange transition-colors p-2 rounded-full hover:bg-gray-100 hidden sm:block" title="Acessar CRM">
+                            <User className="w-6 h-6" />
+                        </Link>
+                    ) : (
+                        <Link to="/login" className="text-gray-600 hover:text-primary-orange transition-colors p-2 rounded-full hover:bg-gray-100 hidden sm:block" title="Login">
+                            <LogIn className="w-6 h-6" />
+                        </Link>
+                    )}
+                    
+                    {/* Botão de Menu Mobile */}
                     <button 
                         onClick={() => setIsMenuOpen(true)}
-                        className="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-600"
+                        className="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-600 lg:hidden"
                         title="Abrir Menu"
                     >
                         <Menu className="w-6 h-6" />
@@ -87,10 +82,11 @@ const PublicHeader: React.FC = () => {
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
-                        <Link to="/" className="block p-2 text-dark-text hover:bg-gray-100 rounded" onClick={() => setIsMenuOpen(false)}>Início</Link>
-                        <Link to="/imoveis" className="block p-2 text-dark-text hover:bg-gray-100 rounded" onClick={() => setIsMenuOpen(false)}>Imóveis</Link>
-                        <Link to="/sobre" className="block p-2 text-dark-text hover:bg-gray-100 rounded" onClick={() => setIsMenuOpen(false)}>Sobre Nós</Link>
-                        <Link to="/contato" className="block p-2 text-dark-text hover:bg-gray-100 rounded" onClick={() => setIsMenuOpen(false)}>Contato</Link>
+                        <Link to="/imoveis" className="block p-2 text-dark-text hover:bg-gray-100 rounded" onClick={() => setIsMenuOpen(false)}>ALUGAR</Link>
+                        <Link to="/imoveis" className="block p-2 text-dark-text hover:bg-gray-100 rounded" onClick={() => setIsMenuOpen(false)}>COMPRAR</Link>
+                        <Link to="/condominios" className="block p-2 text-dark-text hover:bg-gray-100 rounded" onClick={() => setIsMenuOpen(false)}>CONDOMÍNIOS</Link>
+                        <Link to="/manutencao" className="block p-2 text-dark-text hover:bg-gray-100 rounded" onClick={() => setIsMenuOpen(false)}>MANUTENÇÃO</Link>
+                        <Link to="/sobre" className="block p-2 text-dark-text hover:bg-gray-100 rounded" onClick={() => setIsMenuOpen(false)}>IMPERIAL</Link>
                         <Link to={session ? "/crm/dashboard" : "/login"} className="block p-2 text-blue-600 hover:bg-blue-50 rounded" onClick={() => setIsMenuOpen(false)}>
                             {session ? 'Acessar CRM' : 'Login / CRM'}
                         </Link>
