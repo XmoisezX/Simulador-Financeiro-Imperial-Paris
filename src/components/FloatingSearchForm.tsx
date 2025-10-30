@@ -1,37 +1,39 @@
 import React, { useState } from 'react';
 import { Search, ChevronDown, ChevronUp, DollarSign } from 'lucide-react';
 import { HomeIcon, MapPinIcon, BuildingOffice2Icon, CodeBracketIcon, BedIcon, CarIcon } from './icons';
+import TextInput from './TextInput'; // Usando TextInput para campos de código e preço
 
 // Mock Data
-const operationOptions = ['Venda', 'Aluguel', 'Temporada'];
 const propertyTypes = ['Apartamento', 'Casa', 'Terreno', 'Comercial', 'Rural'];
 const neighborhoods = ['Centro', 'Laranjal', 'Areal', 'Porto', 'Fragata', 'Três Vendas'];
-const priceRanges = ['Até R$ 100k', 'R$ 100k - R$ 300k', 'R$ 300k - R$ 600k', 'Acima de R$ 600k'];
 const roomOptions = [1, 2, 3, 4, '5+'];
 
 interface FilterState {
-    operation: string;
+    operation: 'Aluguel' | 'Vendas';
+    city: string;
     type: string;
     neighborhood: string;
-    price: string;
     rooms: number | string;
     garages: number | string;
     code: string;
+    minPrice: string;
+    maxPrice: string;
 }
 
 const initialFilters: FilterState = {
-    operation: 'Venda',
+    operation: 'Aluguel',
+    city: 'Pelotas', // Cidade fixa por enquanto
     type: '',
     neighborhood: '',
-    price: '',
     rooms: '',
     garages: '',
     code: '',
+    minPrice: '0',
+    maxPrice: '300000',
 };
 
 const FloatingSearchForm: React.FC = () => {
     const [filters, setFilters] = useState<FilterState>(initialFilters);
-    const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -41,24 +43,20 @@ const FloatingSearchForm: React.FC = () => {
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         console.log('Searching with filters:', filters);
-        // Aqui você implementaria a navegação para a página de resultados
         alert(`Buscando: ${filters.operation} em ${filters.neighborhood || 'toda a cidade'}`);
     };
     
-    const renderSelect = (name: keyof FilterState, label: string, options: (string | number)[], Icon: React.FC) => (
+    const renderSelect = (name: keyof FilterState, label: string, options: (string | number)[], placeholder: string) => (
         <div className="relative">
             <label htmlFor={name} className="sr-only">{label}</label>
-            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <Icon />
-            </div>
             <select
                 id={name}
                 name={name}
                 value={filters[name]}
                 onChange={handleInputChange}
-                className="w-full p-3 pl-10 border border-gray-300 rounded-lg bg-white text-sm text-dark-text focus:ring-primary-orange focus:border-primary-orange appearance-none cursor-pointer shadow-sm"
+                className="w-full p-3 border border-gray-300 rounded-lg bg-white text-sm text-dark-text focus:ring-primary-orange focus:border-primary-orange appearance-none cursor-pointer shadow-sm disabled:bg-gray-100"
             >
-                <option value="" disabled>{label}</option>
+                <option value="" disabled>{placeholder}</option>
                 {options.map((opt, index) => (
                     <option key={index} value={opt}>{opt}</option>
                 ))}
@@ -69,102 +67,118 @@ const FloatingSearchForm: React.FC = () => {
         </div>
     );
     
-    const renderRadioGroup = (name: keyof FilterState, options: (string | number)[], Icon: React.FC) => (
-        <div className="space-y-2">
-            <div className="flex items-center text-sm font-medium text-dark-text">
-                <Icon />
-                <span className="ml-2">{name.charAt(0).toUpperCase() + name.slice(1)}</span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-                {options.map(opt => (
-                    <button
-                        key={opt}
-                        type="button"
-                        onClick={() => setFilters(prev => ({ ...prev, [name]: prev[name] === opt ? '' : opt }))}
-                        className={`px-3 py-1 text-xs font-medium rounded-full transition-colors border ${
-                            filters[name] === opt
-                                ? 'bg-primary-orange text-white border-primary-orange'
-                                : 'bg-gray-100 text-dark-text border-gray-300 hover:bg-gray-200'
-                        }`}
-                    >
-                        {opt}
-                    </button>
-                ))}
-            </div>
+    const renderPriceInput = (name: keyof FilterState, placeholder: string) => (
+        <div className="relative">
+            <input
+                type="text"
+                name={name}
+                value={filters[name]}
+                onChange={handleInputChange}
+                placeholder={placeholder}
+                className="w-full p-3 border border-gray-300 rounded-lg shadow-sm text-sm focus:ring-primary-orange focus:border-primary-orange"
+            />
         </div>
     );
 
     return (
-        <form onSubmit={handleSearch} className="w-full max-w-4xl mx-auto relative z-10">
-            <div className="bg-white p-6 rounded-xl shadow-2xl border-t-4 border-primary-orange space-y-4">
+        <div className="container mx-auto px-8 flex justify-start">
+            <form onSubmit={handleSearch} className="w-full max-w-md bg-white p-8 rounded-xl shadow-2xl">
                 
-                {/* Seção Principal de Filtros */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {/* Operação */}
-                    <div className="col-span-2 md:col-span-1">
-                        {renderSelect('operation', 'Finalidade', operationOptions, BuildingOffice2Icon)}
-                    </div>
-                    {/* Tipo */}
-                    <div className="col-span-2 md:col-span-1">
-                        {renderSelect('type', 'Tipo de Imóvel', propertyTypes, HomeIcon)}
-                    </div>
-                    {/* Bairro */}
-                    <div className="col-span-2 md:col-span-1">
-                        {renderSelect('neighborhood', 'Bairro', neighborhoods, MapPinIcon)}
-                    </div>
-                    {/* Preço */}
-                    <div className="col-span-2 md:col-span-1">
-                        {renderSelect('price', 'Faixa de Preço', priceRanges, DollarSign)}
-                    </div>
-                </div>
+                <h1 className="text-2xl font-bold text-blue-800">A sua imobiliária</h1>
+                <h2 className="text-3xl font-bold text-blue-800 mb-2">Encontre seu imóvel</h2>
+                <p className="text-lg text-light-text mb-6">São mais de 3243 opções disponíveis.</p>
 
-                {/* Botão de Busca e Filtros Avançados */}
-                <div className="flex justify-between items-center pt-2">
+                {/* Abas de Operação */}
+                <div className="flex border-b border-gray-200 mb-6">
                     <button
                         type="button"
-                        onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
-                        className="flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
+                        onClick={() => setFilters(prev => ({ ...prev, operation: 'Aluguel' }))}
+                        className={`py-2 px-4 text-sm font-semibold transition-colors ${
+                            filters.operation === 'Aluguel' 
+                                ? 'border-b-2 border-primary-orange text-primary-orange' 
+                                : 'text-gray-500 hover:text-dark-text'
+                        }`}
                     >
-                        {isAdvancedOpen ? 'Menos Filtros' : 'Mais Filtros'}
-                        {isAdvancedOpen ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />}
+                        ALUGUEL
                     </button>
-                    
                     <button
-                        type="submit"
-                        className="flex items-center bg-primary-orange hover:bg-secondary-orange text-white font-semibold px-6 py-3 rounded-lg shadow-md transition-colors"
+                        type="button"
+                        onClick={() => setFilters(prev => ({ ...prev, operation: 'Vendas' }))}
+                        className={`py-2 px-4 text-sm font-semibold transition-colors ${
+                            filters.operation === 'Vendas' 
+                                ? 'border-b-2 border-primary-orange text-primary-orange' 
+                                : 'text-gray-500 hover:text-dark-text'
+                        }`}
                     >
-                        <Search className="w-5 h-5 mr-2" /> Buscar Imóveis
+                        VENDAS
                     </button>
                 </div>
-                
-                {/* Filtros Avançados */}
-                {isAdvancedOpen && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-gray-100 animate-fade-in">
-                        {/* Quartos */}
-                        {renderRadioGroup('rooms', roomOptions, BedIcon)}
-                        
-                        {/* Garagens */}
-                        {renderRadioGroup('garages', roomOptions, CarIcon)}
-                        
-                        {/* Código */}
-                        <div className="space-y-2">
-                            <div className="flex items-center text-sm font-medium text-dark-text">
-                                <CodeBracketIcon />
-                                <span className="ml-2">Código do Imóvel</span>
-                            </div>
-                            <input
-                                type="text"
-                                name="code"
-                                value={filters.code}
+
+                {/* Campos de Filtro */}
+                <div className="grid grid-cols-2 gap-4">
+                    {/* Coluna 1 */}
+                    <div className="space-y-4">
+                        {/* Cidade (Fixo) */}
+                        <div className="relative">
+                            <select
+                                id="city"
+                                name="city"
+                                value={filters.city}
                                 onChange={handleInputChange}
-                                placeholder="Ex: 52564"
-                                className="w-full p-2 border border-gray-300 rounded-lg shadow-sm text-sm focus:ring-primary-orange focus:border-primary-orange"
-                            />
+                                disabled
+                                className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 text-sm text-dark-text appearance-none cursor-not-allowed shadow-sm"
+                            >
+                                <option value="Pelotas">Pelotas</option>
+                            </select>
+                            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <ChevronDown className="h-4 w-4 text-gray-400" />
+                            </div>
+                        </div>
+                        
+                        {renderSelect('neighborhood', 'Bairro', neighborhoods, 'Bairro')}
+                        
+                        {renderSelect('rooms', 'Quartos', roomOptions, 'Quartos')}
+                        
+                        {/* Range de Preço (De) */}
+                        <div className="space-y-1 pt-2">
+                            <label className="block text-xs font-medium text-light-text">De</label>
+                            {renderPriceInput('minPrice', 'R$ 0,00')}
                         </div>
                     </div>
-                )}
-            </div>
-        </form>
+                    
+                    {/* Coluna 2 */}
+                    <div className="space-y-4">
+                        {renderSelect('type', 'Tipo', propertyTypes, 'Tipo')}
+                        
+                        <TextInput 
+                            label="Cod. Imóvel" 
+                            id="code" 
+                            name="code"
+                            value={filters.code} 
+                            onChange={handleInputChange} 
+                            placeholder="Cod. Imóvel"
+                            className="w-full p-3 border border-gray-300 rounded-lg shadow-sm text-sm focus:ring-primary-orange focus:border-primary-orange"
+                        />
+                        
+                        {renderSelect('garages', 'Vagas', roomOptions, 'Vagas')}
+                        
+                        {/* Range de Preço (Até) */}
+                        <div className="space-y-1 pt-2">
+                            <label className="block text-xs font-medium text-light-text">Até</label>
+                            {renderPriceInput('maxPrice', 'R$ 30.000,00')}
+                        </div>
+                    </div>
+                </div>
+                
+                {/* Botão de Busca */}
+                <button
+                    type="submit"
+                    className="w-full mt-6 bg-[#ffc107] hover:bg-[#ffb300] text-dark-text font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
+                >
+                    BUSCAR
+                </button>
+            </form>
+        </div>
     );
 };
 

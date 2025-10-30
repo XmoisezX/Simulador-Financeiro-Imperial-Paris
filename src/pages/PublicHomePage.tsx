@@ -34,7 +34,7 @@ const PublicHomePage: React.FC = () => {
                     backgroundImage: `url('${SUPABASE_HERO_IMAGE_URL}')`,
                     backgroundSize: 'cover',
                     backgroundPosition: bannerPosition, // APLICANDO A POSIÇÃO
-                    minHeight: '450px'
+                    minHeight: '650px' // AUMENTADO PARA 650px
                 }}
             >
                 {/* Overlay para escurecer a imagem e melhorar a legibilidade */}
