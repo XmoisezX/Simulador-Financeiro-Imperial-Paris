@@ -11,6 +11,7 @@ import ActionsDropdown from './ActionsDropdown';
 import PersonSelect from './PersonSelect';
 import UserSelect from './UserSelect';
 import MapDisplay from './MapDisplay';
+import CondominioSelect from './CondominioSelect'; // Importando o novo componente
 
 // --- Mock Data ---
 const propertyTypes = [
@@ -259,16 +260,17 @@ const ImovelFormSteps: React.FC<ImovelFormStepsProps> = ({
             return (
                 <>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <label className="block text-sm font-medium text-light-text">Condomínio</label>
-                            <select className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100" disabled={!isEditing}>
-                                <option>Pesquise pelo nome do condomínio (Mock)</option>
-                            </select>
-                        </div>
+                        <CondominioSelect 
+                            label="Condomínio" 
+                            id="condominio_id" 
+                            value={formData.condominio_id} 
+                            onChange={(id) => handlePersonSelectChange('condominio_id', id)}
+                            disabled={!isEditing}
+                        />
                         <div className="space-y-2">
                             <label className="block text-sm font-medium text-light-text">Bloco / Torre / Quadra</label>
-                            <select className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100" disabled={!isEditing}>
-                                <option>Pesquise pelo nome do subcondomínio (Mock)</option>
+                            <select id="bloco_torre" value={formData.bloco_torre} onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100" disabled={!isEditing}>
+                                <option value="">Pesquise pelo nome do subcondomínio (Mock)</option>
                             </select>
                         </div>
                     </div>
