@@ -9,6 +9,8 @@ import { Button } from '../components/ui/Button';
 import { Checkbox } from '../components/ui/Checkbox';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../integrations/supabase/client';
+import TextInput from '../components/TextInput'; // Importação adicionada
+import NumberInput from '../components/NumberInput'; // Importação adicionada
 
 // Interface para o Condomínio (deve ser a mesma usada no CondominioCard)
 interface Condominio {
