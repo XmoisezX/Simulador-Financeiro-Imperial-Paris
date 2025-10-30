@@ -14,7 +14,7 @@ const PUBLIC_URL = `https://pqievwbfrbiqhvdyalrh.supabase.co/storage/v1/object/p
 
 // Configuração de Posição
 const BANNER_SETTINGS_KEY = 'hero_settings';
-const DEFAULT_TRANSFORM: ImageTransform = { scale: 1.0, offsetX: -10, offsetY: 0 }; // Ajustado para -10%
+const DEFAULT_TRANSFORM: ImageTransform = { scale: 1.0, offsetX: -10, offsetY: 0 }; // Mantendo 1.0 e -10
 
 interface BannerSettings {
     desktop: ImageTransform;
