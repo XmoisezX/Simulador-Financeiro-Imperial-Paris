@@ -14,10 +14,10 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon, label, isSidebarOpen, onCli
     const location = useLocation();
     const isActive = location.pathname === to;
     
-    // Cores para o modo expandido (fundo escuro)
+    // Cores para o modo expandido (fundo branco)
     const expandedClasses = isActive 
-        ? 'bg-blue-600 text-white font-semibold' 
-        : 'text-white hover:bg-blue-700';
+        ? 'bg-blue-100 text-blue-800 font-semibold' 
+        : 'text-slate-600 hover:bg-gray-100';
         
     // Cores para o modo recolhido (fundo claro)
     const collapsedClasses = isActive 
@@ -33,7 +33,7 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon, label, isSidebarOpen, onCli
             } ${isSidebarOpen ? 'justify-start' : 'justify-center'}`}
             title={label}
         >
-            {/* O ícone herda a cor do texto do Link (text-white no modo expandido) */}
+            {/* O ícone herda a cor do texto do Link */}
             {icon}
             {isSidebarOpen && <span className="ml-3 text-sm whitespace-nowrap">{label}</span>}
         </Link>
@@ -83,7 +83,7 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
             {/* Sidebar Principal (Desktop) */}
             <aside className={`
                 ${sidebarWidth} 
-                ${isOpen ? 'bg-blue-900 text-white' : 'bg-white border-r border-gray-200'} 
+                bg-white border-r border-gray-200 
                 flex-shrink-0 overflow-y-auto h-full 
                 transition-all duration-300 
                 hidden lg:block sticky top-[88px] 
@@ -93,18 +93,18 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                     {/* Botão de Toggle (Apenas para Desktop) */}
                     <button 
                         onClick={toggleSidebar}
-                        className={`flex items-center p-3 rounded-lg transition-colors duration-150 w-full ${isOpen ? 'justify-end text-white hover:bg-blue-700' : 'justify-center text-slate-600 hover:bg-gray-100'}`}
+                        className={`flex items-center p-3 rounded-lg transition-colors duration-150 w-full ${isOpen ? 'justify-end text-slate-600 hover:bg-gray-100' : 'justify-center text-slate-600 hover:bg-gray-100'}`}
                         title={isOpen ? 'Recolher Menu' : 'Expandir Menu'}
                     >
-                        {/* O ícone de menu agora é branco no modo expandido */}
-                        <Menu className={`w-5 h-5 ${isOpen ? 'text-white' : 'text-slate-600'}`} />
+                        {/* O ícone de menu agora é cinza/preto */}
+                        <Menu className={`w-5 h-5 text-slate-600`} />
                     </button>
 
-                    {isOpen && <h3 className="text-xs font-semibold uppercase text-blue-300 pt-4 pb-1 px-3">Navegação</h3>}
+                    {isOpen && <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1 px-3">Navegação</h3>}
                     
                     <NavItem to="/crm/dashboard" icon={<Home className="w-5 h-5" />} label="Início" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     
-                    {isOpen && <h3 className="text-xs font-semibold uppercase text-blue-300 pt-4 pb-1 px-3">Imóveis & Vendas</h3>}
+                    {isOpen && <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1 px-3">Imóveis & Vendas</h3>}
                     {!isOpen && <div className="h-4"></div>}
                     <NavItem to="/crm/imoveis" icon={<Building className="w-5 h-5" />} label="Imóveis" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     <NavItem to="/crm/chaves" icon={<Key className="w-5 h-5" />} label="Chaves" isSidebarOpen={isOpen} onClick={handleNavClick} />
@@ -112,12 +112,12 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                     <NavItem to="/crm/leads" icon={<Zap className="w-5 h-5" />} label="Leads" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     <NavItem to="/crm/oportunidades" icon={<Briefcase className="w-5 h-5" />} label="Oportunidades" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     
-                    {isOpen && <h3 className="text-xs font-semibold uppercase text-blue-300 pt-4 pb-1 px-3">Pessoas & Rotinas</h3>}
+                    {isOpen && <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1 px-3">Pessoas & Rotinas</h3>}
                     {!isOpen && <div className="h-4"></div>}
                     <NavItem to="/crm/pessoas" icon={<Users className="w-5 h-5" />} label="Pessoas" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     <NavItem to="/crm/atividades" icon={<CalendarCheck className="w-5 h-5" />} label="Atividades" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     
-                    {isOpen && <h3 className="text-xs font-semibold uppercase text-blue-300 pt-4 pb-1 px-3">Ferramentas</h3>}
+                    {isOpen && <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1 px-3">Ferramentas</h3>}
                     {!isOpen && <div className="h-4"></div>}
                     <NavItem to="/simulador" icon={<DollarSign className="w-5 h-5" />} label="Simulador Financeiro" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     <NavItem to="/analise-de-mercado" icon={<Building className="w-5 h-5" />} label="Análise de Mercado" isSidebarOpen={isOpen} onClick={handleNavClick} />
@@ -125,7 +125,7 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                     <NavItem to="/mapa-teste" icon={<Map className="w-5 h-5" />} label="Teste de Mapa" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     
                     {/* NOVO: Menu Sistema */}
-                    {isOpen && <h3 className="text-xs font-semibold uppercase text-blue-300 pt-4 pb-1 px-3">Administração</h3>}
+                    {isOpen && <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1 px-3">Administração</h3>}
                     {!isOpen && <div className="h-4"></div>}
                     
                     <div className="relative">
@@ -133,8 +133,8 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                             onClick={handleSystemClick}
                             className={`flex items-center p-3 rounded-lg transition-colors duration-150 w-full ${
                                 isSystemOpen 
-                                ? 'bg-blue-600 text-white font-semibold' 
-                                : (isOpen ? 'text-white hover:bg-blue-700' : 'text-slate-600 hover:bg-gray-100')
+                                ? 'bg-blue-100 text-blue-800 font-semibold' 
+                                : (isOpen ? 'text-slate-600 hover:bg-gray-100' : 'text-slate-600 hover:bg-gray-100')
                             } ${isOpen ? 'justify-start' : 'justify-center'}`}
                             title="Sistema"
                         >

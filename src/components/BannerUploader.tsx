@@ -45,6 +45,8 @@ const BannerUploader: React.FC = () => {
             return false;
         }
         setBannerPosition(position);
+        setSuccess('Posição do banner salva com sucesso!');
+        setTimeout(() => setSuccess(null), 3000);
         return true;
     }, [session]);
     
@@ -119,6 +121,7 @@ const BannerUploader: React.FC = () => {
         }
         
         // 2. Salvar Posição (garante que a posição atual seja salva junto com o upload)
+        // Chamamos savePosition diretamente para atualizar o estado e mostrar sucesso
         const positionSaved = await savePosition(bannerPosition);
         
         if (positionSaved) {
@@ -143,7 +146,7 @@ const BannerUploader: React.FC = () => {
     const handlePositionChange = (newPosition: string) => {
         setBannerPosition(newPosition);
         
-        // Se não houver upload pendente, salva a posição imediatamente
+        // Salva a posição imediatamente, independentemente de haver um arquivo pendente
         if (!fileToUpload) {
             savePosition(newPosition);
         }
