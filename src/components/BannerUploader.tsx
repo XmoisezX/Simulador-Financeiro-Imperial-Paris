@@ -1,8 +1,9 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Upload, Loader2, XCircle, CheckCircle } from 'lucide-react';
+import { Upload, Loader2, XCircle, CheckCircle, Smartphone, Tablet, Monitor } from 'lucide-react';
 import { Button } from './ui/Button';
 import { supabase } from '../integrations/supabase/client';
 import { useAuth } from '../contexts/AuthContext';
+import ImageEditor, { DeviceType, ImageTransform } from './ImageEditor';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -11,9 +12,20 @@ const BANNER_BUCKET = 'imovel-media';
 const PUBLIC_URL = `https://pqievwbfrbiqhvdyalrh.supabase.co/storage/v1/object/public/${BANNER_BUCKET}/${BANNER_FILENAME}`;
 
 // Configuração de Posição
-const BANNER_POSITION_KEY = 'hero_position';
-const DEFAULT_POSITION = 'center';
-const POSITION_OPTIONS = ['center', 'top', 'bottom', 'left', 'right'];
+const BANNER_SETTINGS_KEY = 'hero_settings';
+const DEFAULT_TRANSFORM: ImageTransform = { scale: 1.0, offsetX: 0, offsetY: 0 };
+
+interface BannerSettings {
+    desktop: ImageTransform;
+    tablet: ImageTransform;
+    mobile: ImageTransform;
+}
+
+const initialSettings: BannerSettings = {
+    desktop: DEFAULT_TRANSFORM,
+    tablet: DEFAULT_TRANSFORM,
+    mobile: DEFAULT_TRANSFORM,
+};
 
 const BannerUploader: React.FC = () => {
     const { session } = useAuth();
@@ -24,52 +36,53 @@ const BannerUploader: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     
-    // NOVO ESTADO: Posição do Banner
-    const [bannerPosition, setBannerPosition] = useState(DEFAULT_POSITION);
-    const [isPositionLoading, setIsPositionLoading] = useState(true);
-
+    // Estado de Transformação
+    const [currentDevice, setCurrentDevice] = useState<DeviceType>('desktop');
+    const [transformSettings, setTransformSettings] = useState<BannerSettings>(initialSettings);
+    const [isSettingsLoading, setIsSettingsLoading] = useState(true);
+    
     // --- Supabase Utilities ---
-    const savePosition = useCallback(async (position: string) => {
+    const saveSettings = useCallback(async (settings: BannerSettings) => {
         if (!session) return false;
         
         const { error } = await supabase
             .from('site_settings')
             .upsert({
-                setting_key: BANNER_POSITION_KEY,
-                setting_value: { position },
+                setting_key: BANNER_SETTINGS_KEY,
+                setting_value: settings,
             }, { onConflict: 'setting_key' });
 
         if (error) {
-            console.error('Error saving banner position:', error);
-            setError('Erro ao salvar a posição do banner.');
+            console.error('Error saving banner settings:', error);
+            setError('Erro ao salvar as configurações do banner.');
             return false;
         }
-        setBannerPosition(position);
-        setSuccess('Posição do banner salva com sucesso!');
+        setTransformSettings(settings);
+        setSuccess('Configurações salvas com sucesso!');
         setTimeout(() => setSuccess(null), 3000);
         return true;
     }, [session]);
     
     // --- Efeitos ---
-    // 1. Fetch current position setting
+    // 1. Fetch current settings
     useEffect(() => {
-        const fetchPosition = async () => {
-            setIsPositionLoading(true);
+        const fetchSettings = async () => {
+            setIsSettingsLoading(true);
             const { data, error } = await supabase
                 .from('site_settings')
                 .select('setting_value')
-                .eq('setting_key', BANNER_POSITION_KEY)
+                .eq('setting_key', BANNER_SETTINGS_KEY)
                 .single();
 
             if (error && error.code !== 'PGRST116') { 
-                console.error('Error fetching banner position:', error);
+                console.error('Error fetching banner settings:', error);
             } else if (data) {
-                setBannerPosition(data.setting_value.position || DEFAULT_POSITION);
+                setTransformSettings(data.setting_value as BannerSettings);
             }
-            setIsPositionLoading(false);
+            setIsSettingsLoading(false);
         };
         if (session) {
-            fetchPosition();
+            fetchSettings();
         }
     }, [session]);
 
@@ -98,40 +111,44 @@ const BannerUploader: React.FC = () => {
         setPreviewUrl(URL.createObjectURL(file));
     };
 
-    const handleUpload = useCallback(async () => {
-        if (!session?.user.id || !fileToUpload) return;
+    const handleUploadAndSave = useCallback(async () => {
+        if (!session?.user.id) return;
 
         setUploading(true);
         setError(null);
         setSuccess(null);
+        
+        let uploadSuccess = true;
 
-        // 1. Upload para o Storage com upsert: true para sobrescrever o banner existente
-        const { error: uploadError } = await supabase.storage
-            .from(BANNER_BUCKET)
-            .upload(BANNER_FILENAME, fileToUpload, {
-                cacheControl: '3600',
-                upsert: true, 
-                contentType: fileToUpload.type,
-            });
+        // 1. Upload do arquivo (se houver um novo)
+        if (fileToUpload) {
+            const { error: uploadError } = await supabase.storage
+                .from(BANNER_BUCKET)
+                .upload(BANNER_FILENAME, fileToUpload, {
+                    cacheControl: '3600',
+                    upsert: true, 
+                    contentType: fileToUpload.type,
+                });
 
-        if (uploadError) {
-            setError(`Erro ao fazer upload: ${uploadError.message}`);
-            setUploading(false);
-            return;
+            if (uploadError) {
+                setError(`Erro ao fazer upload: ${uploadError.message}`);
+                uploadSuccess = false;
+            }
         }
         
-        // 2. Salvar Posição (garante que a posição atual seja salva junto com o upload)
-        // Chamamos savePosition diretamente para atualizar o estado e mostrar sucesso
-        const positionSaved = await savePosition(bannerPosition);
+        // 2. Salvar as configurações de transformação (sempre salva, mesmo que só a posição mude)
+        const settingsSaved = await saveSettings(transformSettings);
         
-        if (positionSaved) {
-            setSuccess('Banner de fundo e posição atualizados com sucesso! O site pode levar alguns minutos para atualizar devido ao cache.');
+        if (uploadSuccess && settingsSaved) {
+            setSuccess('Banner de fundo e configurações atualizados com sucesso! O site pode levar alguns minutos para atualizar devido ao cache.');
             setFileToUpload(null);
             setPreviewUrl(null);
+        } else if (settingsSaved) {
+             setSuccess('Configurações de visualização salvas com sucesso!');
         }
 
         setUploading(false);
-    }, [session?.user.id, fileToUpload, bannerPosition, savePosition]);
+    }, [session?.user.id, fileToUpload, transformSettings, saveSettings, previewUrl]);
     
     const handleCancel = () => {
         if (previewUrl && previewUrl.startsWith('blob:')) {
@@ -141,23 +158,28 @@ const BannerUploader: React.FC = () => {
         setPreviewUrl(null);
         setError(null);
         setSuccess(null);
-    };
-    
-    const handlePositionChange = (newPosition: string) => {
-        setBannerPosition(newPosition);
         
-        // Salva a posição imediatamente, independentemente de haver um arquivo pendente
-        if (!fileToUpload) {
-            savePosition(newPosition);
+        // Recarrega as configurações iniciais
+        if (initialSettings) {
+            setTransformSettings(initialSettings);
         }
     };
+    
+    const handleTransformChange = (transform: ImageTransform) => {
+        setTransformSettings(prev => ({
+            ...prev,
+            [currentDevice]: transform,
+        }));
+    };
+    
+    const currentTransform = transformSettings[currentDevice];
+    const isDirty = fileToUpload !== null || JSON.stringify(transformSettings) !== JSON.stringify(initialSettings);
 
     return (
         <div className="space-y-6 p-6 bg-white rounded-lg shadow-md border border-gray-200">
-            <h3 className="text-xl font-semibold text-dark-text">Upload do Banner de Fundo (Home)</h3>
+            <h3 className="text-xl font-semibold text-dark-text">Upload e Posição do Banner de Fundo (Home)</h3>
             <p className="text-sm text-light-text">
-                Esta imagem será usada como fundo na seção de busca da página inicial. 
-                Recomendamos uma imagem de alta resolução (mínimo 1920x1080) e com foco central.
+                Selecione a imagem e ajuste o zoom e a posição para cada tipo de dispositivo.
             </p>
 
             <input
@@ -169,86 +191,77 @@ const BannerUploader: React.FC = () => {
                 disabled={uploading}
             />
 
-            {/* Pré-visualização e Ações */}
-            <div className="border border-dashed border-gray-300 p-4 rounded-md space-y-4">
-                <div className="h-48 w-full bg-gray-100 flex items-center justify-center relative overflow-hidden">
-                    {isPositionLoading ? (
-                        <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-                    ) : (
-                        <img 
-                            src={previewUrl || PUBLIC_URL} 
-                            alt="Pré-visualização do Banner" 
-                            className="w-full h-full object-cover transition-all duration-300" 
-                            style={{ objectPosition: bannerPosition }}
-                            onError={(e) => {
-                                // Se a imagem do Supabase falhar, exibe um placeholder
-                                if (!previewUrl) e.currentTarget.style.display = 'none';
-                            }}
-                        />
-                    )}
-                    {!previewUrl && !isPositionLoading && (
-                        <div className="absolute inset-0 flex items-center justify-center text-gray-500">
-                            <p className="text-center">Clique para selecionar uma nova imagem.</p>
-                        </div>
-                    )}
-                </div>
-                
-                <div className="flex space-x-3">
-                    <Button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
+            {/* Seletor de Dispositivo */}
+            <div className="pt-4 border-t border-gray-100 space-y-3">
+                <h4 className="text-md font-semibold text-dark-text">Visualização por Dispositivo</h4>
+                <div className="flex flex-wrap gap-3">
+                    <Button 
+                        onClick={() => setCurrentDevice('desktop')}
+                        variant={currentDevice === 'desktop' ? 'default' : 'outline'}
+                        className={currentDevice === 'desktop' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'text-gray-700 border-gray-300 hover:bg-gray-100'}
                         disabled={uploading}
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
                     >
-                        <Upload className="w-4 h-4 mr-2" /> {fileToUpload ? 'Trocar Imagem' : 'Selecionar Imagem'}
+                        <Monitor className="w-4 h-4 mr-2" /> Desktop
                     </Button>
-                    
-                    {fileToUpload && (
-                        <Button
-                            type="button"
-                            onClick={handleUpload}
-                            disabled={uploading}
-                            className="bg-green-600 hover:bg-green-700 text-white"
-                        >
-                            {uploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : 'Salvar Banner'}
-                        </Button>
-                    )}
-                    
-                    {(fileToUpload || success) && (
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={handleCancel}
-                            disabled={uploading}
-                            className="text-gray-700 border-gray-300 hover:bg-gray-100"
-                        >
-                            Cancelar
-                        </Button>
-                    )}
+                    <Button 
+                        onClick={() => setCurrentDevice('tablet')}
+                        variant={currentDevice === 'tablet' ? 'default' : 'outline'}
+                        className={currentDevice === 'tablet' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'text-gray-700 border-gray-300 hover:bg-gray-100'}
+                        disabled={uploading}
+                    >
+                        <Tablet className="w-4 h-4 mr-2" /> Tablet
+                    </Button>
+                    <Button 
+                        onClick={() => setCurrentDevice('mobile')}
+                        variant={currentDevice === 'mobile' ? 'default' : 'outline'}
+                        className={currentDevice === 'mobile' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'text-gray-700 border-gray-300 hover:bg-gray-100'}
+                        disabled={uploading}
+                    >
+                        <Smartphone className="w-4 h-4 mr-2" /> Mobile
+                    </Button>
                 </div>
             </div>
-            
-            {/* Seletor de Posição */}
-            <div className="pt-4 border-t border-gray-100 space-y-3">
-                <h4 className="text-md font-semibold text-dark-text">Posição da Imagem (Foco)</h4>
-                <p className="text-sm text-light-text">Selecione onde o foco da imagem deve permanecer quando a tela for redimensionada.</p>
+
+            {/* Editor de Imagem */}
+            <ImageEditor
+                imageUrl={previewUrl || PUBLIC_URL}
+                currentTransform={currentTransform}
+                onTransformChange={handleTransformChange}
+                device={currentDevice}
+                isLoading={isSettingsLoading || uploading}
+            />
+
+            {/* Ações de Upload e Salvar */}
+            <div className="flex space-x-3 pt-4 border-t border-gray-100">
+                <Button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                    <Upload className="w-4 h-4 mr-2" /> {fileToUpload ? 'Trocar Imagem' : 'Selecionar Nova Imagem'}
+                </Button>
                 
-                <div className="flex flex-wrap gap-3">
-                    {POSITION_OPTIONS.map(pos => (
-                        <button
-                            key={pos}
-                            onClick={() => handlePositionChange(pos)}
-                            disabled={uploading}
-                            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors border ${
-                                bannerPosition === pos
-                                    ? 'bg-primary-orange text-white border-primary-orange'
-                                    : 'bg-gray-100 text-dark-text border-gray-300 hover:bg-gray-200'
-                            }`}
-                        >
-                            {pos.charAt(0).toUpperCase() + pos.slice(1)}
-                        </button>
-                    ))}
-                </div>
+                <Button
+                    type="button"
+                    onClick={handleUploadAndSave}
+                    disabled={uploading || (!fileToUpload && !isDirty)}
+                    className="bg-primary-orange hover:bg-secondary-orange text-white"
+                >
+                    {uploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : 'Salvar Configurações'}
+                </Button>
+                
+                {(fileToUpload || isDirty) && (
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleCancel}
+                        disabled={uploading}
+                        className="text-gray-700 border-gray-300 hover:bg-gray-100"
+                    >
+                        Cancelar
+                    </Button>
+                )}
             </div>
 
             {error && (

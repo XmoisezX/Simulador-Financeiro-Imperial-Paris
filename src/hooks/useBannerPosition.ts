@@ -1,15 +1,28 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../integrations/supabase/client';
+import { DeviceType, ImageTransform } from '../components/ImageEditor';
 
-const BANNER_POSITION_KEY = 'hero_position';
-const DEFAULT_POSITION = 'center';
+const BANNER_SETTINGS_KEY = 'hero_settings';
+const DEFAULT_TRANSFORM: ImageTransform = { scale: 1.0, offsetX: 0, offsetY: 0 };
+
+interface BannerSettings {
+    desktop: ImageTransform;
+    tablet: ImageTransform;
+    mobile: ImageTransform;
+}
+
+const initialSettings: BannerSettings = {
+    desktop: DEFAULT_TRANSFORM,
+    tablet: DEFAULT_TRANSFORM,
+    mobile: DEFAULT_TRANSFORM,
+};
 
 export const useBannerPosition = () => {
-    const [position, setPosition] = useState(DEFAULT_POSITION);
+    const [settings, setSettings] = useState<BannerSettings>(initialSettings);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchPosition = useCallback(async () => {
+    const fetchSettings = useCallback(async () => {
         setIsLoading(true);
         setError(null);
         
@@ -17,23 +30,23 @@ export const useBannerPosition = () => {
         const { data, error } = await supabase
             .from('site_settings')
             .select('setting_value')
-            .eq('setting_key', BANNER_POSITION_KEY)
+            .eq('setting_key', BANNER_SETTINGS_KEY)
             .single();
 
         if (error && error.code !== 'PGRST116') { // Ignora 'Row not found'
-            console.error('Error fetching banner position:', error);
+            console.error('Error fetching banner settings:', error);
             setError('Falha ao carregar a configuração do banner.');
         } else if (data) {
-            setPosition(data.setting_value.position || DEFAULT_POSITION);
+            setSettings(data.setting_value as BannerSettings);
         } else {
-            setPosition(DEFAULT_POSITION);
+            setSettings(initialSettings);
         }
         setIsLoading(false);
     }, []);
 
     useEffect(() => {
-        fetchPosition();
-    }, [fetchPosition]);
+        fetchSettings();
+    }, [fetchSettings]);
 
-    return { position, isLoading, error };
+    return { settings, isLoading, error };
 };

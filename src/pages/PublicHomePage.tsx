@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Home, DollarSign, MapPin, CheckCircle, ArrowRight, User, Loader2 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import TextInput from '../components/TextInput';
@@ -7,6 +7,7 @@ import FloatingSearchForm from '../components/FloatingSearchForm'; // NOVO COMPO
 import { usePublicImoveis } from '../hooks/usePublicImoveis'; // Importando o hook
 import { useBannerPosition } from '../hooks/useBannerPosition'; // NOVO HOOK
 import ClientOnly from '../components/ClientOnly'; // Importando ClientOnly
+import { DeviceType, ImageTransform } from '../components/ImageEditor';
 
 // URL pública da imagem no Supabase Storage
 const SUPABASE_HERO_IMAGE_URL = "https://pqievwbfrbiqhvdyalrh.supabase.co/storage/v1/object/public/imovel-media/hero-background.png";
@@ -21,21 +22,44 @@ const stats = [
 
 const PublicHomePage: React.FC = () => {
     const { imoveis, isLoading: isImoveisLoading, error } = usePublicImoveis();
-    const { position: bannerPosition, isLoading: isPositionLoading } = useBannerPosition(); // Usando o novo hook
+    const { settings, isLoading: isSettingsLoading } = useBannerPosition(); 
+    const [currentTransform, setCurrentTransform] = useState<ImageTransform | null>(null);
 
     const formatCurrency = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    
+    // Lógica para determinar o dispositivo e aplicar a transformação correta
+    useEffect(() => {
+        if (isSettingsLoading) return;
+
+        const getDevice = (): DeviceType => {
+            if (window.innerWidth >= 1024) return 'desktop';
+            if (window.innerWidth >= 768) return 'tablet';
+            return 'mobile';
+        };
+
+        const updateTransform = () => {
+            const device = getDevice();
+            setCurrentTransform(settings[device]);
+        };
+
+        updateTransform();
+        window.addEventListener('resize', updateTransform);
+        return () => window.removeEventListener('resize', updateTransform);
+    }, [settings, isSettingsLoading]);
+    
+    const heroStyle: React.CSSProperties = {
+        backgroundImage: `url('${SUPABASE_HERO_IMAGE_URL}')`,
+        backgroundSize: currentTransform ? `${currentTransform.scale * 100}%` : 'cover',
+        backgroundPosition: currentTransform ? `${50 + currentTransform.offsetX}% ${50 + currentTransform.offsetY}%` : 'center',
+        minHeight: '650px'
+    };
 
     return (
         <div className="bg-white">
             {/* 1. Seção de Busca com Background */}
             <div 
-                className="relative w-full bg-cover bg-center pb-24 pt-32" // Adicionado pt-32 para empurrar o conteúdo abaixo do cabeçalho fixo
-                style={{ 
-                    backgroundImage: `url('${SUPABASE_HERO_IMAGE_URL}')`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: bannerPosition, // APLICANDO A POSIÇÃO
-                    minHeight: '650px' // AUMENTADO PARA 650px
-                }}
+                className="relative w-full bg-cover bg-center pb-24 pt-32" 
+                style={heroStyle}
             >
                 {/* Overlay para escurecer a imagem e melhorar a legibilidade */}
                 <div className="absolute inset-0 bg-black opacity-40"></div> 
