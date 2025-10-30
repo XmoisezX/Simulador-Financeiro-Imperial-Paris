@@ -90,7 +90,7 @@ const PublicHomePage: React.FC = () => {
                         
                         return (
                             <div key={prop.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
-                                <div className="h-48 bg-gray-200 relative">
+                                <div className="h-[280px] w-full bg-gray-200 relative">
                                     <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
                                     <div className="absolute top-2 right-2 bg-primary-orange text-white text-xs font-semibold px-3 py-1 rounded-full">
                                         {operationType}
