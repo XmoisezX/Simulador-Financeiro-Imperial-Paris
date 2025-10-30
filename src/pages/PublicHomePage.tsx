@@ -3,7 +3,7 @@ import { Search, Home, DollarSign, MapPin, CheckCircle, ArrowRight, User, Loader
 import { Button } from '../components/ui/Button';
 import { Link } from 'react-router-dom';
 import FloatingSearchForm from '../components/FloatingSearchForm';
-import { usePublicImoveis } from '../hooks/usePublicImoveis';
+import { useImovelLocations } from '../hooks/useImovelLocations'; // USANDO NOVO HOOK
 import { useBannerPosition } from '../hooks/useBannerPosition';
 import ClientOnly from '../components/ClientOnly';
 import { DeviceType, ImageTransform } from '../components/ImageManipulator';
@@ -27,7 +27,8 @@ const getDevice = (): DeviceType => {
 };
 
 const PublicHomePage: React.FC = () => {
-    const { imoveis, isLoading: isImoveisLoading, error } = usePublicImoveis();
+    // Usando o novo hook que já filtra por disponibilidade e geocodifica
+    const { imoveis, isLoading: isImoveisLoading, error } = useImovelLocations(); 
     const { settings, isLoading: isSettingsLoading } = useBannerPosition(); 
     const [currentTransform, setCurrentTransform] = useState<ImageTransform | null>(null);
 
@@ -64,6 +65,9 @@ const PublicHomePage: React.FC = () => {
         }
         return style;
     }, [currentTransform]);
+    
+    // Limita os destaques a 3
+    const featuredImoveis = imoveis.slice(0, 3);
 
 
     return (
@@ -112,14 +116,14 @@ const PublicHomePage: React.FC = () => {
                     <div className="text-red-600 p-4 bg-red-50 rounded-md">Erro ao carregar destaques: {error}</div>
                 )}
                 
-                {!isImoveisLoading && imoveis.length === 0 && (
+                {!isImoveisLoading && featuredImoveis.length === 0 && (
                     <div className="text-center py-10 text-gray-500">
                         <p className="text-lg">Nenhum imóvel aprovado e disponível encontrado para destaque.</p>
                     </div>
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {imoveis.map(prop => {
+                    {featuredImoveis.map(prop => {
                         const isVenda = prop.dados_contrato.venda_ativo && prop.dados_contrato.venda_disponibilidade === 'Disponível';
                         const isLocacao = prop.dados_contrato.locacao_ativo && prop.dados_contrato.locacao_disponibilidade === 'Disponível';
                         
@@ -158,9 +162,11 @@ const PublicHomePage: React.FC = () => {
                     })}
                 </div>
                 <div className="text-center mt-10">
-                    <Button className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-3">
-                        Ver Todos os Imóveis
-                    </Button>
+                    <Link to="/imoveis">
+                        <Button className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-3">
+                            Ver Todos os Imóveis
+                        </Button>
+                    </Link>
                 </div>
             </div>
 

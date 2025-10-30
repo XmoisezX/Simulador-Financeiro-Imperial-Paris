@@ -17,6 +17,7 @@ import CRMLayout from './src/components/CRMLayout';
 import PublicHomePage from './src/pages/PublicHomePage';
 import PublicLayout from './src/layouts/PublicLayout';
 import PublicImovelDetailsPage from './src/pages/PublicImovelDetailsPage';
+import ImoveisPublicPage from './src/pages/ImoveisPublicPage'; // NOVO
 import ErrorBoundary from './src/components/ErrorBoundary'; // Importando ErrorBoundary
 
 const AppContent: React.FC = () => {
@@ -28,8 +29,8 @@ const AppContent: React.FC = () => {
             <Routes>
                 <Route path="/" element={<PublicLayout><PublicHomePage /></PublicLayout>} />
                 <Route path="/login" element={<LoginPage />} />
-                {/* Rotas públicas mockadas */}
-                <Route path="/imoveis" element={<PublicLayout><div className="p-8 text-xl">Página de Imóveis (Mock)</div></PublicLayout>} />
+                {/* Rotas públicas */}
+                <Route path="/imoveis" element={<PublicLayout><ImoveisPublicPage /></PublicLayout>} />
                 <Route path="/imoveis/:id" element={<PublicLayout><PublicImovelDetailsPage /></PublicLayout>} />
                 <Route path="/sobre" element={<PublicLayout><div className="p-8 text-xl">Página Sobre Nós (Mock)</div></PublicLayout>} />
                 <Route path="/contato" element={<PublicLayout><div className="p-8 text-xl">Página de Contato (Mock)</div></PublicLayout>} />
