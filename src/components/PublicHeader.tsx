@@ -27,23 +27,23 @@ const PublicHeader: React.FC = () => {
                 </Link>
 
                 {/* Navegação Desktop */}
-                <nav className="hidden lg:flex space-x-8 text-dark-text font-medium">
-                    <Link to="/imoveis" className="hover:text-primary-orange transition-colors">ALUGAR</Link>
-                    <Link to="/imoveis" className="hover:text-primary-orange transition-colors">COMPRAR</Link>
-                    <Link to="/condominios" className="hover:text-primary-orange transition-colors">CONDOMÍNIOS</Link>
-                    <Link to="/manutencao" className="hover:text-primary-orange transition-colors">MANUTENÇÃO</Link>
-                    <Link to="/sobre" className="hover:text-primary-orange transition-colors">IMPERIAL</Link>
+                <nav className="hidden lg:flex space-x-8 text-white font-medium">
+                    <Link to="/imoveis" className="transition-colors">ALUGAR</Link>
+                    <Link to="/imoveis" className="transition-colors">COMPRAR</Link>
+                    <Link to="/condominios" className="transition-colors">CONDOMÍNIOS</Link>
+                    <Link to="/manutencao" className="transition-colors">MANUTENÇÃO</Link>
+                    <Link to="/sobre" className="transition-colors">IMPERIAL</Link>
                 </nav>
 
                 {/* Botões de Ação (Movidos para a direita) */}
                 <div className="flex items-center space-x-4">
                     {/* Módulo de Login/CRM */}
                     {session ? (
-                        <Link to="/crm/dashboard" className="text-gray-600 hover:text-primary-orange transition-colors p-2 rounded-full hover:bg-gray-100 hidden sm:block" title="Acessar CRM">
+                        <Link to="/crm/dashboard" className="text-white hover:text-primary-orange transition-colors p-2 rounded-full hover:bg-black/10 hidden sm:block" title="Acessar CRM">
                             <User className="w-6 h-6" />
                         </Link>
                     ) : (
-                        <Link to="/login" className="text-gray-600 hover:text-primary-orange transition-colors p-2 rounded-full hover:bg-gray-100 hidden sm:block" title="Login">
+                        <Link to="/login" className="text-white hover:text-primary-orange transition-colors p-2 rounded-full hover:bg-black/10 hidden sm:block" title="Login">
                             <LogIn className="w-6 h-6" />
                         </Link>
                     )}
@@ -51,7 +51,7 @@ const PublicHeader: React.FC = () => {
                     {/* Botão de Menu Mobile */}
                     <button 
                         onClick={() => setIsMenuOpen(true)}
-                        className="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-600 lg:hidden"
+                        className="p-2 rounded-full hover:bg-black/10 transition-colors text-white lg:hidden"
                         title="Abrir Menu"
                     >
                         <Menu className="w-6 h-6" />
@@ -70,7 +70,7 @@ const PublicHeader: React.FC = () => {
                         </div>
                         <Link to="/imoveis" className="block p-2 text-dark-text hover:bg-gray-100 rounded" onClick={() => setIsMenuOpen(false)}>ALUGAR</Link>
                         <Link to="/imoveis" className="block p-2 text-dark-text hover:bg-gray-100 rounded" onClick={() => setIsMenuOpen(false)}>COMPRAR</Link>
-                        <Link to="/condominios" className="block p-2 text-dark-text hover:bg-gray-100 rounded" onClick={() => setIsMenuOpen(false)}>CONDOMÍNIOS</Link>
+                        <Link to="/condominios" className="block p-2 text-dark-text hover:bg-gray-100 rounded" onClick={() => setIsMenuOpen(false)}>CONDOMÍNIOS</P>
                         <Link to="/manutencao" className="block p-2 text-dark-text hover:bg-gray-100 rounded" onClick={() => setIsMenuOpen(false)}>MANUTENÇÃO</Link>
                         <Link to="/sobre" className="block p-2 text-dark-text hover:bg-gray-100 rounded" onClick={() => setIsMenuOpen(false)}>IMPERIAL</Link>
                         <Link to={session ? "/crm/dashboard" : "/login"} className="block p-2 text-blue-600 hover:bg-blue-50 rounded" onClick={() => setIsMenuOpen(false)}>
