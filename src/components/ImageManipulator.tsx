@@ -12,15 +12,17 @@ export interface ImageTransform {
     offsetY: number; // -100 a 100 (posição Y em %)
 }
 
-interface ImageEditorProps {
+interface ImageManipulatorProps {
     imageUrl: string;
     currentTransform: ImageTransform;
     onTransformChange: (transform: ImageTransform) => void;
     device: DeviceType;
     isLoading: boolean;
+    previewHeight: number; // Altura do container de preview em pixels
+    previewWidth: number; // Largura do container de preview em pixels
 }
 
-const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, currentTransform, onTransformChange, device, isLoading }) => {
+const ImageManipulator: React.FC<ImageManipulatorProps> = ({ imageUrl, currentTransform, onTransformChange, device, isLoading, previewHeight, previewWidth }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
@@ -28,13 +30,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, currentTransform, o
 
     const { scale, offsetX, offsetY } = currentTransform;
 
-    // Dimensões simuladas para o preview
-    const deviceClasses: Record<DeviceType, string> = {
-        desktop: 'w-full h-full',
-        tablet: 'w-[768px] h-[500px] max-w-full',
-        mobile: 'w-[375px] h-[667px] max-w-full',
-    };
-    
     // Limites de zoom
     const MIN_SCALE = 1.0;
     const MAX_SCALE = 3.0;
@@ -52,18 +47,21 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, currentTransform, o
     const handleMouseMove = useCallback((e: MouseEvent) => {
         if (!isDragging || !containerRef.current) return;
 
-        const containerRect = containerRef.current.getBoundingClientRect();
+        // Usamos a largura/altura do preview simulado para calcular a sensibilidade
+        const width = previewWidth;
+        const height = previewHeight;
         
         // Calcula a diferença de pixels arrastados
         const dx = e.clientX - dragStart.x;
         const dy = e.clientY - dragStart.y;
         
         // Converte a diferença de pixels para porcentagem do container
-        // A sensibilidade do movimento deve ser ajustada pela escala
-        const sensitivity = 100 / (containerRect.width * scale); 
+        // A sensibilidade é baseada na largura/altura do container simulado
+        const sensitivityX = 100 / (width * scale); 
+        const sensitivityY = 100 / (height * scale); 
         
-        let newOffsetX = initialOffset.x + dx * sensitivity;
-        let newOffsetY = initialOffset.y + dy * sensitivity;
+        let newOffsetX = initialOffset.x + dx * sensitivityX;
+        let newOffsetY = initialOffset.y + dy * sensitivityY;
         
         // Limita o offset para que a imagem não saia completamente da tela
         const maxOffset = (scale - 1) * 50; // Máximo de deslocamento em %
@@ -72,7 +70,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, currentTransform, o
         newOffsetY = Math.max(-maxOffset, Math.min(maxOffset, newOffsetY));
 
         onTransformChange({ scale, offsetX: newOffsetX, offsetY: newOffsetY });
-    }, [isDragging, dragStart, initialOffset, scale, onTransformChange]);
+    }, [isDragging, dragStart, initialOffset, scale, onTransformChange, previewWidth, previewHeight]);
 
     const handleMouseUp = useCallback(() => {
         setIsDragging(false);
@@ -111,6 +109,13 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, currentTransform, o
         backgroundPosition: `${50 + offsetX}% ${50 + offsetY}%`,
         cursor: isDragging ? 'grabbing' : 'grab',
     };
+    
+    // Dimensões simuladas para o preview
+    const deviceClasses: Record<DeviceType, string> = {
+        desktop: 'w-full',
+        tablet: 'w-[768px] max-w-full',
+        mobile: 'w-[375px] max-w-full',
+    };
 
     return (
         <div className="space-y-4">
@@ -142,14 +147,14 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, currentTransform, o
                 </Button>
             </div>
 
-            {/* Preview do Dispositivo */}
+            {/* Preview do Dispositivo (Apenas o container de manipulação) */}
             <div className="flex justify-center items-center p-4 bg-gray-100 rounded-lg shadow-inner">
                 <div 
                     ref={containerRef}
                     className={`relative overflow-hidden border-8 border-gray-800 rounded-xl shadow-2xl transition-all duration-300 ${deviceClasses[device]}`}
                     style={{ 
-                        height: device === 'desktop' ? '300px' : device === 'tablet' ? '500px' : '667px',
-                        width: device === 'desktop' ? '100%' : device === 'tablet' ? '768px' : '375px',
+                        height: `${previewHeight}px`,
+                        width: `${previewWidth}px`,
                         minHeight: '300px',
                         minWidth: '300px',
                     }}
@@ -182,4 +187,4 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageUrl, currentTransform, o
     );
 };
 
-export default ImageEditor;
+export default ImageManipulator;

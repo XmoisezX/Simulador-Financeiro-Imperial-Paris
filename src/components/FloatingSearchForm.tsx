@@ -32,16 +32,22 @@ const initialFilters: FilterState = {
     maxPrice: '300000',
 };
 
-const FloatingSearchForm: React.FC = () => {
+interface FloatingSearchFormProps {
+    isPreview?: boolean;
+}
+
+const FloatingSearchForm: React.FC<FloatingSearchFormProps> = ({ isPreview = false }) => {
     const [filters, setFilters] = useState<FilterState>(initialFilters);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        if (isPreview) return;
         const { name, value } = e.target;
         setFilters(prev => ({ ...prev, [name]: value }));
     };
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
+        if (isPreview) return;
         console.log('Searching with filters:', filters);
         alert(`Buscando: ${filters.operation} em ${filters.neighborhood || 'toda a cidade'}`);
     };
@@ -55,6 +61,7 @@ const FloatingSearchForm: React.FC = () => {
                 value={filters[name]}
                 onChange={handleInputChange}
                 className="w-full p-3 border border-gray-300 rounded-lg bg-white text-sm text-dark-text focus:ring-primary-orange focus:border-primary-orange appearance-none cursor-pointer shadow-sm disabled:bg-gray-100"
+                disabled={isPreview}
             >
                 <option value="" disabled>{placeholder}</option>
                 {options.map((opt, index) => (
@@ -75,110 +82,113 @@ const FloatingSearchForm: React.FC = () => {
                 value={filters[name]}
                 onChange={handleInputChange}
                 placeholder={placeholder}
-                className="w-full p-3 border border-gray-300 rounded-lg shadow-sm text-sm focus:ring-primary-orange focus:border-primary-orange"
+                className="w-full p-3 border border-gray-300 rounded-lg shadow-sm text-sm focus:ring-primary-orange focus:border-primary-orange disabled:bg-gray-100"
+                disabled={isPreview}
             />
         </div>
     );
 
     return (
-        <div className="container mx-auto px-8 flex justify-start">
-            <form onSubmit={handleSearch} className="w-full max-w-md bg-white p-8 rounded-xl shadow-2xl">
-                
-                <h1 className="text-2xl font-bold text-blue-800">A sua imobiliária</h1>
-                <h2 className="text-3xl font-bold text-blue-800 mb-2">Encontre seu imóvel</h2>
-                <p className="text-lg text-light-text mb-6">São mais de 3243 opções disponíveis.</p>
+        <form onSubmit={handleSearch} className={`w-full max-w-md bg-white p-8 rounded-xl shadow-2xl ${isPreview ? 'pointer-events-none opacity-90' : ''}`}>
+            
+            <h1 className="text-2xl font-bold text-blue-800">A sua imobiliária</h1>
+            <h2 className="text-3xl font-bold text-blue-800 mb-2">Encontre seu imóvel</h2>
+            <p className="text-lg text-light-text mb-6">São mais de 3243 opções disponíveis.</p>
 
-                {/* Abas de Operação */}
-                <div className="flex border-b border-gray-200 mb-6">
-                    <button
-                        type="button"
-                        onClick={() => setFilters(prev => ({ ...prev, operation: 'Aluguel' }))}
-                        className={`py-2 px-4 text-sm font-semibold transition-colors ${
-                            filters.operation === 'Aluguel' 
-                                ? 'border-b-2 border-primary-orange text-primary-orange' 
-                                : 'text-gray-500 hover:text-dark-text'
-                        }`}
-                    >
-                        ALUGUEL
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setFilters(prev => ({ ...prev, operation: 'Vendas' }))}
-                        className={`py-2 px-4 text-sm font-semibold transition-colors ${
-                            filters.operation === 'Vendas' 
-                                ? 'border-b-2 border-primary-orange text-primary-orange' 
-                                : 'text-gray-500 hover:text-dark-text'
-                        }`}
-                    >
-                        VENDAS
-                    </button>
-                </div>
+            {/* Abas de Operação */}
+            <div className="flex border-b border-gray-200 mb-6">
+                <button
+                    type="button"
+                    onClick={() => setFilters(prev => ({ ...prev, operation: 'Aluguel' }))}
+                    className={`py-2 px-4 text-sm font-semibold transition-colors ${
+                        filters.operation === 'Aluguel' 
+                            ? 'border-b-2 border-primary-orange text-primary-orange' 
+                            : 'text-gray-500 hover:text-dark-text'
+                    }`}
+                    disabled={isPreview}
+                >
+                    ALUGUEL
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setFilters(prev => ({ ...prev, operation: 'Vendas' }))}
+                    className={`py-2 px-4 text-sm font-semibold transition-colors ${
+                        filters.operation === 'Vendas' 
+                            ? 'border-b-2 border-primary-orange text-primary-orange' 
+                            : 'text-gray-500 hover:text-dark-text'
+                    }`}
+                    disabled={isPreview}
+                >
+                    VENDAS
+                </button>
+            </div>
 
-                {/* Campos de Filtro */}
-                <div className="grid grid-cols-2 gap-4">
-                    {/* Coluna 1 */}
-                    <div className="space-y-4">
-                        {/* Cidade (Fixo) */}
-                        <div className="relative">
-                            <select
-                                id="city"
-                                name="city"
-                                value={filters.city}
-                                onChange={handleInputChange}
-                                disabled
-                                className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 text-sm text-dark-text appearance-none cursor-not-allowed shadow-sm"
-                            >
-                                <option value="Pelotas">Pelotas</option>
-                            </select>
-                            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                <ChevronDown className="h-4 w-4 text-gray-400" />
-                            </div>
-                        </div>
-                        
-                        {renderSelect('neighborhood', 'Bairro', neighborhoods, 'Bairro')}
-                        
-                        {renderSelect('rooms', 'Quartos', roomOptions, 'Quartos')}
-                        
-                        {/* Range de Preço (De) */}
-                        <div className="space-y-1 pt-2">
-                            <label className="block text-xs font-medium text-light-text">De</label>
-                            {renderPriceInput('minPrice', 'R$ 0,00')}
+            {/* Campos de Filtro */}
+            <div className="grid grid-cols-2 gap-4">
+                {/* Coluna 1 */}
+                <div className="space-y-4">
+                    {/* Cidade (Fixo) */}
+                    <div className="relative">
+                        <select
+                            id="city"
+                            name="city"
+                            value={filters.city}
+                            onChange={handleInputChange}
+                            disabled
+                            className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 text-sm text-dark-text appearance-none cursor-not-allowed shadow-sm"
+                        >
+                            <option value="Pelotas">Pelotas</option>
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <ChevronDown className="h-4 w-4 text-gray-400" />
                         </div>
                     </div>
                     
-                    {/* Coluna 2 */}
-                    <div className="space-y-4">
-                        {renderSelect('type', 'Tipo', propertyTypes, 'Tipo')}
-                        
-                        <TextInput 
-                            label="Cod. Imóvel" 
-                            id="code" 
-                            name="code"
-                            value={filters.code} 
-                            onChange={handleInputChange} 
-                            placeholder="Cod. Imóvel"
-                            className="w-full p-3 border border-gray-300 rounded-lg shadow-sm text-sm focus:ring-primary-orange focus:border-primary-orange"
-                        />
-                        
-                        {renderSelect('garages', 'Vagas', roomOptions, 'Vagas')}
-                        
-                        {/* Range de Preço (Até) */}
-                        <div className="space-y-1 pt-2">
-                            <label className="block text-xs font-medium text-light-text">Até</label>
-                            {renderPriceInput('maxPrice', 'R$ 30.000,00')}
-                        </div>
+                    {renderSelect('neighborhood', 'Bairro', neighborhoods, 'Bairro')}
+                    
+                    {renderSelect('rooms', 'Quartos', roomOptions, 'Quartos')}
+                    
+                    {/* Range de Preço (De) */}
+                    <div className="space-y-1 pt-2">
+                        <label className="block text-xs font-medium text-light-text">De</label>
+                        {renderPriceInput('minPrice', 'R$ 0,00')}
                     </div>
                 </div>
                 
-                {/* Botão de Busca */}
-                <button
-                    type="submit"
-                    className="w-full mt-6 bg-[#ffc107] hover:bg-[#ffb300] text-dark-text font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
-                >
-                    BUSCAR
-                </button>
-            </form>
-        </div>
+                {/* Coluna 2 */}
+                <div className="space-y-4">
+                    {renderSelect('type', 'Tipo', propertyTypes, 'Tipo')}
+                    
+                    <TextInput 
+                        label="Cod. Imóvel" 
+                        id="code" 
+                        name="code"
+                        value={filters.code} 
+                        onChange={handleInputChange} 
+                        placeholder="Cod. Imóvel"
+                        className="w-full p-3 border border-gray-300 rounded-lg shadow-sm text-sm focus:ring-primary-orange focus:border-primary-orange disabled:bg-gray-100"
+                        disabled={isPreview}
+                    />
+                    
+                    {renderSelect('garages', 'Vagas', roomOptions, 'Vagas')}
+                    
+                    {/* Range de Preço (Até) */}
+                    <div className="space-y-1 pt-2">
+                        <label className="block text-xs font-medium text-light-text">Até</label>
+                        {renderPriceInput('maxPrice', 'R$ 30.000,00')}
+                    </div>
+                </div>
+            </div>
+            
+            {/* Botão de Busca */}
+            <button
+                type="submit"
+                className="w-full mt-6 bg-[#ffc107] hover:bg-[#ffb300] text-dark-text font-bold px-6 py-3 rounded-lg shadow-md transition-colors disabled:opacity-50"
+                disabled={isPreview}
+            >
+                BUSCAR
+            </button>
+        </form>
     );
 };
 

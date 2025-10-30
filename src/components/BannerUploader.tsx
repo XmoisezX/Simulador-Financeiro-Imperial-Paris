@@ -3,7 +3,8 @@ import { Upload, Loader2, XCircle, CheckCircle, Smartphone, Tablet, Monitor } fr
 import { Button } from './ui/Button';
 import { supabase } from '../integrations/supabase/client';
 import { useAuth } from '../contexts/AuthContext';
-import ImageEditor, { DeviceType, ImageTransform } from './ImageEditor';
+import ImageManipulator, { DeviceType, ImageTransform } from './ImageManipulator';
+import BannerPreview from './BannerPreview'; // Importando o novo preview
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -40,6 +41,13 @@ const BannerUploader: React.FC = () => {
     const [currentDevice, setCurrentDevice] = useState<DeviceType>('desktop');
     const [transformSettings, setTransformSettings] = useState<BannerSettings>(initialSettings);
     const [isSettingsLoading, setIsSettingsLoading] = useState(true);
+    
+    // Dimensões do preview para o manipulador
+    const previewDimensions: Record<DeviceType, { width: number, height: number }> = {
+        desktop: { width: 800, height: 650 }, // Usamos uma largura fixa para o manipulador
+        tablet: { width: 768, height: 650 },
+        mobile: { width: 375, height: 650 },
+    };
     
     // --- Supabase Utilities ---
     const saveSettings = useCallback(async (settings: BannerSettings) => {
@@ -222,14 +230,26 @@ const BannerUploader: React.FC = () => {
                 </div>
             </div>
 
-            {/* Editor de Imagem */}
-            <ImageEditor
+            {/* Editor de Imagem (Manipulador) */}
+            <ImageManipulator
                 imageUrl={previewUrl || PUBLIC_URL}
                 currentTransform={currentTransform}
                 onTransformChange={handleTransformChange}
                 device={currentDevice}
                 isLoading={isSettingsLoading || uploading}
+                previewHeight={previewDimensions[currentDevice].height}
+                previewWidth={currentDevice === 'desktop' ? previewDimensions.desktop.width : previewDimensions[currentDevice].width}
             />
+            
+            {/* Prévia Real do Site */}
+            <div className="pt-4 border-t border-gray-100">
+                <h4 className="text-md font-semibold text-dark-text mb-3">Prévia do Layout Final</h4>
+                <BannerPreview 
+                    device={currentDevice}
+                    transform={currentTransform}
+                    imageUrl={previewUrl || PUBLIC_URL}
+                />
+            </div>
 
             {/* Ações de Upload e Salvar */}
             <div className="flex space-x-3 pt-4 border-t border-gray-100">
