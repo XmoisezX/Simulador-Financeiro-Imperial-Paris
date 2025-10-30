@@ -37,7 +37,7 @@ const BannerPreview: React.FC<BannerPreviewProps> = ({ device, transform, imageU
     };
     
     // Altura do container de visualização
-    const previewHeight = device === 'desktop' ? '650px' : device === 'tablet' ? '650px' : '650px';
+    const previewHeight = '650px'; // Mantemos a altura fixa para o banner
 
     return (
         <div className="flex justify-center items-start p-4 bg-gray-100 rounded-lg shadow-inner overflow-hidden">
@@ -45,7 +45,7 @@ const BannerPreview: React.FC<BannerPreviewProps> = ({ device, transform, imageU
                 className={`relative overflow-hidden border-8 border-gray-800 rounded-xl shadow-2xl transition-all duration-300 ${deviceClasses[device]}`}
                 style={{ height: previewHeight }}
             >
-                {/* 1. Seção de Busca com Background (Simulada) */}
+                {/* 1. Seção de Busca com Background (Copiada da PublicHomePage) */}
                 <div 
                     className="relative w-full bg-cover bg-no-repeat pb-24 pt-32" 
                     style={heroStyle}
@@ -60,13 +60,15 @@ const BannerPreview: React.FC<BannerPreviewProps> = ({ device, transform, imageU
                     </div>
                 </div>
                 
-                {/* Adiciona um placeholder para a seção de KPIs que fica abaixo do banner */}
-                <div className="relative z-10 -mt-16 container mx-auto px-8">
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 bg-white p-6 rounded-xl shadow-lg border-t-4 border-primary-orange">
-                        <div className="text-center p-3 border-r border-gray-200"><p className="text-3xl font-bold text-primary-orange">100+</p><p className="text-sm text-light-text mt-1">Imóveis</p></div>
-                        <div className="text-center p-3 border-r border-gray-200"><p className="text-3xl font-bold text-primary-orange">15</p><p className="text-sm text-light-text mt-1">Anos</p></div>
-                        <div className="text-center p-3 border-r border-gray-200"><p className="text-3xl font-bold text-primary-orange">98%</p><p className="text-sm text-light-text mt-1">Satisfação</p></div>
-                        <div className="text-center p-3"><p className="text-3xl font-bold text-primary-orange">Pelotas</p><p className="text-sm text-light-text mt-1">Foco</p></div>
+                {/* 2. Stats/KPIs Section (Copiada da PublicHomePage) */}
+                <div className="relative z-10 -mt-16">
+                    <div className="container mx-auto px-8">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 bg-white p-6 rounded-xl shadow-lg border-t-4 border-primary-orange">
+                            <div className="text-center p-3 border-r border-gray-200"><p className="text-3xl font-bold text-primary-orange">100+</p><p className="text-sm text-light-text mt-1">Imóveis</p></div>
+                            <div className="text-center p-3 border-r border-gray-200"><p className="text-3xl font-bold text-primary-orange">15</p><p className="text-sm text-light-text mt-1">Anos</p></div>
+                            <div className="text-center p-3 border-r border-gray-200"><p className="text-3xl font-bold text-primary-orange">98%</p><p className="text-sm text-light-text mt-1">Satisfação</p></div>
+                            <div className="text-center p-3"><p className="text-3xl font-bold text-primary-orange">Pelotas</p><p className="text-sm text-light-text mt-1">Foco</p></div>
+                        </div>
                     </div>
                 </div>
             </div>

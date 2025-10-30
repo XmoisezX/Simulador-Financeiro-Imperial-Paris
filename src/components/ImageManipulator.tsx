@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ZoomIn, ZoomOut, Move, RotateCw, Smartphone, Tablet, Monitor, Loader2 } from 'lucide-react';
 import { Button } from './ui/Button';
 
@@ -112,7 +112,7 @@ const ImageManipulator: React.FC<ImageManipulatorProps> = ({ imageUrl, currentTr
     
     // Dimensões simuladas para o preview
     const deviceClasses: Record<DeviceType, string> = {
-        desktop: 'w-full',
+        desktop: 'w-full', // Usamos w-full aqui, mas o BannerUploader define o max-width
         tablet: 'w-[768px] max-w-full',
         mobile: 'w-[375px] max-w-full',
     };
