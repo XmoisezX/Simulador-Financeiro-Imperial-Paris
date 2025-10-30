@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Home, Building2, Loader2, Plus, MapPin, List, FileText, Image, CheckCircle, Zap, Lock, Eye } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { CondominioInput, CondominioMedia } from '../../types';
 import { useAuth } from '../contexts/AuthContext';
 import ImovelStep from '../components/ImovelStep'; // Reusing ImovelStep for layout
@@ -402,7 +402,12 @@ const NewCondominioPage: React.FC = () => {
     return (
         <div className="p-4 sm:p-6 lg:p-8 animate-fade-in space-y-6">
             <h1 className="text-2xl font-bold text-dark-text flex items-center">
-                <Building2 className="w-6 h-6 mr-2 text-blue-600" /> INÍCIO &gt; CONDOMÍNIOS &gt; NOVO
+                <Building2 className="w-6 h-6 mr-2 text-blue-600" /> 
+                <Link to="/crm/dashboard" className="text-gray-500 hover:text-blue-600 transition-colors">INÍCIO</Link> 
+                <span className="mx-2 text-gray-400">&gt;</span> 
+                <Link to="/crm/condominios" className="text-gray-500 hover:text-blue-600 transition-colors">CONDOMÍNIOS</Link> 
+                <span className="mx-2 text-gray-400">&gt;</span> 
+                NOVO
             </h1>
             
             {validationError && (
