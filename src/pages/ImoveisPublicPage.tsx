@@ -167,13 +167,13 @@ const ImoveisPublicPage: React.FC = () => {
     return (
         <div className="flex flex-col lg:grid lg:grid-cols-3 min-h-[calc(100vh-150px)] pt-[100px] bg-gray-50">
             
-            {/* Coluna 1: Lista de Imóveis e Filtro Compacto (2/3 da tela em LG) */}
-            <div className="lg:col-span-2 w-full flex-shrink-0 overflow-y-auto p-4 sm:p-6 space-y-6 bg-white shadow-lg lg:shadow-none">
+            {/* Coluna 1: Filtros e Lista de Imóveis (1/3 da tela em LG) */}
+            <div className="lg:col-span-1 w-full flex-shrink-0 overflow-y-auto p-4 sm:p-6 space-y-6 bg-white shadow-lg lg:shadow-none">
                 
-                {/* Filtro Compacto */}
+                {/* Filtro Compacto (Vertical) */}
                 <CompactSearchForm />
                 
-                <h1 className="text-2xl font-bold text-dark-text flex items-center">
+                <h1 className="text-2xl font-bold text-dark-text flex items-center border-t pt-4">
                     <Home className="w-5 h-5 mr-2 text-primary-orange" /> Imóveis para Venda ({imoveis.length})
                 </h1>
                 <p className="text-sm text-light-text">Clique em um imóvel para ver os detalhes ou no mapa para destacar.</p>
@@ -206,8 +206,8 @@ const ImoveisPublicPage: React.FC = () => {
                 )}
             </div>
             
-            {/* Coluna 2: Mapa (1/3 da tela em LG) */}
-            <div className="lg:col-span-1 h-[50vh] lg:h-auto lg:sticky lg:top-[88px] lg:flex-grow">
+            {/* Coluna 2: Mapa (2/3 da tela em LG) */}
+            <div className="lg:col-span-2 h-[50vh] lg:h-auto lg:sticky lg:top-[88px] lg:flex-grow">
                 <ClientOnly fallback={
                     <div className="flex items-center justify-center h-full bg-gray-200">
                         <Loader2 className="w-8 h-8 animate-spin text-primary-orange" />

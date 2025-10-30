@@ -44,8 +44,9 @@ const CompactSearchForm: React.FC = () => {
         // Aqui a lógica real de filtragem da lista seria implementada
     };
     
+    // Ajustado para ocupar a largura total do container
     const renderSelect = (name: keyof FilterState, options: (string | number)[], placeholder: string) => (
-        <div className="relative flex-1 min-w-[120px]">
+        <div className="relative w-full">
             <select
                 id={name}
                 name={name}
@@ -64,8 +65,9 @@ const CompactSearchForm: React.FC = () => {
         </div>
     );
     
+    // Ajustado para ocupar a largura total do container
     const renderPriceInput = (name: keyof FilterState, placeholder: string) => (
-        <div className="relative flex-1 min-w-[100px]">
+        <div className="relative w-full">
             <input
                 type="text"
                 name={name}
@@ -79,6 +81,8 @@ const CompactSearchForm: React.FC = () => {
 
     return (
         <form onSubmit={handleSearch} className="w-full bg-white p-4 rounded-lg shadow-md border border-gray-100 space-y-4">
+            
+            <h2 className="text-lg font-bold text-dark-text border-b pb-2">Filtros de Busca</h2>
             
             {/* Abas de Operação */}
             <div className="flex border-b border-gray-200">
@@ -106,8 +110,8 @@ const CompactSearchForm: React.FC = () => {
                 </button>
             </div>
 
-            {/* Campos de Filtro Compactos */}
-            <div className="flex flex-wrap gap-3 items-center">
+            {/* Campos de Filtro Verticais */}
+            <div className="space-y-3">
                 
                 {/* Bairro */}
                 {renderSelect('neighborhood', neighborhoods, 'Bairro')}
@@ -122,17 +126,17 @@ const CompactSearchForm: React.FC = () => {
                 {renderSelect('garages', roomOptions, 'Vagas')}
                 
                 {/* Preço Mínimo */}
-                {renderPriceInput('minPrice', 'R$ Mín')}
+                {renderPriceInput('minPrice', 'Preço Mínimo')}
                 
                 {/* Preço Máximo */}
-                {renderPriceInput('maxPrice', 'R$ Máx')}
+                {renderPriceInput('maxPrice', 'Preço Máximo')}
                 
                 {/* Botão de Busca */}
                 <Button
                     type="submit"
-                    className="bg-primary-orange hover:bg-secondary-orange text-white font-medium px-4 py-2 flex items-center justify-center h-10 flex-shrink-0"
+                    className="w-full bg-primary-orange hover:bg-secondary-orange text-white font-medium px-4 py-2 flex items-center justify-center h-10 flex-shrink-0"
                 >
-                    <Search className="w-4 h-4" />
+                    <Search className="w-4 h-4 mr-2" /> Aplicar Filtros
                 </Button>
             </div>
         </form>
