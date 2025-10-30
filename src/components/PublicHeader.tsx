@@ -14,7 +14,7 @@ const PublicHeader: React.FC = () => {
     };
 
     return (
-        <header className="fixed top-0 left-0 right-0 z-20 backdrop-blur-sm">
+        <header className="fixed top-0 left-0 right-0 z-20 backdrop-blur-md bg-white/80 shadow-md">
             {/* Barra Principal (Logo e Navegação) */}
             <div className="container mx-auto p-4 flex items-center justify-between">
                 <Link to="/" className="flex items-center">
@@ -27,23 +27,23 @@ const PublicHeader: React.FC = () => {
                 </Link>
 
                 {/* Navegação Desktop */}
-                <nav className="hidden lg:flex space-x-8 text-white font-medium">
-                    <Link to="/imoveis" className="transition-colors">ALUGAR</Link>
-                    <Link to="/imoveis" className="transition-colors">COMPRAR</Link>
-                    <Link to="/condominios" className="transition-colors">CONDOMÍNIOS</Link>
-                    <Link to="/manutencao" className="transition-colors">MANUTENÇÃO</Link>
-                    <Link to="/sobre" className="transition-colors">IMPERIAL</Link>
+                <nav className="hidden lg:flex space-x-8 text-dark-text font-medium">
+                    <Link to="/imoveis" className="hover:text-primary-orange transition-colors">ALUGAR</Link>
+                    <Link to="/imoveis" className="hover:text-primary-orange transition-colors">COMPRAR</Link>
+                    <Link to="/condominios" className="hover:text-primary-orange transition-colors">CONDOMÍNIOS</Link>
+                    <Link to="/manutencao" className="hover:text-primary-orange transition-colors">MANUTENÇÃO</Link>
+                    <Link to="/sobre" className="hover:text-primary-orange transition-colors">IMPERIAL</Link>
                 </nav>
 
                 {/* Botões de Ação (Movidos para a direita) */}
                 <div className="flex items-center space-x-4">
                     {/* Módulo de Login/CRM */}
                     {session ? (
-                        <Link to="/crm/dashboard" className="text-white hover:text-primary-orange transition-colors p-2 rounded-full hover:bg-black/10 hidden sm:block" title="Acessar CRM">
+                        <Link to="/crm/dashboard" className="text-dark-text hover:text-primary-orange transition-colors p-2 rounded-full hover:bg-gray-100 hidden sm:block" title="Acessar CRM">
                             <User className="w-6 h-6" />
                         </Link>
                     ) : (
-                        <Link to="/login" className="text-white hover:text-primary-orange transition-colors p-2 rounded-full hover:bg-black/10 hidden sm:block" title="Login">
+                        <Link to="/login" className="text-dark-text hover:text-primary-orange transition-colors p-2 rounded-full hover:bg-gray-100 hidden sm:block" title="Login">
                             <LogIn className="w-6 h-6" />
                         </Link>
                     )}
@@ -51,7 +51,7 @@ const PublicHeader: React.FC = () => {
                     {/* Botão de Menu Mobile */}
                     <button 
                         onClick={() => setIsMenuOpen(true)}
-                        className="p-2 rounded-full hover:bg-black/10 transition-colors text-white lg:hidden"
+                        className="p-2 rounded-full hover:bg-gray-100 transition-colors text-dark-text lg:hidden"
                         title="Abrir Menu"
                     >
                         <Menu className="w-6 h-6" />
