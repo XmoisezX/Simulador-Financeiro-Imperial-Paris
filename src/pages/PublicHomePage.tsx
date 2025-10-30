@@ -65,8 +65,10 @@ const PublicHomePage: React.FC = () => {
                 <div className="absolute inset-0 bg-black opacity-40"></div> 
                 <div className="relative z-10">
                     <ClientOnly>
-                        {/* NOVO COMPONENTE DE BUSCA */}
-                        <FloatingSearchForm />
+                        {/* Ajuste: Centralizando o formulário de busca */}
+                        <div className="container mx-auto px-8 flex justify-center">
+                            <FloatingSearchForm />
+                        </div>
                     </ClientOnly>
                 </div>
             </div>

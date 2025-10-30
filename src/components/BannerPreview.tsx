@@ -50,7 +50,7 @@ const BannerPreview: React.FC<BannerPreviewProps> = ({ device, transform, imageU
                     <div className="absolute inset-0 bg-black opacity-40"></div> 
                     <div className="relative z-10">
                         {/* Renderiza o formulário de busca no contexto do preview */}
-                        <div className="container mx-auto px-8 flex justify-start">
+                        <div className="container mx-auto px-8 flex justify-center">
                             <FloatingSearchForm isPreview={true} />
                         </div>
                     </div>
