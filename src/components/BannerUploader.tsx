@@ -53,18 +53,43 @@ const BannerUploader: React.FC = () => {
     const saveSettings = useCallback(async (settings: BannerSettings) => {
         if (!session) return false;
         
-        const { error } = await supabase
+        // 1. Tenta buscar o ID existente
+        const { data: existingData } = await supabase
             .from('site_settings')
-            .upsert({
-                setting_key: BANNER_SETTINGS_KEY,
-                setting_value: settings,
-            }, { onConflict: 'setting_key' });
+            .select('id')
+            .eq('setting_key', BANNER_SETTINGS_KEY)
+            .single();
+            
+        const dataToSave = {
+            setting_key: BANNER_SETTINGS_KEY,
+            setting_value: settings,
+            updated_at: new Date().toISOString(),
+        };
+        
+        let error;
+        
+        if (existingData) {
+            // 2. Se existir, atualiza
+            const result = await supabase
+                .from('site_settings')
+                .update(dataToSave)
+                .eq('id', existingData.id);
+            error = result.error;
+        } else {
+            // 3. Se não existir, insere
+            const result = await supabase
+                .from('site_settings')
+                .insert(dataToSave);
+            error = result.error;
+        }
 
         if (error) {
             console.error('Error saving banner settings:', error);
-            setError('Erro ao salvar as configurações do banner.');
+            setError(`Erro ao salvar as configurações do banner: ${error.message}`);
             return false;
         }
+        
+        // Se o salvamento for bem-sucedido, atualiza o estado local
         setTransformSettings(settings);
         setSuccess('Configurações salvas com sucesso!');
         setTimeout(() => setSuccess(null), 3000);
@@ -120,7 +145,10 @@ const BannerUploader: React.FC = () => {
     };
 
     const handleUploadAndSave = useCallback(async () => {
-        if (!session?.user.id) return;
+        if (!session?.user.id) {
+            setError('Você precisa estar logado para salvar as configurações.');
+            return;
+        }
 
         setUploading(true);
         setError(null);
@@ -168,9 +196,10 @@ const BannerUploader: React.FC = () => {
         setSuccess(null);
         
         // Recarrega as configurações iniciais
-        if (initialSettings) {
-            setTransformSettings(initialSettings);
-        }
+        // Nota: Para recarregar as configurações iniciais, precisaríamos do estado inicial
+        // que foi buscado do banco. Como não temos o estado inicial salvo, vamos apenas
+        // resetar para o DEFAULT_TRANSFORM para cada dispositivo.
+        setTransformSettings(initialSettings);
     };
     
     const handleTransformChange = (transform: ImageTransform) => {
@@ -181,7 +210,13 @@ const BannerUploader: React.FC = () => {
     };
     
     const currentTransform = transformSettings[currentDevice];
+    
+    // Para verificar se está 'dirty', precisamos comparar com o estado inicial buscado.
+    // Como não temos o estado inicial salvo de forma limpa, vamos simplificar a verificação
+    // para apenas verificar se há um arquivo para upload ou se as configurações atuais
+    // são diferentes das configurações padrão (initialSettings).
     const isDirty = fileToUpload !== null || JSON.stringify(transformSettings) !== JSON.stringify(initialSettings);
+
 
     return (
         <div className="space-y-6 p-6 bg-white rounded-lg shadow-md border border-gray-200">
