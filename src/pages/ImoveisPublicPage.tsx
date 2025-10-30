@@ -7,6 +7,7 @@ import { Button } from '../components/ui/Button';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import CompactSearchForm from '../components/CompactSearchForm';
+import PublicImovelCard from '../components/PublicImovelCard'; // Importando o novo card
 
 // Ícone customizado para o mapa
 const CustomIcon = L.divIcon({
@@ -40,7 +41,7 @@ const MapComponent: React.FC<MapComponentProps> = ({ imoveis, highlightedId, onM
                 });
 
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
                 }).addTo(mapInstanceRef.current);
             }
 
@@ -92,57 +93,6 @@ const MapComponent: React.FC<MapComponentProps> = ({ imoveis, highlightedId, onM
 
     return <div ref={mapRef} className="w-full h-full z-0" />;
 };
-
-// Componente de Card de Imóvel na Lista
-interface ImovelListItemProps {
-    imovel: any;
-    isHighlighted: boolean;
-    onClick: (id: string) => void;
-}
-
-const formatCurrency = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
-const ImovelListItem: React.FC<ImovelListItemProps> = ({ imovel, isHighlighted, onClick }) => {
-    const itemRef = useRef<HTMLDivElement>(null);
-    
-    useEffect(() => {
-        if (isHighlighted && itemRef.current) {
-            itemRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-    }, [isHighlighted]);
-    
-    const price = imovel.dados_valores.valor_venda;
-    const type = imovel.dados_caracteristicas.tipo_imovel;
-    const imageUrl = imovel.imagens_imovel?.[0]?.url || '/LOGO LARANJA.png';
-    const title = `${type} - Cód: ${imovel.codigo}`;
-    
-    const { dormitorios, suites, banheiros, vagas_garagem, area_privativa_m2 } = imovel.dados_caracteristicas;
-
-    return (
-        <div 
-            ref={itemRef}
-            className={`flex p-4 border rounded-lg shadow-sm transition-all duration-300 cursor-pointer ${
-                isHighlighted ? 'border-primary-orange bg-orange-50 shadow-lg' : 'bg-white hover:shadow-md'
-            }`}
-            onClick={() => onClick(imovel.id)}
-        >
-            <div className="flex-shrink-0 w-24 h-24 mr-4 rounded-md overflow-hidden bg-gray-200">
-                <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
-            </div>
-            <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-semibold text-dark-text truncate">{title}</h3>
-                <p className="text-xl font-bold text-primary-orange mt-1">{formatCurrency(price)}</p>
-                <div className="flex items-center text-xs text-light-text space-x-3 mt-1">
-                    <span className="flex items-center"><Bed className="w-3 h-3 mr-1" /> {dormitorios} ({suites})</span>
-                    <span className="flex items-center"><Bath className="w-3 h-3 mr-1" /> {banheiros}</span>
-                    <span className="flex items-center"><Maximize2 className="w-3 h-3 mr-1" /> {area_privativa_m2} m²</span>
-                </div>
-                <p className="text-xs text-light-text mt-1 truncate">{imovel.logradouro}, {imovel.bairro}</p>
-            </div>
-        </div>
-    );
-};
-
 
 const ImoveisPublicPage: React.FC = () => {
     const { imoveis, isLoading, error } = useImovelLocations();
@@ -217,12 +167,14 @@ const ImoveisPublicPage: React.FC = () => {
 
                 <div className="space-y-4">
                     {imoveis.map(imovel => (
-                        <div key={imovel.id} onClick={() => handleViewDetails(imovel.id)}>
-                            <ImovelListItem 
-                                imovel={imovel}
-                                isHighlighted={imovel.id === highlightedId}
-                                onClick={handleListItemClick}
-                            />
+                        <div 
+                            key={imovel.id} 
+                            // Adiciona a classe de destaque para o card
+                            className={imovel.id === highlightedId ? 'border-2 border-primary-orange rounded-xl shadow-lg' : ''}
+                            onMouseEnter={() => setHighlightedId(imovel.id)}
+                            onMouseLeave={() => setHighlightedId(null)}
+                        >
+                            <PublicImovelCard imovel={imovel} />
                         </div>
                     ))}
                 </div>

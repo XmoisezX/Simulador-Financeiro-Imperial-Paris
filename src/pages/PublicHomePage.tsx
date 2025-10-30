@@ -7,6 +7,7 @@ import { useImovelLocations } from '../hooks/useImovelLocations'; // USANDO NOVO
 import { useBannerPosition } from '../hooks/useBannerPosition';
 import ClientOnly from '../components/ClientOnly';
 import { DeviceType, ImageTransform } from '../components/ImageManipulator';
+import PublicImovelCard from '../components/PublicImovelCard'; // Importando o novo card
 
 // URL pública da imagem no Supabase Storage
 const SUPABASE_HERO_IMAGE_URL = "https://pqievwbfrbiqhvdyalrh.supabase.co/storage/v1/object/public/imovel-media/hero-background.png";
@@ -123,43 +124,9 @@ const PublicHomePage: React.FC = () => {
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {featuredImoveis.map(prop => {
-                        const isVenda = prop.dados_contrato.venda_ativo && prop.dados_contrato.venda_disponibilidade === 'Disponível';
-                        const isLocacao = prop.dados_contrato.locacao_ativo && prop.dados_contrato.locacao_disponibilidade === 'Disponível';
-                        
-                        const price = isVenda ? prop.dados_valores.valor_venda : prop.dados_valores.valor_locacao;
-                        const operationType = isVenda ? 'Venda' : (isLocacao ? 'Locação' : 'Indefinido');
-                        const imageUrl = prop.imagens_imovel?.[0]?.url || 'https://via.placeholder.com/400x300/ff6600/ffffff?text=Sem+Foto';
-                        
-                        const title = `${prop.dados_caracteristicas.tipo_imovel} ${operationType} - Cód: ${prop.codigo}`;
-                        
-                        return (
-                            <div key={prop.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
-                                <div className="h-[280px] w-full bg-gray-200 relative">
-                                    <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
-                                    <div className="absolute top-2 right-2 bg-primary-orange text-white text-xs font-semibold px-3 py-1 rounded-full">
-                                        {operationType}
-                                    </div>
-                                </div>
-                                <div className="p-4 space-y-2">
-                                    <h3 className="text-lg font-semibold text-dark-text truncate">{title}</h3>
-                                    <p className="text-2xl font-bold text-primary-orange">{formatCurrency(price)}</p>
-                                    <div className="flex items-center text-sm text-light-text space-x-4">
-                                        <span className="flex items-center"><MapPin className="w-4 h-4 mr-1" /> {prop.bairro}, {prop.logradouro}</span>
-                                    </div>
-                                    <div className="flex items-center text-sm text-dark-text space-x-4 border-t pt-2">
-                                        <span className="flex items-center"><Home className="w-4 h-4 mr-1" /> {prop.dados_caracteristicas.area_privativa_m2} m²</span>
-                                        <span className="flex items-center"><DollarSign className="w-4 h-4 mr-1" /> {prop.dados_caracteristicas.dormitorios} Dorms</span>
-                                    </div>
-                                    <Link to={`/imoveis/${prop.id}`}>
-                                        <Button variant="outline" className="w-full mt-3 text-blue-600 border-blue-600 hover:bg-blue-50">
-                                            Ver Detalhes <ArrowRight className="w-4 h-4 ml-2" />
-                                        </Button>
-                                    </Link>
-                                </div>
-                            </div>
-                        );
-                    })}
+                    {featuredImoveis.map(prop => (
+                        <PublicImovelCard key={prop.id} imovel={prop} />
+                    ))}
                 </div>
                 <div className="text-center mt-10">
                     <Link to="/imoveis">
