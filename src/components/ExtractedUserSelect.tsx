@@ -1,67 +1,26 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Loader2, User, CheckCircle, XCircle, ChevronDown } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../integrations/supabase/client';
 
-interface UserProfile {
-    id: string;
-    full_name: string | null;
-    email: string;
-}
+// Lista fixa de responsáveis
+const RESPONSIBLE_USERS = [
+    { id: 'Moisez Torres', name: 'Moisez Torres' },
+    { id: 'Alessandro Gomes', name: 'Alessandro Gomes' },
+    { id: 'Tamires Torres', name: 'Tamires Torres' },
+];
 
 interface ExtractedUserSelectProps {
     imovelId: number;
-    currentUserId: string | null;
-    onUpdate: (newUserId: string | null) => void;
+    currentUserName: string | null; // Renomeado para refletir que é o nome
+    onUpdate: (newUserName: string | null) => void;
 }
 
-const ExtractedUserSelect: React.FC<ExtractedUserSelectProps> = ({ imovelId, currentUserId, onUpdate }) => {
-    const { session } = useAuth();
-    const [users, setUsers] = useState<UserProfile[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+const ExtractedUserSelect: React.FC<ExtractedUserSelectProps> = ({ imovelId, currentUserName, onUpdate }) => {
     const [isSaving, setIsSaving] = useState(false);
     const [saveStatus, setSaveStatus] = useState<'success' | 'error' | null>(null);
     const [isSelectOpen, setIsSelectOpen] = useState(false);
     const selectRef = useRef<HTMLDivElement>(null);
 
-    const getDisplayName = (user: UserProfile) => user.full_name || user.email.split('@')[0] || 'Sem Nome';
-
-    const fetchUsers = useCallback(async () => {
-        if (!session) return;
-        setIsLoading(true);
-        
-        // Busca todos os perfis
-        const { data, error } = await supabase
-            .from('profiles')
-            .select('id, full_name, email')
-            .order('full_name', { ascending: true });
-
-        if (error) {
-            console.error('Error fetching users:', error);
-        } else {
-            let uniqueUsers = data as UserProfile[];
-            
-            // Garante que o usuário logado esteja na lista, mesmo que o perfil não tenha sido criado
-            if (!uniqueUsers.some(u => u.id === session.user.id)) {
-                uniqueUsers = [{
-                    id: session.user.id,
-                    full_name: session.user.user_metadata.full_name || null,
-                    email: session.user.email || '',
-                }, ...uniqueUsers];
-            }
-            
-            // Ordena pelo nome de exibição
-            uniqueUsers.sort((a, b) => getDisplayName(a).localeCompare(getDisplayName(b)));
-            
-            setUsers(uniqueUsers);
-        }
-        setIsLoading(false);
-    }, [session]);
-
-    useEffect(() => {
-        fetchUsers();
-    }, [fetchUsers]);
-    
     // Fecha o select ao clicar fora
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -74,23 +33,18 @@ const ExtractedUserSelect: React.FC<ExtractedUserSelectProps> = ({ imovelId, cur
     }, []);
     
     const handleSelectChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const newUserId = e.target.value || null;
-        
-        if (!session) {
-            alert('Você precisa estar logado para atribuir um responsável.');
-            return;
-        }
+        const newUserName = e.target.value || null;
         
         setIsSaving(true);
         setSaveStatus(null);
         
         // 1. Atualiza o estado local imediatamente (via prop)
-        onUpdate(newUserId);
+        onUpdate(newUserName);
 
-        // 2. Salva no Supabase
+        // 2. Salva no Supabase (usando o campo responsible_user_id para armazenar o nome)
         const { error } = await supabase
             .from('imoveis_importados')
-            .update({ responsible_user_id: newUserId })
+            .update({ responsible_user_id: newUserName })
             .eq('id', imovelId);
 
         setIsSaving(false);
@@ -106,21 +60,12 @@ const ExtractedUserSelect: React.FC<ExtractedUserSelectProps> = ({ imovelId, cur
         }
     };
 
-    const selectedUser = users.find(u => u.id === currentUserId);
-    const displayName = selectedUser ? getDisplayName(selectedUser) : 'Não Atribuído';
-    const selectedValue = currentUserId || '';
-
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center h-full text-gray-500 text-xs">
-                <Loader2 className="w-3 h-3 animate-spin mr-1" /> Carregando...
-            </div>
-        );
-    }
+    const displayName = currentUserName || 'Não Atribuído';
+    const selectedValue = currentUserName || '';
 
     return (
         <div 
-            className={`relative w-full h-full flex items-center p-2 cursor-pointer transition-colors ${currentUserId ? 'bg-green-100 hover:bg-green-200' : 'hover:bg-gray-50'}`} 
+            className={`relative w-full h-full flex items-center p-2 cursor-pointer transition-colors ${currentUserName ? 'bg-green-100 hover:bg-green-200' : 'hover:bg-gray-50'}`} 
             ref={selectRef}
         >
             
@@ -135,9 +80,9 @@ const ExtractedUserSelect: React.FC<ExtractedUserSelectProps> = ({ imovelId, cur
                     autoFocus
                 >
                     <option value="">Não Atribuído</option>
-                    {users.map(user => (
+                    {RESPONSIBLE_USERS.map(user => (
                         <option key={user.id} value={user.id}>
-                            {getDisplayName(user)}
+                            {user.name}
                         </option>
                     ))}
                 </select>
@@ -145,7 +90,7 @@ const ExtractedUserSelect: React.FC<ExtractedUserSelectProps> = ({ imovelId, cur
                 // Modo de Visualização (Botão)
                 <button
                     onClick={() => setIsSelectOpen(true)}
-                    className={`w-full text-left text-sm flex items-center justify-between ${currentUserId ? 'text-green-800 font-medium' : 'text-gray-500'}`}
+                    className={`w-full text-left text-sm flex items-center justify-between ${currentUserName ? 'text-green-800 font-medium' : 'text-gray-500'}`}
                     disabled={isSaving}
                 >
                     <span className="truncate pr-2">{displayName}</span>

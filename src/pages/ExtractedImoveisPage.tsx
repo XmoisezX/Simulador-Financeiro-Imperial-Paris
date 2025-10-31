@@ -13,7 +13,7 @@ import ExtractedUserSelect from '../components/ExtractedUserSelect';
 // Define a interface para os dados da linha, baseada na tabela imoveis_importados
 interface ExtractedImovel {
     id: number; // Internal Supabase row ID (SERIAL PRIMARY KEY)
-    responsible_user_id: string | null; // UUID do responsável (Substitui Pagina)
+    responsible_user_id: string | null; // Agora armazena o NOME do responsável (string)
     Referencia: string | null;
     Categoria: string | null;
     Endereco: string | null;
@@ -464,8 +464,8 @@ const ExtractedImoveisPage: React.FC = () => {
                                         >
                                             <ExtractedUserSelect 
                                                 imovelId={row.id}
-                                                currentUserId={row.responsible_user_id}
-                                                onUpdate={(newUserId) => handleEdit(row.id, 'responsible_user_id', newUserId)}
+                                                currentUserName={row.responsible_user_id}
+                                                onUpdate={(newUserName) => handleEdit(row.id, 'responsible_user_id', newUserName)}
                                             />
                                         </td>
                                     );
