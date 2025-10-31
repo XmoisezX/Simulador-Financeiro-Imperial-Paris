@@ -48,9 +48,18 @@ const initialFilters: ExtractedFilters = {
     andar: null,
 };
 
+// Função auxiliar para limpar e converter valor de moeda (R$ 1.000,00 -> 1000.00)
+const parseCurrency = (value: string | null): number | null => {
+    if (!value) return null;
+    const cleanValue = value.replace(/[^\d,]/g, '').replace(',', '.');
+    const num = parseFloat(cleanValue);
+    return isNaN(num) ? null : num;
+};
+
+
 const ExtractedImoveisPage: React.FC = () => {
   const [data, setData] = useState<ExtractedImovel[]>([]); // Dados brutos da página (sem filtro de busca rápida)
-  const [filteredData, setFilteredData] = useState<ExtractedImovel[]>([]); // Dados após filtro de busca rápida
+  const [filteredData, setFilteredData] = useState<ExtractedImovel[]>([]); // Dados após filtro de busca rápida e filtros de valor
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
@@ -114,7 +123,7 @@ const ExtractedImoveisPage: React.FC = () => {
       .select("*, id", { count: "exact" })
       .order("id", { ascending: true });
       
-    // --- Aplicação dos Filtros no Servidor ---
+    // --- Aplicação dos Filtros no Servidor (Apenas colunas seguras) ---
     
     // 1. Filtros de Igualdade (Categoria, Bairro)
     if (currentFilters.categoria) {
@@ -124,11 +133,7 @@ const ExtractedImoveisPage: React.FC = () => {
         query = query.eq('Bairro', currentFilters.bairro);
     }
     
-    // 2. Filtros de Range (Venda, Aluguel, Dorms)
-    // Nota: Venda e Aluguel são TEXT no banco, o que impede filtros numéricos diretos.
-    // Para fins de demonstração, aplicaremos filtros apenas em colunas numéricas (Dorms).
-    
-    // Dormitórios (Dorms é bigint)
+    // 2. Filtros de Range (Dorms - Coluna numérica)
     if (currentFilters.minDorms !== null && currentFilters.minDorms > 0) {
         query = query.gte('Dorms', currentFilters.minDorms);
     }
@@ -145,7 +150,6 @@ const ExtractedImoveisPage: React.FC = () => {
     else {
       setTotalRows(count || 0);
       setData(fetchedData || []);
-      setFilteredData(fetchedData || []); // Inicialmente, filteredData = data
     }
     setLoading(false);
   }, [limit]);
@@ -154,21 +158,43 @@ const ExtractedImoveisPage: React.FC = () => {
     fetchData(page, appliedFilters);
   }, [page, limit, appliedFilters, fetchData]);
 
-  // 🔹 Filtro de busca (aplica no bloco atual - Cliente Side Search)
+  // 🔹 Filtro de busca e valor (aplica no bloco atual - Client Side Filtering)
   useEffect(() => {
-    if (!search.trim()) {
-        setFilteredData(data);
-        return;
+    let currentData = data;
+    
+    // 1. Filtragem por Valores (Venda/Aluguel)
+    currentData = currentData.filter(row => {
+        const venda = parseCurrency(row.Venda);
+        const aluguel = parseCurrency(row.Aluguel);
+        
+        const minVenda = appliedFilters.minVenda;
+        const maxVenda = appliedFilters.maxVenda;
+        const minAluguel = appliedFilters.minAluguel;
+        const maxAluguel = appliedFilters.maxAluguel;
+        
+        // Filtro de Venda
+        if (minVenda !== null && (venda === null || venda < minVenda)) return false;
+        if (maxVenda !== null && (venda === null || venda > maxVenda)) return false;
+        
+        // Filtro de Aluguel
+        if (minAluguel !== null && (aluguel === null || aluguel < minAluguel)) return false;
+        if (maxAluguel !== null && (aluguel === null || aluguel > maxAluguel)) return false;
+        
+        return true;
+    });
+
+    // 2. Filtragem por Busca Rápida (Search)
+    if (search.trim()) {
+        const lower = search.toLowerCase();
+        currentData = currentData.filter((row) =>
+            columns.some(
+                (col) => row[col] && row[col].toString().toLowerCase().includes(lower)
+            )
+        );
     }
-    const lower = search.toLowerCase();
-    setFilteredData(
-      data.filter((row) =>
-        columns.some(
-          (col) => row[col] && row[col].toString().toLowerCase().includes(lower)
-        )
-      )
-    );
-  }, [search, data, columns]);
+    
+    setFilteredData(currentData);
+  }, [search, data, columns, appliedFilters]);
   
   // 🔹 Handlers do componente de filtro
   const handleFilterChange = useCallback((key: keyof ExtractedFilters, value: string | number | null) => {
@@ -287,7 +313,7 @@ const ExtractedImoveisPage: React.FC = () => {
   const paginationSummary = `Página ${page} de ${totalPages} — ${totalRows} registros`;
   
   // O resumo da filtragem agora compara o número de itens filtrados (filteredData) com o limite da página (limit)
-  // Se a busca rápida estiver ativa, mostra quantos foram encontrados no bloco atual.
+  // Se a busca rápida ou os filtros de valor estiverem ativos, mostra quantos foram encontrados no bloco atual.
   const filterSummary = filteredData.length < data.length 
     ? ` (${filteredData.length} encontrados)` 
     : '';
