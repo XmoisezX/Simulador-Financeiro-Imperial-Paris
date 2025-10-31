@@ -7,6 +7,7 @@ import Papa from 'papaparse';
 import { useAgenciamentoData, Planilha } from '../hooks/useAgenciamentoData';
 
 const defaultHeaders = ['ID', 'Endereço', 'Bairro', 'Tipo', 'Valor Venda', 'Valor Locação', 'Status', 'Proprietário'];
+const TARGET_PLANILHA_NAME = 'imoveis_extraidos';
 
 const AgenciamentoPage: React.FC = () => {
     const { planilhas, isLoading, error, savePlanilha, deletePlanilha, fetchPlanilhas } = useAgenciamentoData();
@@ -20,7 +21,24 @@ const AgenciamentoPage: React.FC = () => {
     const [currentPlanilhaId, setCurrentPlanilhaId] = useState<string | undefined>(undefined);
     const [isSaving, setIsSaving] = useState(false);
 
-    // Inicializa a planilha com uma linha vazia se não houver dados
+    // 1. Efeito para carregar a planilha alvo ou inicializar com dados vazios
+    useEffect(() => {
+        if (!isLoading && planilhas.length > 0) {
+            const targetPlanilha = planilhas.find(p => p.nome.toLowerCase() === TARGET_PLANILHA_NAME);
+            
+            if (targetPlanilha) {
+                handleLoad(targetPlanilha);
+            } else if (currentPlanilhaId === undefined) {
+                // Se não encontrou a alvo e não há nenhuma carregada, inicializa a nova
+                handleNewPlanilha();
+            }
+        } else if (!isLoading && planilhas.length === 0 && currentPlanilhaId === undefined) {
+             // Se não há planilhas salvas, inicializa a nova
+             handleNewPlanilha();
+        }
+    }, [isLoading, planilhas]); // Depende de isLoading e planilhas
+
+    // 2. Garante que sempre haja pelo menos uma linha vazia se os dados estiverem vazios
     useEffect(() => {
         if (data.length === 0 && headers.length > 0) {
             setData([Array(headers.length).fill('')]);
@@ -111,10 +129,7 @@ const AgenciamentoPage: React.FC = () => {
                 alert('Planilha excluída.');
                 if (currentPlanilhaId === id) {
                     // Resetar para o estado inicial
-                    setPlanilhaName('Nova Planilha');
-                    setHeaders(defaultHeaders);
-                    setData([Array(defaultHeaders.length).fill('')]);
-                    setCurrentPlanilhaId(undefined);
+                    handleNewPlanilha();
                 }
             } else {
                 alert('Falha ao excluir a planilha.');
