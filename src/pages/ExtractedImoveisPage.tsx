@@ -8,12 +8,11 @@ import ExtractedImovelFilters, { ExtractedFilters } from '../components/Extracte
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { formatCurrencyHalfTone, parseCurrencyToNumber } from '../utils/format';
-import ExtractedUserSelect from '../components/ExtractedUserSelect';
 
 // Define a interface para os dados da linha, baseada na tabela imoveis_importados
 interface ExtractedImovel {
     id: number; // Internal Supabase row ID (SERIAL PRIMARY KEY)
-    responsible_user_id: string | null; // Agora armazena o NOME do responsável (string)
+    Pagina: number | null; // RESTAURADO
     Referencia: string | null;
     Categoria: string | null;
     Endereco: string | null;
@@ -50,7 +49,7 @@ const initialFilters: ExtractedFilters = {
     bairro: '',
     categoria: '',
     andar: null,
-    enderecoSearch: '', // NOVO CAMPO
+    enderecoSearch: '',
 };
 
 const ExtractedImoveisPage: React.FC = () => {
@@ -69,7 +68,7 @@ const ExtractedImoveisPage: React.FC = () => {
   const [appliedFilters, setAppliedFilters] = useState<ExtractedFilters>(initialFilters);
 
   const columns = [
-    "Responsavel", // New column replacing "Pagina"
+    "Pagina", // RESTAURADO
     "Referencia",
     "Categoria",
     "Endereco",
@@ -90,7 +89,7 @@ const ExtractedImoveisPage: React.FC = () => {
   
   // Larguras mínimas ajustadas para tentar caber mais na tela
   const columnWidths: Record<string, string> = {
-    "Responsavel": "150px", // New width
+    "Pagina": "80px", // RESTAURADO
     "Endereco": "180px",
     "NomeProprietario": "150px",
     "Referencia": "120px",
@@ -105,7 +104,7 @@ const ExtractedImoveisPage: React.FC = () => {
   };
   
   // Fields that are numeric in the database schema
-  const numericFields = ["AreaPrivada", "Dorms", "ID"];
+  const numericFields = ["AreaPrivada", "Dorms", "ID", "Pagina"]; // Pagina é numérica
 
   // 🔹 Lógica de Busca de Dados (Aplicando filtros no servidor via RPC)
   const fetchData = useCallback(async (pageNumber = 1, currentFilters: ExtractedFilters, currentSearch: string) => {
@@ -128,7 +127,7 @@ const ExtractedImoveisPage: React.FC = () => {
         p_limit: limit,
         p_offset: offset,
         p_andar: currentFilters.andar,
-        p_endereco_search: currentFilters.enderecoSearch.trim() || null, // NOVO PARÂMETRO
+        p_endereco_search: currentFilters.enderecoSearch.trim() || null,
     });
 
     if (error) {
@@ -172,16 +171,6 @@ const ExtractedImoveisPage: React.FC = () => {
 
   // 🔹 Atualiza célula (apenas no estado local)
   const handleEdit = (id: number, field: string, value: any) => {
-    
-    // Se for a coluna Responsavel, o salvamento é tratado pelo componente ExtractedUserSelect
-    if (field === 'responsible_user_id') {
-        // Apenas atualiza o estado local, pois o componente filho já chamou a API
-        setData(prev => prev.map(item => 
-            item.id === id ? { ...item, responsible_user_id: value } : item
-        ));
-        // Não rastreamos em pendingChanges
-        return;
-    }
     
     let updatedValue = value;
     
@@ -263,9 +252,7 @@ const ExtractedImoveisPage: React.FC = () => {
     const header = columns.join(",");
     const rows = filteredData
       .map((r) => columns.map((c) => {
-          // Mapeia o campo correto para a exportação
-          const fieldName = c === 'Responsavel' ? 'responsible_user_id' : c;
-          return `"${r[fieldName] ?? ""}"`;
+          return `"${r[c] ?? ""}"`;
       }).join(","))
       .join("\n");
     const csv = `${header}\n${rows}`;
@@ -287,8 +274,7 @@ const ExtractedImoveisPage: React.FC = () => {
 
     const head = [columns];
     const body = filteredData.map(row => columns.map(col => {
-        const fieldName = col === 'Responsavel' ? 'responsible_user_id' : col;
-        return row[fieldName] ?? '';
+        return row[col] ?? '';
     }));
 
     autoTable(doc, {
@@ -450,28 +436,10 @@ const ExtractedImoveisPage: React.FC = () => {
                         <tr key={row.id} className={`hover:bg-yellow-50 transition-colors ${isRowPending ? 'bg-yellow-100' : ''}`}>
                             {columns.map((col) => {
                                 
-                                const fieldName = col === 'Responsavel' ? 'responsible_user_id' : col;
-                                const currentValue = row[fieldName] ?? '';
-                                const isCellPending = isRowPending && pendingChanges[row.id] && pendingChanges[row.id][fieldName] !== undefined;
+                                const currentValue = row[col] ?? '';
+                                const isCellPending = isRowPending && pendingChanges[row.id] && pendingChanges[row.id][col] !== undefined;
                                 
-                                // 1. Coluna Responsável (Select com salvamento imediato)
-                                if (col === 'Responsavel') {
-                                    return (
-                                        <td 
-                                            key={col} 
-                                            className="border border-gray-300 p-0 relative"
-                                            style={{ minWidth: columnWidths[col] || '150px' }}
-                                        >
-                                            <ExtractedUserSelect 
-                                                imovelId={row.id}
-                                                currentUserName={row.responsible_user_id}
-                                                onUpdate={(newUserName) => handleEdit(row.id, 'responsible_user_id', newUserName)}
-                                            />
-                                        </td>
-                                    );
-                                }
-                                
-                                // 2. Colunas Venda e Aluguel (Formatação de Moeda)
+                                // Colunas Venda e Aluguel (Formatação de Moeda)
                                 if (col === 'Venda' || col === 'Aluguel') {
                                     return (
                                         <td 
@@ -486,7 +454,7 @@ const ExtractedImoveisPage: React.FC = () => {
                                     );
                                 }
                                 
-                                // 3. Outras colunas (Textarea editável com salvamento em lote)
+                                // Outras colunas (Textarea editável com salvamento em lote)
                                 return (
                                     <td 
                                         key={col} 
