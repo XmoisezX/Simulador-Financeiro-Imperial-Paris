@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Loader2, Search, Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, Search, Download, ChevronLeft, ChevronRight, Save } from "lucide-react";
 import { supabase } from '../integrations/supabase/client';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
@@ -28,15 +28,19 @@ interface ExtractedImovel {
     [key: string]: any; // Permite acesso dinâmico às colunas
 }
 
+// Tipo para rastrear alterações pendentes: { [rowId]: { [columnName]: newValue } }
+type PendingChanges = Record<number, Partial<ExtractedImovel>>;
+
 const ExtractedImoveisPage: React.FC = () => {
   const [data, setData] = useState<ExtractedImovel[]>([]);
   const [filteredData, setFilteredData] = useState<ExtractedImovel[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [totalRows, setTotalRows] = useState(0);
   const [limit, setLimit] = useState(20);
+  const [pendingChanges, setPendingChanges] = useState<PendingChanges>({});
 
   const columns = [
     "Pagina",
@@ -57,17 +61,36 @@ const ExtractedImoveisPage: React.FC = () => {
     "Exclusivo",
     "ID",
   ];
+  
+  // Larguras mínimas para as colunas (em pixels)
+  const columnWidths: Record<string, string> = {
+    "Endereco": "250px",
+    "NomeProprietario": "200px",
+    "Referencia": "150px",
+    "Categoria": "150px",
+    "Bairro": "150px",
+    "AreaTotal": "100px",
+    "AreaPrivada": "100px",
+    "Venda": "120px",
+    "Aluguel": "120px",
+    "Fones": "150px",
+    "Email": "200px",
+  };
+  
+  // Fields that are numeric in the database schema
+  const numericFields = ["Pagina", "AreaPrivada", "Dorms", "ID"];
 
   // 🔹 Carrega dados do Supabase com paginação
   const fetchData = useCallback(async (pageNumber = 1) => {
     setLoading(true);
+    setPendingChanges({}); // Limpa alterações pendentes ao carregar nova página
     const from = (pageNumber - 1) * limit;
     const to = from + limit - 1;
 
     const { data: fetchedData, error, count } = await supabase
       .from("imoveis_importados")
-      .select("*, id", { count: "exact" }) // Seleciona a nova chave primária 'id'
-      .order("id", { ascending: true }) // Ordena pela chave primária interna
+      .select("*, id", { count: "exact" })
+      .order("id", { ascending: true })
       .range(from, to);
 
     if (error) console.error("Erro ao carregar dados:", error);
@@ -96,35 +119,83 @@ const ExtractedImoveisPage: React.FC = () => {
     );
   }, [search, data, columns]);
 
-  // 🔹 Atualiza célula (autosave)
-  const handleEdit = async (id: number, field: string, value: any) => {
-    setSaving(id);
-    
-    // Fields that are numeric in the database schema: Pagina (bigint), AreaPrivada (double precision), Dorms (bigint), ID (bigint)
-    const numericFields = ["Pagina", "AreaPrivada", "Dorms", "ID"];
+  // 🔹 Atualiza célula (apenas no estado local)
+  const handleEdit = (id: number, field: string, value: any) => {
     
     let updatedValue = value;
     if (numericFields.includes(field)) {
-        // Attempt to parse as float, use null if empty string
+        // Tenta converter para número, usa null se for string vazia
         updatedValue = value.trim() === '' ? null : parseFloat(value);
+        if (isNaN(updatedValue as number)) updatedValue = value; // Mantém a string se a conversão falhar
     }
     
-    const { error } = await supabase
-      .from("imoveis_importados")
-      .update({ [field]: updatedValue })
-      .eq("id", id); // Usa a chave primária interna 'id'
-      
-    if (error) {
-        console.error("Erro ao salvar:", error);
-        alert(`Erro ao salvar ${field}: ${error.message}`);
+    setPendingChanges(prev => ({
+        ...prev,
+        [id]: {
+            ...prev[id],
+            [field]: updatedValue,
+        }
+    }));
+    
+    // Atualiza o estado 'data' imediatamente para refletir a mudança na UI
+    setData(prev => prev.map(item => 
+        item.id === id ? { ...item, [field]: updatedValue } : item
+    ));
+  };
+  
+  // 🔹 Salva todas as alterações pendentes
+  const handleSaveAll = async () => {
+    if (Object.keys(pendingChanges).length === 0) {
+        alert("Nenhuma alteração pendente para salvar.");
+        return;
     }
-    else {
-      // Atualiza o estado local para refletir a mudança
-      setData((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, [field]: updatedValue } : item))
-      );
+    
+    setSaving(true);
+    let successCount = 0;
+    let errorCount = 0;
+    
+    const updates = Object.entries(pendingChanges).map(([idStr, changes]) => {
+        const id = parseInt(idStr);
+        
+        // Prepara os dados para o Supabase
+        const dataToUpdate: Partial<ExtractedImovel> = {};
+        for (const [key, value] of Object.entries(changes)) {
+            // Garante que valores numéricos sejam tratados como null se forem strings vazias
+            if (numericFields.includes(key) && (value === null || value === '')) {
+                dataToUpdate[key] = null;
+            } else {
+                dataToUpdate[key] = value;
+            }
+        }
+        
+        return supabase
+            .from("imoveis_importados")
+            .update(dataToUpdate)
+            .eq("id", id);
+    });
+    
+    const results = await Promise.all(updates);
+    
+    results.forEach(result => {
+        if (result.error) {
+            console.error("Erro ao salvar lote:", result.error);
+            errorCount++;
+        } else {
+            successCount++;
+        }
+    });
+    
+    setSaving(false);
+    setPendingChanges({}); // Limpa as alterações após a tentativa de salvar
+    
+    if (errorCount > 0) {
+        alert(`Salvo com ${successCount} sucesso(s) e ${errorCount} falha(s). Verifique o console para detalhes.`);
+    } else {
+        alert(`Todas as ${successCount} alterações foram salvas com sucesso!`);
     }
-    setSaving(null);
+    
+    // Recarrega a página atual para garantir a consistência dos dados
+    fetchData(page);
   };
 
   // 🔹 Exportar CSV (apenas dados visíveis)
@@ -143,6 +214,7 @@ const ExtractedImoveisPage: React.FC = () => {
   };
 
   const totalPages = Math.ceil(totalRows / limit);
+  const hasPendingChanges = Object.keys(pendingChanges).length > 0;
 
   if (loading && data.length === 0)
     return (
@@ -170,6 +242,14 @@ const ExtractedImoveisPage: React.FC = () => {
               className="pl-8 w-64 h-9"
             />
           </div>
+          <Button 
+            onClick={handleSaveAll} 
+            disabled={saving || !hasPendingChanges}
+            className="h-9 bg-primary-orange hover:bg-secondary-orange text-white"
+          >
+            {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+            Salvar Alterações ({Object.keys(pendingChanges).length})
+          </Button>
           <Button onClick={exportCSV} variant="outline" className="h-9 text-green-600 border-green-600 hover:bg-green-50">
             <Download className="w-4 h-4 mr-2" /> Exportar CSV
           </Button>
@@ -184,33 +264,52 @@ const ExtractedImoveisPage: React.FC = () => {
               <thead>
                 <tr className="bg-gray-100 text-left sticky top-0 z-10">
                   {columns.map((col) => (
-                    <th key={col} className="border border-gray-300 px-3 py-2 whitespace-nowrap font-semibold text-dark-text">
+                    <th 
+                        key={col} 
+                        className="border border-gray-300 px-3 py-2 whitespace-nowrap font-semibold text-dark-text"
+                        style={{ minWidth: columnWidths[col] || '120px' }} // Aplica largura mínima
+                    >
                       {col}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {filteredData.map((row) => (
-                  <tr key={row.id} className="hover:bg-yellow-50 transition-colors">
-                    {columns.map((col) => (
-                      <td key={col} className="border border-gray-300 p-0 relative">
-                        <Input
-                          className="h-8 text-xs border-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent"
-                          defaultValue={row[col] ?? ''}
-                          onBlur={(e) =>
-                            e.target.value !== row[col]?.toString() &&
-                            handleEdit(row.id, col, e.target.value)
-                          }
-                          disabled={saving === row.id}
-                        />
-                        {saving === row.id && (
-                          <Loader2 className="w-3 h-3 animate-spin absolute right-1 top-1 text-primary-orange" />
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
+                {filteredData.map((row) => {
+                    const isRowPending = !!pendingChanges[row.id];
+                    return (
+                        <tr key={row.id} className={`hover:bg-yellow-50 transition-colors ${isRowPending ? 'bg-yellow-100' : ''}`}>
+                            {columns.map((col) => {
+                                // Usa o valor do estado 'data' que inclui as alterações pendentes
+                                const currentValue = row[col] ?? '';
+                                const isCellPending = isRowPending && pendingChanges[row.id] && pendingChanges[row.id][col] !== undefined;
+                                
+                                return (
+                                    <td 
+                                        key={col} 
+                                        className="border border-gray-300 p-0 relative"
+                                        style={{ height: '60px' }} // Altura da célula
+                                    >
+                                        <textarea
+                                            className={`w-full h-full text-xs border-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent resize-none p-2 overflow-y-auto ${isCellPending ? 'font-bold text-dark-text' : 'text-gray-700'}`}
+                                            defaultValue={currentValue}
+                                            onBlur={(e) => {
+                                                // Verifica se o valor mudou antes de chamar handleEdit
+                                                if (e.target.value !== currentValue?.toString()) {
+                                                    handleEdit(row.id, col, e.target.value);
+                                                }
+                                            }}
+                                            // Usamos defaultValue e onBlur para evitar re-renderizações constantes
+                                        />
+                                        {isCellPending && (
+                                            <span className="absolute right-1 top-1 text-xs text-primary-orange" title="Alteração pendente">*</span>
+                                        )}
+                                    </td>
+                                );
+                            })}
+                        </tr>
+                    );
+                })}
               </tbody>
             </table>
             {filteredData.length === 0 && !loading && (
@@ -228,7 +327,7 @@ const ExtractedImoveisPage: React.FC = () => {
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
-            disabled={page === 1}
+            disabled={page === 1 || saving}
             onClick={() => setPage((p) => p - 1)}
             className="h-9"
           >
@@ -236,7 +335,7 @@ const ExtractedImoveisPage: React.FC = () => {
           </Button>
           <Button
             variant="outline"
-            disabled={page === totalPages}
+            disabled={page === totalPages || saving}
             onClick={() => setPage((p) => p + 1)}
             className="h-9"
           >
@@ -249,6 +348,7 @@ const ExtractedImoveisPage: React.FC = () => {
                 setLimit(Number(e.target.value));
                 setPage(1); // Reset page when limit changes
             }}
+            disabled={saving}
           >
             {[10, 20, 50, 100].map((n) => (
               <option key={n} value={n}>
