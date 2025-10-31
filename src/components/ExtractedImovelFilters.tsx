@@ -44,7 +44,8 @@ export interface ExtractedFilters {
     bairro: string;
     categoria: string;
     andar: number | null;
-    enderecoSearch: string; // NOVO CAMPO
+    enderecoSearch: string;
+    referenciaSearch: string; // NOVO CAMPO
 }
 
 interface ExtractedImovelFiltersProps {
@@ -91,14 +92,21 @@ const ExtractedImovelFilters: React.FC<ExtractedImovelFiltersProps> = ({ filters
                 <Search className="w-5 h-5 mr-2 text-blue-600" /> Filtro Inteligente
             </h2>
 
-            {/* Linha 1: Busca de Endereço Dedicada */}
-            <div className="grid grid-cols-1">
+            {/* Linha 1: Busca de Endereço e Referência */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <TextInput 
                     label="Buscar Endereço Específico" 
                     id="enderecoSearch" 
                     value={filters.enderecoSearch} 
                     onChange={handleTextChange} 
                     placeholder="Ex: Rua Suzana Cortez Balreira 391"
+                />
+                <TextInput 
+                    label="Buscar Referência" 
+                    id="referenciaSearch" 
+                    value={filters.referenciaSearch} 
+                    onChange={handleTextChange} 
+                    placeholder="Ex: REF12345"
                 />
             </div>
 

@@ -50,6 +50,7 @@ const initialFilters: ExtractedFilters = {
     categoria: '',
     andar: null,
     enderecoSearch: '',
+    referenciaSearch: '', // NOVO FILTRO
 };
 
 const ExtractedImoveisPage: React.FC = () => {
@@ -137,6 +138,7 @@ const ExtractedImoveisPage: React.FC = () => {
             p_endereco_search: currentFilters.enderecoSearch.trim() || null,
             p_sort_column: sortCol, // Novo parâmetro
             p_sort_direction: sortDir, // Novo parâmetro
+            p_referencia_search: currentFilters.referenciaSearch.trim() || null, // NOVO PARÂMETRO
         });
 
         if (error) {
@@ -298,7 +300,7 @@ const ExtractedImoveisPage: React.FC = () => {
   const paginationSummary = `Página ${page} de ${totalPages} — ${totalRows} registros`;
   
   // O resumo da filtragem agora é sempre baseado no totalRows retornado pelo servidor
-  const filterSummary = (appliedFilters.categoria || appliedFilters.bairro || appliedFilters.minDorms || appliedFilters.maxDorms || appliedFilters.minVenda || appliedFilters.maxVenda || appliedFilters.minAluguel || appliedFilters.maxAluguel || appliedFilters.andar || appliedFilters.enderecoSearch || search)
+  const filterSummary = (appliedFilters.categoria || appliedFilters.bairro || appliedFilters.minDorms || appliedFilters.maxDorms || appliedFilters.minVenda || appliedFilters.maxVenda || appliedFilters.minAluguel || appliedFilters.maxAluguel || appliedFilters.andar || appliedFilters.enderecoSearch || appliedFilters.referenciaSearch || search)
     ? ` (Filtrando ${totalRows} resultados)` 
     : '';
 
@@ -445,10 +447,11 @@ const ExtractedImoveisPage: React.FC = () => {
                                 
                                 // Coluna Responsáveis (Select para ENUM)
                                 if (col === 'Responsáveis') {
+                                    const isSelected = currentValue !== 'Vazio' && currentValue !== null && currentValue !== '';
                                     return (
                                         <td 
                                             key={col} 
-                                            className="border border-gray-300 p-0 relative"
+                                            className="border border-gray-300 p-1 relative"
                                             style={{ minWidth: columnWidths[col] || '120px' }}
                                         >
                                             <select
@@ -460,7 +463,9 @@ const ExtractedImoveisPage: React.FC = () => {
                                                         item.id === row.id ? { ...item, [col]: e.target.value } : item
                                                     ));
                                                 }}
-                                                className={`w-full h-full text-xs border-none focus:ring-0 p-2 bg-transparent text-gray-700`}
+                                                className={`w-full h-full text-xs border-none focus:ring-0 p-1 text-gray-700 rounded-lg appearance-none cursor-pointer transition-colors 
+                                                    ${isSelected ? 'bg-green-100' : 'bg-gray-100'}
+                                                `}
                                                 disabled={saving}
                                             >
                                                 {responsavelOptions.map(option => (
