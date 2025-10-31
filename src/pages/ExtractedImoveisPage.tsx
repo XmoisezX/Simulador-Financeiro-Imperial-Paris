@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Loader2, Search, Download, ChevronLeft, ChevronRight, Save } from "lucide-react";
+import { Loader2, Search, Download, ChevronLeft, ChevronRight, Save, ArrowUp, ArrowDown } from "lucide-react";
 import { supabase } from '../integrations/supabase/client';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
@@ -54,21 +54,23 @@ const initialFilters: ExtractedFilters = {
 
 const ExtractedImoveisPage: React.FC = () => {
   const [data, setData] = useState<ExtractedImovel[]>([]); // Dados brutos da página (sem filtro de busca rápida)
-  const [filteredData, setFilteredData] = useState<ExtractedImovel[]>([]); // Dados após filtro de busca rápida e filtros de valor
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState(""); // Busca rápida agora é aplicada no servidor
   const [page, setPage] = useState(1);
   const [totalRows, setTotalRows] = useState(0);
   const [limit, setLimit] = useState(20);
-  const [pendingChanges, setPendingChanges] = useState<PendingChanges>({});
+  
+  // --- Estado de Ordenação ---
+  const [sortColumn, setSortColumn] = useState<string>('id');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   
   // Estado dos filtros
   const [filters, setFilters] = useState<ExtractedFilters>(initialFilters);
   const [appliedFilters, setAppliedFilters] = useState<ExtractedFilters>(initialFilters);
 
   const columns = [
-    "Responsáveis", // NOVO
+    "Responsáveis", 
     "Referencia",
     "Categoria",
     "Endereco",
@@ -87,12 +89,12 @@ const ExtractedImoveisPage: React.FC = () => {
     "ID",
   ];
   
-  // Opções para o ENUM Responsáveis (ATUALIZADO)
+  // Opções para o ENUM Responsáveis
   const responsavelOptions = ['Vazio', 'Alessandro Gomes', 'Tamires Torres', 'Moisez Torres'];
   
-  // Larguras mínimas ajustadas para tentar caber mais na tela
+  // Larguras mínimas ajustadas
   const columnWidths: Record<string, string> = {
-    "Responsáveis": "120px", // NOVO
+    "Responsáveis": "120px", 
     "Endereco": "180px",
     "NomeProprietario": "150px",
     "Referencia": "120px",
@@ -110,13 +112,12 @@ const ExtractedImoveisPage: React.FC = () => {
   const numericFields = ["AreaPrivada", "Dorms", "ID"]; 
 
   // 🔹 Lógica de Busca de Dados (Aplicando filtros no servidor via RPC)
-  const fetchData = useCallback(async (pageNumber = 1, currentFilters: ExtractedFilters, currentSearch: string) => {
+  const fetchData = useCallback(async (pageNumber = 1, currentFilters: ExtractedFilters, currentSearch: string, sortCol: string, sortDir: 'asc' | 'desc') => {
     setLoading(true);
-    setPendingChanges({}); 
     
     const offset = (pageNumber - 1) * limit;
 
-    // Chamada da função RPC para filtrar e paginar no servidor
+    // Chamada da função RPC para filtrar, paginar e ordenar no servidor
     const { data: fetchedData, error } = await supabase.rpc('filter_imoveis_importados', {
         p_search: currentSearch.trim() || null,
         p_min_venda: currentFilters.minVenda,
@@ -131,28 +132,27 @@ const ExtractedImoveisPage: React.FC = () => {
         p_offset: offset,
         p_andar: currentFilters.andar,
         p_endereco_search: currentFilters.enderecoSearch.trim() || null,
+        p_sort_column: sortCol, // Novo parâmetro
+        p_sort_direction: sortDir, // Novo parâmetro
     });
 
     if (error) {
         console.error("Erro ao carregar dados via RPC:", error);
     } else if (fetchedData && fetchedData.length > 0) {
-        // O total_count vem na primeira linha do resultado da RPC
         const totalCount = fetchedData[0].total_count;
         setTotalRows(Number(totalCount));
         setData(fetchedData as ExtractedImovel[]);
-        setFilteredData(fetchedData as ExtractedImovel[]); // Não há mais filtro no cliente, então filteredData = data
     } else {
         setTotalRows(0);
         setData([]);
-        setFilteredData([]);
     }
     setLoading(false);
   }, [limit]);
 
-  // Efeito para buscar dados quando a página, limite, filtros aplicados ou busca rápida mudam
+  // Efeito para buscar dados quando a página, limite, filtros aplicados, busca rápida ou ordenação mudam
   useEffect(() => {
-    fetchData(page, appliedFilters, search);
-  }, [page, limit, appliedFilters, search, fetchData]);
+    fetchData(page, appliedFilters, search, sortColumn, sortDirection);
+  }, [page, limit, appliedFilters, search, sortColumn, sortDirection, fetchData]);
 
   // 🔹 Handlers do componente de filtro
   const handleFilterChange = useCallback((key: keyof ExtractedFilters, value: string | number | null) => {
@@ -170,160 +170,60 @@ const ExtractedImoveisPage: React.FC = () => {
     setPage(1);
     setSearch('');
   }, []);
+  
+  // 🔹 Lógica de Ordenação
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+        setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+        setSortColumn(column);
+        setSortDirection('asc');
+    }
+    setPage(1); // Volta para a primeira página ao mudar a ordenação
+  };
 
 
-  // 🔹 Atualiza célula (apenas no estado local)
-  const handleEdit = (id: number, field: string, value: any) => {
+  // 🔹 Salva célula individualmente ao perder o foco
+  const handleSaveCell = async (id: number, field: string, rawValue: string) => {
     
-    let updatedValue: any = value;
+    let updatedValue: any = rawValue;
     
     if (numericFields.includes(field)) {
         // Lógica para campos numéricos
-        updatedValue = value.trim() === '' ? null : parseFloat(value);
-        if (isNaN(updatedValue as number)) updatedValue = value;
+        updatedValue = rawValue.trim() === '' ? null : parseFloat(rawValue);
+        if (isNaN(updatedValue as number)) updatedValue = rawValue;
     } else {
         // Lógica para campos de texto/ENUM
-        if (field === 'Responsáveis') {
-            // Para ENUM, o valor é sempre a string exata ('Vazio', 'Alessandro Gomes', etc.)
-            updatedValue = value; 
-        } else {
-            // Para outros campos de texto, string vazia vira null
-            updatedValue = value.trim() === '' ? null : value;
-        }
+        updatedValue = rawValue.trim() === '' ? null : rawValue;
     }
     
-    // 1. Atualiza o estado de alterações pendentes
-    setPendingChanges(prev => ({
-        ...prev,
-        [id]: {
-            ...prev[id],
-            [field]: updatedValue,
-        }
-    }));
-    
-    // 2. Atualiza o estado 'data' imediatamente para refletir a mudança na UI
+    // 1. Atualiza o estado 'data' imediatamente para refletir a mudança na UI
     setData(prev => prev.map(item => 
         item.id === id ? { ...item, [field]: updatedValue } : item
     ));
-  };
-  
-  // 🔹 Salva todas as alterações pendentes
-  const handleSaveAll = async () => {
-    const pendingKeys = Object.keys(pendingChanges);
-    if (pendingKeys.length === 0) {
-        alert("Nenhuma alteração pendente para salvar.");
-        return;
-    }
     
+    // 2. Salva no banco de dados
     setSaving(true);
-    let successCount = 0;
-    let errorCount = 0;
     
-    const updates = pendingKeys.map((idStr) => {
-        const id = parseInt(idStr);
-        const changes = pendingChanges[id];
+    const dataToUpdate: Partial<ExtractedImovel> = { [field]: updatedValue };
+    
+    const { error } = await supabase
+        .from("imoveis_importados")
+        .update(dataToUpdate)
+        .eq("id", id);
         
-        const dataToUpdate: Partial<ExtractedImovel> = {};
-        for (const [key, value] of Object.entries(changes)) {
-            // Trata campos nulos para o banco de dados
-            if (numericFields.includes(key) && (value === null || value === '')) {
-                dataToUpdate[key] = null;
-            } else if (value === null || value === '') {
-                dataToUpdate[key] = null;
-            } else {
-                dataToUpdate[key] = value;
-            }
-        }
-        
-        return supabase
-            .from("imoveis_importados")
-            .update(dataToUpdate)
-            .eq("id", id);
-    });
-    
-    const results = await Promise.all(updates);
-    
-    results.forEach(result => {
-        if (result.error) {
-            console.error("Erro ao salvar lote:", result.error);
-            errorCount++;
-        } else {
-            successCount++;
-        }
-    });
-    
     setSaving(false);
-    setPendingChanges({}); 
     
-    if (errorCount > 0) {
-        alert(`Salvo com ${successCount} sucesso(s) e ${errorCount} falha(s). Verifique o console para detalhes.`);
-    } else {
-        alert(`Todas as ${successCount} alterações foram salvas com sucesso!`);
+    if (error) {
+        console.error("Erro ao salvar célula:", error);
+        alert(`Falha ao salvar a alteração: ${error.message}`);
+        // Opcional: Recarregar dados para reverter a célula em caso de erro
+        fetchData(page, appliedFilters, search, sortColumn, sortDirection);
     }
-    
-    // Recarrega a página atual para garantir a consistência dos dados
-    fetchData(page, appliedFilters, search);
-  };
-
-  // 🔹 Exportar CSV (apenas dados visíveis)
-  const exportCSV = () => {
-    const header = columns.join(",");
-    const rows = filteredData
-      .map((r) => columns.map((c) => {
-          return `"${r[c] ?? ""}"`;
-      }).join(","))
-      .join("\n");
-    const csv = `${header}\n${rows}`;
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `imoveis_importados_pagina${page}.csv`;
-    a.click();
-  };
-  
-  // 🔹 Exportar PDF (apenas dados visíveis)
-  const exportPDF = () => {
-    const doc = new jsPDF({
-        orientation: 'landscape', // Tabela larga, melhor em paisagem
-        unit: 'mm',
-        format: 'a4'
-    });
-
-    const head = [columns];
-    const body = filteredData.map(row => columns.map(col => {
-        return row[col] ?? '';
-    }));
-
-    autoTable(doc, {
-        head: head,
-        body: body,
-        startY: 10,
-        theme: 'grid',
-        styles: {
-            fontSize: 6,
-            cellPadding: 1,
-        },
-        headStyles: {
-            fillColor: [30, 58, 138], // Azul escuro
-            textColor: 255,
-            fontStyle: 'bold',
-        },
-        margin: { top: 10, left: 5, right: 5, bottom: 10 },
-        didDrawPage: function (data) {
-            // Adiciona título e número da página
-            doc.setFontSize(10);
-            doc.text("Relatório de Imóveis Importados", data.settings.margin.left, 5);
-            doc.text(`Página ${data.pageNumber}`, doc.internal.pageSize.width - data.settings.margin.right, 5, { align: 'right' });
-        }
-    });
-
-    doc.save(`imoveis_importados_pagina${page}.pdf`);
   };
 
 
   const totalPages = Math.ceil(totalRows / limit);
-  const hasPendingChanges = Object.keys(pendingChanges).length > 0;
   
   // Resumo da paginação e filtragem
   const paginationSummary = `Página ${page} de ${totalPages} — ${totalRows} registros`;
@@ -396,14 +296,12 @@ const ExtractedImoveisPage: React.FC = () => {
               className="pl-8 w-64 h-9"
             />
           </div>
-          <Button 
-            onClick={handleSaveAll} 
-            disabled={saving || !hasPendingChanges}
-            className="h-9 bg-primary-orange hover:bg-secondary-orange text-white"
-          >
-            {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-            Salvar Alterações ({Object.keys(pendingChanges).length})
-          </Button>
+          {/* Removido botão Salvar Alterações */}
+          {saving && (
+            <Button disabled className="h-9 bg-primary-orange text-white">
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Salvando...
+            </Button>
+          )}
           <Button onClick={exportCSV} variant="outline" className="h-9 text-green-600 border-green-600 hover:bg-green-50">
             <Download className="w-4 h-4 mr-2" /> Exportar CSV
           </Button>
@@ -439,23 +337,29 @@ const ExtractedImoveisPage: React.FC = () => {
                   {columns.map((col) => (
                     <th 
                         key={col} 
-                        className="border border-gray-300 px-3 py-2 whitespace-nowrap font-semibold text-dark-text"
-                        style={{ minWidth: columnWidths[col] || '100px' }} // Usando 100px como fallback
+                        className="border border-gray-300 px-3 py-2 whitespace-nowrap font-semibold text-dark-text cursor-pointer hover:bg-gray-200 transition-colors"
+                        style={{ minWidth: columnWidths[col] || '100px' }}
+                        onClick={() => handleSort(col)}
                     >
-                      {col}
+                      <div className="flex items-center justify-between">
+                        {col}
+                        {sortColumn === col ? (
+                            sortDirection === 'asc' ? <ArrowUp className="w-4 h-4 ml-1 text-blue-600" /> : <ArrowDown className="w-4 h-4 ml-1 text-blue-600" />
+                        ) : (
+                            <ArrowUp className="w-4 h-4 ml-1 text-gray-300" />
+                        )}
+                      </div>
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {filteredData.map((row) => {
-                    const isRowPending = !!pendingChanges[row.id];
+                {data.map((row) => {
                     return (
-                        <tr key={row.id} className={`hover:bg-yellow-50 transition-colors ${isRowPending ? 'bg-yellow-100' : ''}`}>
+                        <tr key={row.id} className={`hover:bg-gray-50 transition-colors`}>
                             {columns.map((col) => {
                                 
                                 const currentValue = row[col] ?? '';
-                                const isCellPending = isRowPending && pendingChanges[row.id] && pendingChanges[row.id][col] !== undefined;
                                 
                                 // Coluna Responsáveis (Select para ENUM)
                                 if (col === 'Responsáveis') {
@@ -466,18 +370,21 @@ const ExtractedImoveisPage: React.FC = () => {
                                             style={{ minWidth: columnWidths[col] || '120px' }}
                                         >
                                             <select
-                                                // Se o valor for null, usa 'Vazio' para o select funcionar
                                                 value={currentValue === null ? 'Vazio' : currentValue}
-                                                onChange={(e) => handleEdit(row.id, col, e.target.value)}
-                                                className={`w-full h-full text-xs border-none focus:ring-0 p-2 bg-transparent ${isCellPending ? 'font-bold text-dark-text' : 'text-gray-700'}`}
+                                                onBlur={(e) => handleSaveCell(row.id, col, e.target.value)}
+                                                onChange={(e) => {
+                                                    // Atualiza o estado local imediatamente para feedback visual
+                                                    setData(prev => prev.map(item => 
+                                                        item.id === row.id ? { ...item, [col]: e.target.value } : item
+                                                    ));
+                                                }}
+                                                className={`w-full h-full text-xs border-none focus:ring-0 p-2 bg-transparent text-gray-700`}
+                                                disabled={saving}
                                             >
                                                 {responsavelOptions.map(option => (
                                                     <option key={option} value={option}>{option}</option>
                                                 ))}
                                             </select>
-                                            {isCellPending && (
-                                                <span className="absolute right-1 top-1 text-xs text-primary-orange" title="Alteração pendente">*</span>
-                                            )}
                                         </td>
                                     );
                                 }
@@ -497,7 +404,7 @@ const ExtractedImoveisPage: React.FC = () => {
                                     );
                                 }
                                 
-                                // Outras colunas (Textarea editável com salvamento em lote)
+                                // Outras colunas (Textarea editável com salvamento em onBlur)
                                 return (
                                     <td 
                                         key={col} 
@@ -505,19 +412,16 @@ const ExtractedImoveisPage: React.FC = () => {
                                         style={{ height: '60px' }} // Altura da célula
                                     >
                                         <textarea
-                                            className={`w-full h-full text-xs border-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent resize-none p-2 overflow-y-auto ${isCellPending ? 'font-bold text-dark-text' : 'text-gray-700'}`}
+                                            className={`w-full h-full text-xs border-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent resize-none p-2 overflow-y-auto text-gray-700`}
                                             defaultValue={currentValue}
                                             onBlur={(e) => {
-                                                // Verifica se o valor mudou antes de chamar handleEdit
+                                                // Salva se o valor mudou
                                                 if (e.target.value !== currentValue?.toString()) {
-                                                    handleEdit(row.id, col, e.target.value);
+                                                    handleSaveCell(row.id, col, e.target.value);
                                                 }
                                             }}
-                                            // Usamos defaultValue e onBlur para evitar re-renderizações constantes
+                                            disabled={saving}
                                         />
-                                        {isCellPending && (
-                                            <span className="absolute right-1 top-1 text-xs text-primary-orange" title="Alteração pendente">*</span>
-                                        )}
                                     </td>
                                 );
                             })}
@@ -526,7 +430,7 @@ const ExtractedImoveisPage: React.FC = () => {
                 })}
               </tbody>
             </table>
-            {filteredData.length === 0 && !loading && (
+            {data.length === 0 && !loading && (
                 <div className="text-center py-10 text-gray-500">Nenhum registro encontrado na página atual.</div>
             )}
           </div>
