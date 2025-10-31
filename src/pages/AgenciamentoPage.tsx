@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Briefcase, Upload, Loader2, Save, Trash2, RefreshCw } from 'lucide-react';
+import { Briefcase, Upload, Loader2, Save, Trash2, RefreshCw, Plus } from 'lucide-react';
 import SpreadsheetEditor from '../components/SpreadsheetEditor';
 import { Button } from '../components/ui/Button';
 import TextInput from '../components/TextInput';
