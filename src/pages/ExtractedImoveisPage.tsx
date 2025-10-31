@@ -5,6 +5,8 @@ import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
 import ExtractedImovelFilters, { ExtractedFilters } from '../components/ExtractedImovelFilters'; // Importando o novo componente e tipos
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 // Define a interface para os dados da linha, baseada na tabela imoveis_importados
 interface ExtractedImovel {
@@ -268,6 +270,44 @@ const ExtractedImoveisPage: React.FC = () => {
     a.download = `imoveis_importados_pagina${page}.csv`;
     a.click();
   };
+  
+  // 🔹 Exportar PDF (apenas dados visíveis)
+  const exportPDF = () => {
+    const doc = new jsPDF({
+        orientation: 'landscape', // Tabela larga, melhor em paisagem
+        unit: 'mm',
+        format: 'a4'
+    });
+
+    const head = [columns];
+    const body = filteredData.map(row => columns.map(col => row[col] ?? ''));
+
+    autoTable(doc, {
+        head: head,
+        body: body,
+        startY: 10,
+        theme: 'grid',
+        styles: {
+            fontSize: 6,
+            cellPadding: 1,
+        },
+        headStyles: {
+            fillColor: [30, 58, 138], // Azul escuro
+            textColor: 255,
+            fontStyle: 'bold',
+        },
+        margin: { top: 10, left: 5, right: 5, bottom: 10 },
+        didDrawPage: function (data) {
+            // Adiciona título e número da página
+            doc.setFontSize(10);
+            doc.text("Relatório de Imóveis Importados", data.settings.margin.left, 5);
+            doc.text(`Página ${data.pageNumber}`, doc.internal.pageSize.width - data.settings.margin.right, 5, { align: 'right' });
+        }
+    });
+
+    doc.save(`imoveis_importados_pagina${page}.pdf`);
+  };
+
 
   const totalPages = Math.ceil(totalRows / limit);
   const hasPendingChanges = Object.keys(pendingChanges).length > 0;
@@ -353,6 +393,9 @@ const ExtractedImoveisPage: React.FC = () => {
           </Button>
           <Button onClick={exportCSV} variant="outline" className="h-9 text-green-600 border-green-600 hover:bg-green-50">
             <Download className="w-4 h-4 mr-2" /> Exportar CSV
+          </Button>
+          <Button onClick={exportPDF} variant="outline" className="h-9 text-red-600 border-red-600 hover:bg-red-50">
+            <Download className="w-4 h-4 mr-2" /> Exportar PDF
           </Button>
         </div>
       </div>
