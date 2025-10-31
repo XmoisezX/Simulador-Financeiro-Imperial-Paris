@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Loader2, User, CheckCircle, XCircle } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Loader2, User, CheckCircle, XCircle, ChevronDown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../integrations/supabase/client';
 
@@ -21,12 +21,13 @@ const ExtractedUserSelect: React.FC<ExtractedUserSelectProps> = ({ imovelId, cur
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [saveStatus, setSaveStatus] = useState<'success' | 'error' | null>(null);
+    const [isSelectOpen, setIsSelectOpen] = useState(false);
+    const selectRef = useRef<HTMLDivElement>(null);
 
     const fetchUsers = useCallback(async () => {
         if (!session) return;
         setIsLoading(true);
         
-        // Busca todos os perfis (usuários)
         const { data, error } = await supabase
             .from('profiles')
             .select('id, full_name, email')
@@ -44,6 +45,17 @@ const ExtractedUserSelect: React.FC<ExtractedUserSelectProps> = ({ imovelId, cur
     useEffect(() => {
         fetchUsers();
     }, [fetchUsers]);
+    
+    // Fecha o select ao clicar fora
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (selectRef.current && !selectRef.current.contains(event.target as Node)) {
+                setIsSelectOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
     
     const handleSelectChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newUserId = e.target.value || null;
@@ -66,6 +78,7 @@ const ExtractedUserSelect: React.FC<ExtractedUserSelectProps> = ({ imovelId, cur
             .eq('id', imovelId);
 
         setIsSaving(false);
+        setIsSelectOpen(false); // Fecha após a seleção
 
         if (error) {
             console.error('Erro ao salvar responsável:', error);
@@ -77,39 +90,64 @@ const ExtractedUserSelect: React.FC<ExtractedUserSelectProps> = ({ imovelId, cur
         }
     };
 
+    const selectedUser = users.find(u => u.id === currentUserId);
+    const displayName = selectedUser?.full_name || selectedUser?.email?.split('@')[0] || 'Não Atribuído';
     const selectedValue = currentUserId || '';
 
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-full text-gray-500 text-xs">
+                <Loader2 className="w-3 h-3 animate-spin mr-1" /> Carregando...
+            </div>
+        );
+    }
+
     return (
-        <div className="relative w-full h-full flex items-center">
-            <select
-                id={`responsible-${imovelId}`}
-                value={selectedValue}
-                onChange={handleSelectChange}
-                disabled={isLoading || isSaving}
-                className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-1 focus:ring-secondary-orange focus:border-primary-orange disabled:bg-gray-100 appearance-none"
-            >
-                <option value="">{isLoading ? 'Carregando...' : 'Não Atribuído'}</option>
-                {users.map(user => (
-                    <option key={user.id} value={user.id}>
-                        {user.full_name || user.email}
-                    </option>
-                ))}
-            </select>
+        <div className="relative w-full h-full flex items-center p-2 cursor-pointer hover:bg-gray-50 transition-colors" ref={selectRef}>
+            
+            {isSelectOpen ? (
+                // Modo de Seleção (Dropdown)
+                <select
+                    id={`responsible-${imovelId}`}
+                    value={selectedValue}
+                    onChange={handleSelectChange}
+                    disabled={isSaving}
+                    className="w-full p-1 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-1 focus:ring-secondary-orange focus:border-primary-orange disabled:bg-gray-100 appearance-none"
+                    autoFocus
+                >
+                    <option value="">Não Atribuído</option>
+                    {users.map(user => (
+                        <option key={user.id} value={user.id}>
+                            {user.full_name || user.email}
+                        </option>
+                    ))}
+                </select>
+            ) : (
+                // Modo de Visualização (Botão)
+                <button
+                    onClick={() => setIsSelectOpen(true)}
+                    className={`w-full text-left text-sm flex items-center justify-between ${currentUserId ? 'text-dark-text font-medium' : 'text-gray-500'}`}
+                    disabled={isSaving}
+                >
+                    <span className="truncate pr-2">{displayName}</span>
+                    <ChevronDown className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                </button>
+            )}
             
             {isSaving && (
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3 bg-white/80">
+                <div className="absolute inset-0 flex items-center justify-center bg-white/80">
                     <Loader2 className="w-4 h-4 animate-spin text-primary-orange" />
                 </div>
             )}
             
             {saveStatus === 'success' && (
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3 bg-white/80">
+                <div className="absolute inset-0 flex items-center justify-center bg-green-50/80">
                     <CheckCircle className="w-4 h-4 text-green-600" />
                 </div>
             )}
             
             {saveStatus === 'error' && (
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3 bg-white/80">
+                <div className="absolute inset-0 flex items-center justify-center bg-red-50/80">
                     <XCircle className="w-4 h-4 text-red-600" />
                 </div>
             )}
