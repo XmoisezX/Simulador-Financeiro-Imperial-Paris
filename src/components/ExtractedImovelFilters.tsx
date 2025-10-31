@@ -5,7 +5,30 @@ import TextInput from './TextInput';
 import NumberInput from './NumberInput';
 
 // Mock Data baseado nas colunas da tabela imoveis_importados
-const CATEGORY_OPTIONS = ['Apartamento', 'Casa', 'Terreno', 'Comercial', 'Rural', 'Outro'];
+const CATEGORY_OPTIONS = [
+    'Apartamento', 
+    'Casa', 
+    'Terreno', 
+    'Comercial', 
+    'Rural', 
+    'Outro',
+    'Chácara',
+    'Cobertura',
+    'Depósito',
+    'Empreendimento',
+    'Galpão',
+    'Kitnet',
+    'Loft',
+    'Loja',
+    'Pavilhão',
+    'Ponto Comercial',
+    'Prédio Comercial',
+    'Salas/Conjuntos',
+    'Sítio',
+    'Sobrado',
+    'Terreno Comercial',
+    'Terreno Industrial'
+];
 const NEIGHBORHOOD_OPTIONS = ['Centro', 'Laranjal', 'Areal', 'Porto', 'Fragata', 'Três Vendas', 'Outro'];
 const ROOM_OPTIONS = [1, 2, 3, 4, 5];
 const FLOOR_OPTIONS = [1, 2, 3, 4, 5];
