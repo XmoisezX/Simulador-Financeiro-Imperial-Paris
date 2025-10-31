@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Loader2, Search, Download, ChevronLeft, ChevronRight, Save, ArrowUp, ArrowDown } from "lucide-react";
+import { Loader2, Search, Download, ChevronLeft, ChevronRight, Save, ArrowUp, ArrowDown, AlertTriangle } from "lucide-react";
 import { supabase } from '../integrations/supabase/client';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
@@ -60,6 +60,7 @@ const ExtractedImoveisPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const [totalRows, setTotalRows] = useState(0);
   const [limit, setLimit] = useState(20);
+  const [fetchError, setFetchError] = useState<string | null>(null); // NOVO ESTADO DE ERRO
   
   // --- Estado de Ordenação ---
   const [sortColumn, setSortColumn] = useState<string>('id');
@@ -114,39 +115,51 @@ const ExtractedImoveisPage: React.FC = () => {
   // 🔹 Lógica de Busca de Dados (Aplicando filtros no servidor via RPC)
   const fetchData = useCallback(async (pageNumber = 1, currentFilters: ExtractedFilters, currentSearch: string, sortCol: string, sortDir: 'asc' | 'desc') => {
     setLoading(true);
+    setFetchError(null); // Limpa erros anteriores
     
     const offset = (pageNumber - 1) * limit;
 
-    // Chamada da função RPC para filtrar, paginar e ordenar no servidor
-    const { data: fetchedData, error } = await supabase.rpc('filter_imoveis_importados', {
-        p_search: currentSearch.trim() || null,
-        p_min_venda: currentFilters.minVenda,
-        p_max_venda: currentFilters.maxVenda,
-        p_min_aluguel: currentFilters.minAluguel,
-        p_max_aluguel: currentFilters.maxAluguel,
-        p_min_dorms: currentFilters.minDorms,
-        p_max_dorms: currentFilters.maxDorms,
-        p_categoria: currentFilters.categoria || null,
-        p_bairro: currentFilters.bairro || null,
-        p_limit: limit,
-        p_offset: offset,
-        p_andar: currentFilters.andar,
-        p_endereco_search: currentFilters.enderecoSearch.trim() || null,
-        p_sort_column: sortCol, // Novo parâmetro
-        p_sort_direction: sortDir, // Novo parâmetro
-    });
+    try {
+        // Chamada da função RPC para filtrar, paginar e ordenar no servidor
+        const { data: fetchedData, error } = await supabase.rpc('filter_imoveis_importados', {
+            p_search: currentSearch.trim() || null,
+            p_min_venda: currentFilters.minVenda,
+            p_max_venda: currentFilters.maxVenda,
+            p_min_aluguel: currentFilters.minAluguel,
+            p_max_aluguel: currentFilters.maxAluguel,
+            p_min_dorms: currentFilters.minDorms,
+            p_max_dorms: currentFilters.maxDorms,
+            p_categoria: currentFilters.categoria || null,
+            p_bairro: currentFilters.bairro || null,
+            p_limit: limit,
+            p_offset: offset,
+            p_andar: currentFilters.andar,
+            p_endereco_search: currentFilters.enderecoSearch.trim() || null,
+            p_sort_column: sortCol, // Novo parâmetro
+            p_sort_direction: sortDir, // Novo parâmetro
+        });
 
-    if (error) {
-        console.error("Erro ao carregar dados via RPC:", error);
-    } else if (fetchedData && fetchedData.length > 0) {
-        const totalCount = fetchedData[0].total_count;
-        setTotalRows(Number(totalCount));
-        setData(fetchedData as ExtractedImovel[]);
-    } else {
+        if (error) {
+            console.error("Erro ao carregar dados via RPC:", error);
+            setFetchError(`Falha ao carregar dados: ${error.message}. Verifique as permissões (RLS) ou a sintaxe da função SQL.`);
+            setTotalRows(0);
+            setData([]);
+        } else if (fetchedData && fetchedData.length > 0) {
+            const totalCount = fetchedData[0].total_count;
+            setTotalRows(Number(totalCount));
+            setData(fetchedData as ExtractedImovel[]);
+        } else {
+            setTotalRows(0);
+            setData([]);
+        }
+    } catch (e) {
+        console.error("Erro de rede/execução:", e);
+        setFetchError("Erro de rede ou execução ao chamar a função do banco de dados.");
         setTotalRows(0);
         setData([]);
+    } finally {
+        setLoading(false);
     }
-    setLoading(false);
   }, [limit]);
 
   // Efeito para buscar dados quando a página, limite, filtros aplicados, busca rápida ou ordenação mudam
@@ -296,6 +309,19 @@ const ExtractedImoveisPage: React.FC = () => {
         <p className="ml-3 text-gray-600">Carregando dados extraídos...</p>
       </div>
     );
+    
+  if (fetchError) {
+      return (
+          <div className="p-8 bg-red-100 border border-red-400 text-red-700 rounded-md">
+              <h2 className="text-xl font-bold flex items-center"><AlertTriangle className="w-6 h-6 mr-2" /> Erro ao Carregar Dados</h2>
+              <p className="mt-2">{fetchError}</p>
+              <p className="mt-4 text-sm">Se o erro persistir, verifique o console para detalhes sobre a chamada RPC.</p>
+              <Button onClick={() => fetchData(page, appliedFilters, search, sortColumn, sortDirection)} className="mt-3 bg-red-600 hover:bg-red-700 text-white">
+                  Tentar Recarregar
+              </Button>
+          </div>
+      );
+  }
 
   // Componente de Paginação Duplicado
   const PaginationControls = () => (
@@ -486,7 +512,7 @@ const ExtractedImoveisPage: React.FC = () => {
                 })}
               </tbody>
             </table>
-            {data.length === 0 && !loading && (
+            {data.length === 0 && !loading && !fetchError && (
                 <div className="text-center py-10 text-gray-500">Nenhum registro encontrado na página atual.</div>
             )}
           </div>
