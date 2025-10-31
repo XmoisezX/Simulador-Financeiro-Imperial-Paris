@@ -43,7 +43,8 @@ export interface ExtractedFilters {
     maxVagas: number | null;
     bairro: string;
     categoria: string;
-    andar: number | null; // Novo: Andar (INTEGER)
+    andar: number | null;
+    enderecoSearch: string; // NOVO CAMPO
 }
 
 interface ExtractedImovelFiltersProps {
@@ -78,6 +79,11 @@ const ExtractedImovelFilters: React.FC<ExtractedImovelFiltersProps> = ({ filters
             onFilterChange(id as keyof ExtractedFilters, value);
         }
     };
+    
+    const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { id, value } = e.target;
+        onFilterChange(id as keyof ExtractedFilters, value);
+    };
 
     return (
         <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200 space-y-3">
@@ -85,8 +91,19 @@ const ExtractedImovelFilters: React.FC<ExtractedImovelFiltersProps> = ({ filters
                 <Search className="w-5 h-5 mr-2 text-blue-600" /> Filtro Inteligente
             </h2>
 
-            {/* Linha 1: Valores e Categorias (4 colunas em telas grandes) */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+            {/* Linha 1: Busca de Endereço Dedicada */}
+            <div className="grid grid-cols-1">
+                <TextInput 
+                    label="Buscar Endereço Específico" 
+                    id="enderecoSearch" 
+                    value={filters.enderecoSearch} 
+                    onChange={handleTextChange} 
+                    placeholder="Ex: Rua Suzana Cortez Balreira 391"
+                />
+            </div>
+
+            {/* Linha 2: Valores e Categorias (4 colunas em telas grandes) */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 pt-3 border-t border-gray-100">
                 
                 {/* Valor Venda Mín */}
                 <NumberInput label="Venda Mín" id="minVenda" value={filters.minVenda || ''} onChange={handleNumberChange} isCurrency placeholder="0" />
@@ -126,7 +143,7 @@ const ExtractedImovelFilters: React.FC<ExtractedImovelFiltersProps> = ({ filters
                 </div>
             </div>
 
-            {/* Linha 2: Características (4 colunas em telas grandes) */}
+            {/* Linha 3: Características (4 colunas em telas grandes) */}
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 pt-3 border-t border-gray-100">
                 
                 {/* Dormitórios Mín */}
