@@ -5,7 +5,7 @@ import { supabase } from '../integrations/supabase/client';
 
 interface UserProfile {
     id: string;
-    full_name: string;
+    full_name: string | null;
     email: string;
 }
 
@@ -24,10 +24,13 @@ const ExtractedUserSelect: React.FC<ExtractedUserSelectProps> = ({ imovelId, cur
     const [isSelectOpen, setIsSelectOpen] = useState(false);
     const selectRef = useRef<HTMLDivElement>(null);
 
+    const getDisplayName = (user: UserProfile) => user.full_name || user.email.split('@')[0] || 'Sem Nome';
+
     const fetchUsers = useCallback(async () => {
         if (!session) return;
         setIsLoading(true);
         
+        // Busca todos os perfis
         const { data, error } = await supabase
             .from('profiles')
             .select('id, full_name, email')
@@ -36,8 +39,21 @@ const ExtractedUserSelect: React.FC<ExtractedUserSelectProps> = ({ imovelId, cur
         if (error) {
             console.error('Error fetching users:', error);
         } else {
-            const uniqueUsers = data as UserProfile[];
-            setUsers(uniqueUsers.sort((a, b) => (a.full_name || a.email).localeCompare(b.full_name || b.email)));
+            let uniqueUsers = data as UserProfile[];
+            
+            // Garante que o usuário logado esteja na lista, mesmo que o perfil não tenha sido criado
+            if (!uniqueUsers.some(u => u.id === session.user.id)) {
+                uniqueUsers = [{
+                    id: session.user.id,
+                    full_name: session.user.user_metadata.full_name || null,
+                    email: session.user.email || '',
+                }, ...uniqueUsers];
+            }
+            
+            // Ordena pelo nome de exibição
+            uniqueUsers.sort((a, b) => getDisplayName(a).localeCompare(getDisplayName(b)));
+            
+            setUsers(uniqueUsers);
         }
         setIsLoading(false);
     }, [session]);
@@ -91,7 +107,7 @@ const ExtractedUserSelect: React.FC<ExtractedUserSelectProps> = ({ imovelId, cur
     };
 
     const selectedUser = users.find(u => u.id === currentUserId);
-    const displayName = selectedUser?.full_name || selectedUser?.email?.split('@')[0] || 'Não Atribuído';
+    const displayName = selectedUser ? getDisplayName(selectedUser) : 'Não Atribuído';
     const selectedValue = currentUserId || '';
 
     if (isLoading) {
@@ -103,7 +119,10 @@ const ExtractedUserSelect: React.FC<ExtractedUserSelectProps> = ({ imovelId, cur
     }
 
     return (
-        <div className="relative w-full h-full flex items-center p-2 cursor-pointer hover:bg-gray-50 transition-colors" ref={selectRef}>
+        <div 
+            className={`relative w-full h-full flex items-center p-2 cursor-pointer transition-colors ${currentUserId ? 'bg-green-100 hover:bg-green-200' : 'hover:bg-gray-50'}`} 
+            ref={selectRef}
+        >
             
             {isSelectOpen ? (
                 // Modo de Seleção (Dropdown)
@@ -118,7 +137,7 @@ const ExtractedUserSelect: React.FC<ExtractedUserSelectProps> = ({ imovelId, cur
                     <option value="">Não Atribuído</option>
                     {users.map(user => (
                         <option key={user.id} value={user.id}>
-                            {user.full_name || user.email}
+                            {getDisplayName(user)}
                         </option>
                     ))}
                 </select>
@@ -126,7 +145,7 @@ const ExtractedUserSelect: React.FC<ExtractedUserSelectProps> = ({ imovelId, cur
                 // Modo de Visualização (Botão)
                 <button
                     onClick={() => setIsSelectOpen(true)}
-                    className={`w-full text-left text-sm flex items-center justify-between ${currentUserId ? 'text-dark-text font-medium' : 'text-gray-500'}`}
+                    className={`w-full text-left text-sm flex items-center justify-between ${currentUserId ? 'text-green-800 font-medium' : 'text-gray-500'}`}
                     disabled={isSaving}
                 >
                     <span className="truncate pr-2">{displayName}</span>
