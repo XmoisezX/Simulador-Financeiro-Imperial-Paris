@@ -1,3 +1,5 @@
+import React from 'react';
+
 export const formatCurrency = (value: number | string | null | undefined, prefix: string = 'R$'): string => {
     if (value === null || value === undefined || value === '') return 'N/A';
     const num = typeof value === 'string' ? parseFloat(value.replace(/[^\d,]/g, '').replace(',', '.')) : Number(value);
