@@ -53,7 +53,7 @@ const initialFilters: ExtractedFilters = {
 };
 
 const ExtractedImoveisPage: React.FC = () => {
-  const [data, setData] = useState<ExtractedImovel[]>([]); // Dados brutos da página (sem filtro de busca rápida)
+  const [data, setData] = useState<ExtractedImovel[]>([]); // Dados brutos da página
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState(""); // Busca rápida agora é aplicada no servidor
@@ -221,6 +221,62 @@ const ExtractedImoveisPage: React.FC = () => {
         fetchData(page, appliedFilters, search, sortColumn, sortDirection);
     }
   };
+  
+  // 🔹 Exportar CSV (apenas dados visíveis)
+  const exportCSV = useCallback(() => {
+    const header = columns.join(",");
+    const rows = data
+      .map((r) => columns.map((c) => {
+          return `"${r[c] ?? ""}"`;
+      }).join(","))
+      .join("\n");
+    const csv = `${header}\n${rows}`;
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `imoveis_importados_pagina${page}.csv`;
+    a.click();
+  }, [data, columns, page]);
+  
+  // 🔹 Exportar PDF (apenas dados visíveis)
+  const exportPDF = useCallback(() => {
+    const doc = new jsPDF({
+        orientation: 'landscape', // Tabela larga, melhor em paisagem
+        unit: 'mm',
+        format: 'a4'
+    });
+
+    const head = [columns];
+    const body = data.map(row => columns.map(col => {
+        return row[col] ?? '';
+    }));
+
+    autoTable(doc, {
+        head: head,
+        body: body,
+        startY: 10,
+        theme: 'grid',
+        styles: {
+            fontSize: 6,
+            cellPadding: 1,
+        },
+        headStyles: {
+            fillColor: [30, 58, 138], // Azul escuro
+            textColor: 255,
+            fontStyle: 'bold',
+        },
+        margin: { top: 10, left: 5, right: 5, bottom: 10 },
+        didDrawPage: function (data) {
+            // Adiciona título e número da página
+            doc.setFontSize(10);
+            doc.text("Relatório de Imóveis Importados", data.settings.margin.left, 5);
+            doc.text(`Página ${data.pageNumber}`, doc.internal.pageSize.width - data.settings.margin.right, 5, { align: 'right' });
+        }
+    });
+
+    doc.save(`imoveis_importados_pagina${page}.pdf`);
+  }, [data, columns, page]);
 
 
   const totalPages = Math.ceil(totalRows / limit);
