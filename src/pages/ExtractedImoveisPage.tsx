@@ -62,7 +62,7 @@ const ExtractedImoveisPage: React.FC = () => {
   const [filteredData, setFilteredData] = useState<ExtractedImovel[]>([]); // Dados após filtro de busca rápida e filtros de valor
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(""); // Busca rápida agora é aplicada no servidor
   const [page, setPage] = useState(1);
   const [totalRows, setTotalRows] = useState(0);
   const [limit, setLimit] = useState(20);
@@ -110,91 +110,51 @@ const ExtractedImoveisPage: React.FC = () => {
   // Fields that are numeric in the database schema
   const numericFields = ["Pagina", "AreaPrivada", "Dorms", "ID"];
 
-  // 🔹 Lógica de Busca de Dados (Aplicando filtros no servidor)
-  const fetchData = useCallback(async (pageNumber = 1, currentFilters: ExtractedFilters) => {
+  // 🔹 Lógica de Busca de Dados (Aplicando filtros no servidor via RPC)
+  const fetchData = useCallback(async (pageNumber = 1, currentFilters: ExtractedFilters, currentSearch: string) => {
     setLoading(true);
     setPendingChanges({}); 
     
-    const from = (pageNumber - 1) * limit;
-    const to = from + limit - 1;
+    const offset = (pageNumber - 1) * limit;
 
-    let query = supabase
-      .from("imoveis_importados")
-      .select("*, id", { count: "exact" })
-      .order("id", { ascending: true });
-      
-    // --- Aplicação dos Filtros no Servidor (Apenas colunas seguras) ---
-    
-    // 1. Filtros de Igualdade (Categoria, Bairro)
-    if (currentFilters.categoria) {
-        query = query.eq('Categoria', currentFilters.categoria);
-    }
-    if (currentFilters.bairro) {
-        query = query.eq('Bairro', currentFilters.bairro);
-    }
-    
-    // 2. Filtros de Range (Dorms - Coluna numérica)
-    if (currentFilters.minDorms !== null && currentFilters.minDorms > 0) {
-        query = query.gte('Dorms', currentFilters.minDorms);
-    }
-    if (currentFilters.maxDorms !== null && currentFilters.maxDorms > 0) {
-        query = query.lte('Dorms', currentFilters.maxDorms);
-    }
-    
-    // 3. Paginação
-    query = query.range(from, to);
+    // Chamada da função RPC para filtrar e paginar no servidor
+    const { data: fetchedData, error } = await supabase.rpc('filter_imoveis_importados', {
+        p_search: currentSearch.trim() || null,
+        p_min_venda: currentFilters.minVenda,
+        p_max_venda: currentFilters.maxVenda,
+        p_min_aluguel: currentFilters.minAluguel,
+        p_max_aluguel: currentFilters.maxAluguel,
+        p_min_dorms: currentFilters.minDorms,
+        p_max_dorms: currentFilters.maxDorms,
+        p_categoria: currentFilters.categoria || null,
+        p_bairro: currentFilters.bairro || null,
+        p_limit: limit,
+        p_offset: offset,
+    });
 
-    const { data: fetchedData, error, count } = await query;
-
-    if (error) console.error("Erro ao carregar dados:", error);
-    else {
-      setTotalRows(count || 0);
-      setData(fetchedData || []);
+    if (error) {
+        console.error("Erro ao carregar dados via RPC:", error);
+    } else if (fetchedData && fetchedData.length > 0) {
+        // O total_count vem na primeira linha do resultado da RPC
+        const totalCount = fetchedData[0].total_count;
+        setTotalRows(Number(totalCount));
+        setData(fetchedData as ExtractedImovel[]);
+        setFilteredData(fetchedData as ExtractedImovel[]); // Não há mais filtro no cliente, então filteredData = data
+    } else {
+        setTotalRows(0);
+        setData([]);
+        setFilteredData([]);
     }
     setLoading(false);
   }, [limit]);
 
+  // Efeito para buscar dados quando a página, limite, filtros aplicados ou busca rápida mudam
   useEffect(() => {
-    fetchData(page, appliedFilters);
-  }, [page, limit, appliedFilters, fetchData]);
+    fetchData(page, appliedFilters, search);
+  }, [page, limit, appliedFilters, search, fetchData]);
 
-  // 🔹 Filtro de busca e valor (aplica no bloco atual - Client Side Filtering)
-  useEffect(() => {
-    let currentData = data;
-    
-    // 1. Filtragem por Valores (Venda/Aluguel)
-    currentData = currentData.filter(row => {
-        const venda = parseCurrency(row.Venda);
-        const aluguel = parseCurrency(row.Aluguel);
-        
-        const minVenda = appliedFilters.minVenda;
-        const maxVenda = appliedFilters.maxVenda;
-        const minAluguel = appliedFilters.minAluguel;
-        const maxAluguel = appliedFilters.maxAluguel;
-        
-        // Filtro de Venda
-        if (minVenda !== null && (venda === null || venda < minVenda)) return false;
-        if (maxVenda !== null && (venda === null || venda > maxVenda)) return false;
-        
-        // Filtro de Aluguel
-        if (minAluguel !== null && (aluguel === null || aluguel < minAluguel)) return false;
-        if (maxAluguel !== null && (aluguel === null || aluguel > maxAluguel)) return false;
-        
-        return true;
-    });
-
-    // 2. Filtragem por Busca Rápida (Search)
-    if (search.trim()) {
-        const lower = search.toLowerCase();
-        currentData = currentData.filter((row) =>
-            columns.some(
-                (col) => row[col] && row[col].toString().toLowerCase().includes(lower)
-            )
-        );
-    }
-    
-    setFilteredData(currentData);
-  }, [search, data, columns, appliedFilters]);
+  // 🔹 Filtro de busca e valor (REMOVIDO: Agora tudo é feito no servidor)
+  // O estado `filteredData` agora é atualizado diretamente no `fetchData`.
   
   // 🔹 Handlers do componente de filtro
   const handleFilterChange = useCallback((key: keyof ExtractedFilters, value: string | number | null) => {
@@ -204,7 +164,7 @@ const ExtractedImoveisPage: React.FC = () => {
   const handleApplyFilters = useCallback(() => {
     setAppliedFilters(filters);
     setPage(1); // Volta para a primeira página ao aplicar novos filtros
-    setSearch(''); // Limpa a busca rápida
+    // A busca rápida (search) é mantida separada, mas o fetchData a usará.
   }, [filters]);
   
   const handleClearFilters = useCallback(() => {
@@ -288,7 +248,7 @@ const ExtractedImoveisPage: React.FC = () => {
     }
     
     // Recarrega a página atual para garantir a consistência dos dados
-    fetchData(page, appliedFilters);
+    fetchData(page, appliedFilters, search);
   };
 
   // 🔹 Exportar CSV (apenas dados visíveis)
@@ -312,10 +272,9 @@ const ExtractedImoveisPage: React.FC = () => {
   // Resumo da paginação e filtragem
   const paginationSummary = `Página ${page} de ${totalPages} — ${totalRows} registros`;
   
-  // O resumo da filtragem agora compara o número de itens filtrados (filteredData) com o limite da página (limit)
-  // Se a busca rápida ou os filtros de valor estiverem ativos, mostra quantos foram encontrados no bloco atual.
-  const filterSummary = filteredData.length < data.length 
-    ? ` (${filteredData.length} encontrados)` 
+  // O resumo da filtragem agora é sempre baseado no totalRows retornado pelo servidor
+  const filterSummary = (appliedFilters.categoria || appliedFilters.bairro || appliedFilters.minDorms || appliedFilters.maxDorms || appliedFilters.minVenda || appliedFilters.maxVenda || appliedFilters.minAluguel || appliedFilters.maxAluguel || search)
+    ? ` (Filtrando ${totalRows} resultados)` 
     : '';
 
   if (loading && data.length === 0)
@@ -339,7 +298,7 @@ const ExtractedImoveisPage: React.FC = () => {
         </Button>
         <Button
             variant="outline"
-            disabled={page === totalPages || saving}
+            disabled={page >= totalPages || saving}
             onClick={() => setPage((p) => p + 1)}
             className="h-9"
         >
@@ -375,7 +334,7 @@ const ExtractedImoveisPage: React.FC = () => {
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Buscar no bloco atual..."
+              placeholder="Buscar em todo o banco de dados..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-8 w-64 h-9"
