@@ -62,19 +62,19 @@ const ExtractedImoveisPage: React.FC = () => {
     "ID",
   ];
   
-  // Larguras mínimas para as colunas (em pixels)
+  // Larguras mínimas ajustadas para tentar caber mais na tela
   const columnWidths: Record<string, string> = {
-    "Endereco": "250px",
-    "NomeProprietario": "200px",
-    "Referencia": "150px",
-    "Categoria": "150px",
-    "Bairro": "150px",
-    "AreaTotal": "100px",
-    "AreaPrivada": "100px",
-    "Venda": "120px",
-    "Aluguel": "120px",
-    "Fones": "150px",
-    "Email": "200px",
+    "Endereco": "180px", // Reduzido de 250px
+    "NomeProprietario": "150px", // Reduzido de 200px
+    "Referencia": "120px", // Reduzido de 150px
+    "Categoria": "120px", // Reduzido de 150px
+    "Bairro": "120px", // Reduzido de 150px
+    "AreaTotal": "80px", // Reduzido de 100px
+    "AreaPrivada": "80px", // Reduzido de 100px
+    "Venda": "100px", // Reduzido de 120px
+    "Aluguel": "100px", // Reduzido de 120px
+    "Fones": "120px", // Reduzido de 150px
+    "Email": "150px", // Reduzido de 200px
   };
   
   // Fields that are numeric in the database schema
@@ -267,7 +267,7 @@ const ExtractedImoveisPage: React.FC = () => {
                     <th 
                         key={col} 
                         className="border border-gray-300 px-3 py-2 whitespace-nowrap font-semibold text-dark-text"
-                        style={{ minWidth: columnWidths[col] || '120px' }} // Aplica largura mínima
+                        style={{ minWidth: columnWidths[col] || '100px' }} // Usando 100px como fallback
                     >
                       {col}
                     </th>
