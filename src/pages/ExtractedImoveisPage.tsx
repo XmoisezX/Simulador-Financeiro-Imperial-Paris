@@ -259,7 +259,7 @@ const ExtractedImoveisPage: React.FC = () => {
       {/* Tabela */}
       <Card className="shadow-lg">
         <CardContent className="p-0">
-          <div className="overflow-x-auto max-h-[85vh]">
+          <div className="overflow-x-auto">
             <table className="min-w-full text-sm border-collapse">
               <thead>
                 <tr className="bg-gray-100 text-left sticky top-0 z-10">
