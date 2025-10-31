@@ -130,6 +130,7 @@ const ExtractedImoveisPage: React.FC = () => {
         p_bairro: currentFilters.bairro || null,
         p_limit: limit,
         p_offset: offset,
+        p_andar: currentFilters.andar, // NOVO PARÂMETRO
     });
 
     if (error) {
@@ -273,7 +274,7 @@ const ExtractedImoveisPage: React.FC = () => {
   const paginationSummary = `Página ${page} de ${totalPages} — ${totalRows} registros`;
   
   // O resumo da filtragem agora é sempre baseado no totalRows retornado pelo servidor
-  const filterSummary = (appliedFilters.categoria || appliedFilters.bairro || appliedFilters.minDorms || appliedFilters.maxDorms || appliedFilters.minVenda || appliedFilters.maxVenda || appliedFilters.minAluguel || appliedFilters.maxAluguel || search)
+  const filterSummary = (appliedFilters.categoria || appliedFilters.bairro || appliedFilters.minDorms || appliedFilters.maxDorms || appliedFilters.minVenda || appliedFilters.maxVenda || appliedFilters.minAluguel || appliedFilters.maxAluguel || appliedFilters.andar || search)
     ? ` (Filtrando ${totalRows} resultados)` 
     : '';
 

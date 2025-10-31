@@ -28,7 +28,7 @@ const CATEGORY_OPTIONS = [
 ];
 const NEIGHBORHOOD_OPTIONS = ['Centro', 'Laranjal', 'Areal', 'Porto', 'Fragata', 'Três Vendas', 'Outro'];
 const ROOM_OPTIONS = [1, 2, 3, 4, 5];
-const FLOOR_OPTIONS = [1, 2, 3, 4, 5];
+const FLOOR_OPTIONS = [1, 2, 3, 4, 5]; // Opções de andar (1º, 2º, 3º, 4º, 5º+)
 
 export interface ExtractedFilters {
     minVenda: number | null;
@@ -43,7 +43,7 @@ export interface ExtractedFilters {
     maxVagas: number | null;
     bairro: string;
     categoria: string;
-    andar: number | null; // Mocked, since 'andar' is not a direct column, but we'll use it for filtering logic
+    andar: number | null; // Novo: Andar (INTEGER)
 }
 
 interface ExtractedImovelFiltersProps {
@@ -57,13 +57,26 @@ const ExtractedImovelFilters: React.FC<ExtractedImovelFiltersProps> = ({ filters
     
     const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { id, value } = e.target;
-        const numericValue = value === '' ? null : parseFloat(value.replace(/[^\d,]/g, '').replace(',', '.'));
-        onFilterChange(id as keyof ExtractedFilters, numericValue);
+        // Para valores de moeda, usamos a lógica de limpeza
+        if (id.includes('Venda') || id.includes('Aluguel')) {
+            const numericValue = value === '' ? null : parseFloat(value.replace(/[^\d,]/g, '').replace(',', '.'));
+            onFilterChange(id as keyof ExtractedFilters, numericValue);
+        } else {
+            // Para Dorms, Suites, Vagas (inteiros)
+            const numericValue = value === '' ? null : parseInt(value);
+            onFilterChange(id as keyof ExtractedFilters, numericValue);
+        }
     };
     
     const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const { id, value } = e.target;
-        onFilterChange(id as keyof ExtractedFilters, value);
+        
+        if (id === 'andar') {
+            const numericValue = value === '' ? null : parseInt(value);
+            onFilterChange(id as keyof ExtractedFilters, numericValue);
+        } else {
+            onFilterChange(id as keyof ExtractedFilters, value);
+        }
     };
 
     return (
@@ -103,12 +116,12 @@ const ExtractedImovelFilters: React.FC<ExtractedImovelFiltersProps> = ({ filters
                     </select>
                 </div>
                 
-                {/* Andar (Mock) */}
+                {/* Andar */}
                 <div className="space-y-1">
-                    <label htmlFor="andar" className="block text-xs font-medium text-light-text">Andar (Mock)</label>
+                    <label htmlFor="andar" className="block text-xs font-medium text-light-text">Andar</label>
                     <select id="andar" value={filters.andar || ''} onChange={handleSelectChange} className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100">
                         <option value="">Todos</option>
-                        {FLOOR_OPTIONS.map(f => <option key={f} value={f}>{f}º+</option>)}
+                        {FLOOR_OPTIONS.map(f => <option key={f} value={f}>{f}º</option>)}
                     </select>
                 </div>
             </div>
