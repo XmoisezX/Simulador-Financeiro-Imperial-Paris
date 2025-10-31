@@ -82,6 +82,7 @@ const PlanilhasIndexPage: React.FC = () => {
             const success = await deletePlanilha(id);
             if (success) {
                 alert('Planilha excluída.');
+                navigate('/crm/agenciamento/planilhas'); // Updated navigation
             } else {
                 alert('Falha ao excluir a planilha.');
             }
@@ -100,10 +101,10 @@ const PlanilhasIndexPage: React.FC = () => {
             {/* Link para a nova página de visualização direta */}
             <div className="mb-8 p-4 bg-blue-100 rounded-lg shadow-md border border-blue-300 flex justify-between items-center">
                 <p className="font-semibold text-blue-800 flex items-center">
-                    <Table className="w-5 h-5 mr-2" /> Visualizar dados da tabela `imoveis_extraidos`
+                    <Table className="w-5 h-5 mr-2" /> Tabela Direta de Imóveis Importados
                 </p>
                 <Link to="/crm/agenciamento" className="text-blue-600 hover:text-blue-800 flex items-center font-medium">
-                    Acessar Tabela Direta
+                    Acessar Tabela
                     <ArrowRight className="w-4 h-4 ml-2" />
                 </Link>
             </div>

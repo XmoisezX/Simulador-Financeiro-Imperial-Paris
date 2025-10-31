@@ -5,25 +5,26 @@ import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
 
-// Define a interface para os dados da linha
+// Define a interface para os dados da linha, baseada na tabela imoveis_importados
 interface ExtractedImovel {
-    id: number;
-    Pagina: string;
-    Referencia: string;
-    Categoria: string;
-    Endereco: string;
-    Bairro: string;
-    AreaTotal: number;
-    AreaPrivada: number;
-    Dorms: number;
-    Suites: number;
-    Vagas: number;
-    Venda: number;
-    Aluguel: number;
-    NomeProprietario: string;
-    Fones: string;
-    Email: string;
-    Exclusivo: string;
+    id: number; // Internal Supabase row ID (assuming it exists)
+    Pagina: number | null; // bigint
+    Referencia: string | null;
+    Categoria: string | null;
+    Endereco: string | null;
+    Bairro: string | null;
+    AreaTotal: string | null; // text
+    AreaPrivada: number | null; // double precision
+    Dorms: number | null; // bigint
+    Suites: string | null; // text
+    Vagas: string | null; // text
+    Venda: string | null; // text
+    Aluguel: string | null; // text
+    NomeProprietario: string | null;
+    Fones: string | null;
+    Email: string | null;
+    Exclusivo: string | null;
+    ID: number | null; // Imported ID (bigint)
     [key: string]: any; // Permite acesso dinâmico às colunas
 }
 
@@ -54,6 +55,7 @@ const ExtractedImoveisPage: React.FC = () => {
     "Fones",
     "Email",
     "Exclusivo",
+    "ID",
   ];
 
   // 🔹 Carrega dados do Supabase com paginação
@@ -63,9 +65,9 @@ const ExtractedImoveisPage: React.FC = () => {
     const to = from + limit - 1;
 
     const { data: fetchedData, error, count } = await supabase
-      .from("imoveis_extraidos")
-      .select("*", { count: "exact" })
-      .order("id", { ascending: true })
+      .from("imoveis_importados") // Alterado para a tabela correta
+      .select("*, ID", { count: "exact" })
+      .order("ID", { ascending: true })
       .range(from, to);
 
     if (error) console.error("Erro ao carregar dados:", error);
@@ -98,16 +100,19 @@ const ExtractedImoveisPage: React.FC = () => {
   const handleEdit = async (id: number, field: string, value: any) => {
     setSaving(id);
     
-    // Converte valores numéricos se o campo for esperado como tal
+    // Fields that are numeric in the database schema: Pagina (bigint), AreaPrivada (double precision), Dorms (bigint), ID (bigint)
+    const numericFields = ["Pagina", "AreaPrivada", "Dorms", "ID"];
+    
     let updatedValue = value;
-    if (["AreaTotal", "AreaPrivada", "Dorms", "Suites", "Vagas", "Venda", "Aluguel"].includes(field)) {
-        updatedValue = parseFloat(value) || 0;
+    if (numericFields.includes(field)) {
+        // Attempt to parse as float, use null if empty string
+        updatedValue = value.trim() === '' ? null : parseFloat(value);
     }
     
     const { error } = await supabase
-      .from("imoveis_extraidos")
+      .from("imoveis_importados") // Alterado para a tabela correta
       .update({ [field]: updatedValue })
-      .eq("id", id);
+      .eq("id", id); // Assumindo 'id' (lowercase) é a chave primária interna
       
     if (error) {
         console.error("Erro ao salvar:", error);
@@ -133,7 +138,7 @@ const ExtractedImoveisPage: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `imoveis_extraidos_pagina${page}.csv`;
+    a.download = `imoveis_importados_pagina${page}.csv`;
     a.click();
   };
 
@@ -152,7 +157,7 @@ const ExtractedImoveisPage: React.FC = () => {
       {/* Cabeçalho */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-3xl font-bold text-dark-text">
-            <Search className="w-6 h-6 mr-2 inline text-blue-600" /> Imóveis Extraídos (Web Scraping)
+            <Search className="w-6 h-6 mr-2 inline text-blue-600" /> Imóveis Importados (Tabela Direta)
         </h1>
 
         <div className="flex flex-wrap gap-2">
