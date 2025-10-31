@@ -5,38 +5,34 @@ import { Button } from '../components/ui/Button';
 import TextInput from '../components/TextInput';
 import Papa from 'papaparse';
 import { useAgenciamentoData, Planilha } from '../hooks/useAgenciamentoData';
-
-const defaultHeaders = ['ID', 'Endereço', 'Bairro', 'Tipo', 'Valor Venda', 'Valor Locação', 'Status', 'Proprietário'];
-const TARGET_PLANILHA_NAME = 'imoveis_extraidos';
+import { TARGET_PLANILHA_NAME, DEFAULT_AGENCIAMENTO_PLANILHA, DEFAULT_AGENCIAMENTO_HEADERS } from '../constants/agenciamento';
 
 const AgenciamentoPage: React.FC = () => {
     const { planilhas, isLoading, error, savePlanilha, deletePlanilha, fetchPlanilhas } = useAgenciamentoData();
     
-    const [data, setData] = useState<string[][]>([]);
-    const [headers, setHeaders] = useState<string[]>(defaultHeaders);
+    const [data, setData] = useState<string[][]>(DEFAULT_AGENCIAMENTO_PLANILHA.data);
+    const [headers, setHeaders] = useState<string[]>(DEFAULT_AGENCIAMENTO_PLANILHA.headers);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
     
-    const [planilhaName, setPlanilhaName] = useState('Nova Planilha');
-    const [currentPlanilhaId, setCurrentPlanilhaId] = useState<string | undefined>(undefined);
+    const [planilhaName, setPlanilhaName] = useState(DEFAULT_AGENCIAMENTO_PLANILHA.nome);
+    const [currentPlanilhaId, setCurrentPlanilhaId] = useState<string | undefined>(DEFAULT_AGENCIAMENTO_PLANILHA.id);
     const [isSaving, setIsSaving] = useState(false);
 
-    // 1. Efeito para carregar a planilha alvo ou inicializar com dados vazios
+    // 1. Efeito para carregar a planilha alvo do Supabase ou inicializar com dados fixos
     useEffect(() => {
-        if (!isLoading && planilhas.length > 0) {
+        if (!isLoading) {
             const targetPlanilha = planilhas.find(p => p.nome.toLowerCase() === TARGET_PLANILHA_NAME);
             
             if (targetPlanilha) {
+                // Carrega a versão salva no Supabase
                 handleLoad(targetPlanilha);
-            } else if (currentPlanilhaId === undefined) {
-                // Se não encontrou a alvo e não há nenhuma carregada, inicializa a nova
-                handleNewPlanilha();
+            } else if (currentPlanilhaId === DEFAULT_AGENCIAMENTO_PLANILHA.id) {
+                // Se não encontrou no Supabase e o estado atual é o default, garante que o default esteja carregado
+                handleLoad(DEFAULT_AGENCIAMENTO_PLANILHA);
             }
-        } else if (!isLoading && planilhas.length === 0 && currentPlanilhaId === undefined) {
-             // Se não há planilhas salvas, inicializa a nova
-             handleNewPlanilha();
         }
-    }, [isLoading, planilhas]); // Depende de isLoading e planilhas
+    }, [isLoading, planilhas]);
 
     // 2. Garante que sempre haja pelo menos uma linha vazia se os dados estiverem vazios
     useEffect(() => {
@@ -76,7 +72,7 @@ const AgenciamentoPage: React.FC = () => {
                 if (rawData.length === 0) {
                     setUploadError('O arquivo CSV está vazio.');
                     setData([]);
-                    setHeaders(defaultHeaders);
+                    setHeaders(DEFAULT_AGENCIAMENTO_HEADERS);
                     return;
                 }
                 
@@ -102,7 +98,8 @@ const AgenciamentoPage: React.FC = () => {
         }
         
         setIsSaving(true);
-        const idToSave = isNew ? undefined : currentPlanilhaId;
+        // Se o ID for 'default', forçamos a criação de uma nova planilha no Supabase
+        const idToSave = currentPlanilhaId === DEFAULT_AGENCIAMENTO_PLANILHA.id ? undefined : currentPlanilhaId;
         
         const { success, id } = await savePlanilha(planilhaName, headers, data, idToSave);
         
@@ -128,8 +125,8 @@ const AgenciamentoPage: React.FC = () => {
             if (success) {
                 alert('Planilha excluída.');
                 if (currentPlanilhaId === id) {
-                    // Resetar para o estado inicial
-                    handleNewPlanilha();
+                    // Resetar para o estado inicial (default)
+                    handleLoad(DEFAULT_AGENCIAMENTO_PLANILHA);
                 }
             } else {
                 alert('Falha ao excluir a planilha.');
@@ -139,8 +136,8 @@ const AgenciamentoPage: React.FC = () => {
     
     const handleNewPlanilha = () => {
         setPlanilhaName('Nova Planilha');
-        setHeaders(defaultHeaders);
-        setData([Array(defaultHeaders.length).fill('')]);
+        setHeaders(DEFAULT_AGENCIAMENTO_HEADERS);
+        setData([Array(DEFAULT_AGENCIAMENTO_HEADERS.length).fill('')]);
         setCurrentPlanilhaId(undefined);
     };
 
@@ -167,12 +164,12 @@ const AgenciamentoPage: React.FC = () => {
                 
                 <div className="flex space-x-3">
                     <Button 
-                        onClick={() => handleSave(currentPlanilhaId === undefined)}
+                        onClick={() => handleSave(currentPlanilhaId === undefined || currentPlanilhaId === DEFAULT_AGENCIAMENTO_PLANILHA.id)}
                         disabled={isSaving || !planilhaName.trim()}
                         className="bg-green-600 hover:bg-green-700 text-white"
                     >
                         {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                        {currentPlanilhaId ? 'Atualizar Planilha' : 'Salvar Nova Planilha'}
+                        {currentPlanilhaId && currentPlanilhaId !== DEFAULT_AGENCIAMENTO_PLANILHA.id ? 'Atualizar Planilha' : 'Salvar Nova Planilha'}
                     </Button>
                     <Button 
                         onClick={handleNewPlanilha}
@@ -222,7 +219,7 @@ const AgenciamentoPage: React.FC = () => {
                                 </button>
                                 <div className="flex space-x-2 items-center">
                                     <span className="text-xs text-gray-500 hidden sm:block">Atualizado: {new Date(p.updated_at).toLocaleDateString('pt-BR')}</span>
-                                    <Button onClick={() => handleDelete(p.id, p.nome)} size="sm" variant="outline" className="text-red-500 hover:bg-red-50">
+                                    <Button onClick={() => handleDelete(p.id, p.nome)} size="sm" variant="outline" className="text-red-500 hover:bg-red-50" disabled={p.id === DEFAULT_AGENCIAMENTO_PLANILHA.id}>
                                         <Trash2 className="w-4 h-4" />
                                     </Button>
                                 </div>
