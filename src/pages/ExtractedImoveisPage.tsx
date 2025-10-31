@@ -12,7 +12,7 @@ import { formatCurrencyHalfTone, parseCurrencyToNumber } from '../utils/format';
 // Define a interface para os dados da linha, baseada na tabela imoveis_importados
 interface ExtractedImovel {
     id: number; // Internal Supabase row ID (SERIAL PRIMARY KEY)
-    Pagina: number | null; // RESTAURADO
+    "Responsáveis": 'Vazio' | 'Alessandro' | 'Tamires' | 'Moisez' | string | null; // NOVO: ENUM
     Referencia: string | null;
     Categoria: string | null;
     Endereco: string | null;
@@ -68,7 +68,7 @@ const ExtractedImoveisPage: React.FC = () => {
   const [appliedFilters, setAppliedFilters] = useState<ExtractedFilters>(initialFilters);
 
   const columns = [
-    "Pagina", // RESTAURADO
+    "Responsáveis", // NOVO
     "Referencia",
     "Categoria",
     "Endereco",
@@ -87,9 +87,12 @@ const ExtractedImoveisPage: React.FC = () => {
     "ID",
   ];
   
+  // Opções para o ENUM Responsáveis
+  const responsavelOptions = ['Vazio', 'Alessandro', 'Tamires', 'Moisez'];
+  
   // Larguras mínimas ajustadas para tentar caber mais na tela
   const columnWidths: Record<string, string> = {
-    "Pagina": "80px", // RESTAURADO
+    "Responsáveis": "120px", // NOVO
     "Endereco": "180px",
     "NomeProprietario": "150px",
     "Referencia": "120px",
@@ -97,14 +100,14 @@ const ExtractedImoveisPage: React.FC = () => {
     "Bairro": "120px",
     "AreaTotal": "80px",
     "AreaPrivada": "80px",
-    "Venda": "120px", // Increased width for currency
-    "Aluguel": "120px", // Increased width for currency
+    "Venda": "120px", 
+    "Aluguel": "120px", 
     "Fones": "120px",
     "Email": "150px",
   };
   
   // Fields that are numeric in the database schema
-  const numericFields = ["AreaPrivada", "Dorms", "ID", "Pagina"]; // Pagina é numérica
+  const numericFields = ["AreaPrivada", "Dorms", "ID"]; 
 
   // 🔹 Lógica de Busca de Dados (Aplicando filtros no servidor via RPC)
   const fetchData = useCallback(async (pageNumber = 1, currentFilters: ExtractedFilters, currentSearch: string) => {
@@ -438,6 +441,30 @@ const ExtractedImoveisPage: React.FC = () => {
                                 
                                 const currentValue = row[col] ?? '';
                                 const isCellPending = isRowPending && pendingChanges[row.id] && pendingChanges[row.id][col] !== undefined;
+                                
+                                // Coluna Responsáveis (Select para ENUM)
+                                if (col === 'Responsáveis') {
+                                    return (
+                                        <td 
+                                            key={col} 
+                                            className="border border-gray-300 p-0 relative"
+                                            style={{ minWidth: columnWidths[col] || '120px' }}
+                                        >
+                                            <select
+                                                value={currentValue || 'Vazio'}
+                                                onChange={(e) => handleEdit(row.id, col, e.target.value)}
+                                                className={`w-full h-full text-xs border-none focus:ring-0 p-2 bg-transparent ${isCellPending ? 'font-bold text-dark-text' : 'text-gray-700'}`}
+                                            >
+                                                {responsavelOptions.map(option => (
+                                                    <option key={option} value={option}>{option}</option>
+                                                ))}
+                                            </select>
+                                            {isCellPending && (
+                                                <span className="absolute right-1 top-1 text-xs text-primary-orange" title="Alteração pendente">*</span>
+                                            )}
+                                        </td>
+                                    );
+                                }
                                 
                                 // Colunas Venda e Aluguel (Formatação de Moeda)
                                 if (col === 'Venda' || col === 'Aluguel') {
