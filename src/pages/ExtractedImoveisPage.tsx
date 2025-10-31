@@ -325,6 +325,8 @@ const ExtractedImoveisPage: React.FC = () => {
   
   // Resumo da paginação e filtragem
   const paginationSummary = `Página ${page} de ${totalPages} — ${totalRows} registros`;
+  
+  // Calcula o resumo da filtragem: se o número de itens filtrados for diferente do total de itens na página, mostra a contagem.
   const filterSummary = filteredData.length < data.length 
     ? ` (${filteredData.length} encontrados)` 
     : '';
