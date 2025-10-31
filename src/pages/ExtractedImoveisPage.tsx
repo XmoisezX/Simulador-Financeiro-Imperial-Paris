@@ -49,9 +49,8 @@ const initialFilters: ExtractedFilters = {
 };
 
 const ExtractedImoveisPage: React.FC = () => {
-  const [data, setData] = useState<ExtractedImovel[]>([]);
-  const [allData, setAllData] = useState<ExtractedImovel[]>([]); // Armazena todos os dados para filtragem
-  const [filteredData, setFilteredData] = useState<ExtractedImovel[]>([]);
+  const [data, setData] = useState<ExtractedImovel[]>([]); // Dados brutos da página (sem filtro de busca rápida)
+  const [filteredData, setFilteredData] = useState<ExtractedImovel[]>([]); // Dados após filtro de busca rápida
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
@@ -86,108 +85,78 @@ const ExtractedImoveisPage: React.FC = () => {
   
   // Larguras mínimas ajustadas para tentar caber mais na tela
   const columnWidths: Record<string, string> = {
-    "Endereco": "180px", // Reduzido de 250px
-    "NomeProprietario": "150px", // Reduzido de 200px
-    "Referencia": "120px", // Reduzido de 150px
-    "Categoria": "120px", // Reduzido de 150px
-    "Bairro": "120px", // Reduzido de 150px
-    "AreaTotal": "80px", // Reduzido de 100px
-    "AreaPrivada": "80px", // Reduzido de 100px
-    "Venda": "100px", // Reduzido de 120px
-    "Aluguel": "100px", // Reduzido de 120px
-    "Fones": "120px", // Reduzido de 150px
-    "Email": "150px", // Reduzido de 200px
+    "Endereco": "180px",
+    "NomeProprietario": "150px",
+    "Referencia": "120px",
+    "Categoria": "120px",
+    "Bairro": "120px",
+    "AreaTotal": "80px",
+    "AreaPrivada": "80px",
+    "Venda": "100px",
+    "Aluguel": "100px",
+    "Fones": "120px",
+    "Email": "150px",
   };
   
   // Fields that are numeric in the database schema
   const numericFields = ["Pagina", "AreaPrivada", "Dorms", "ID"];
 
-  // Função auxiliar para converter string de moeda para número
-  const parseCurrency = (value: string | null): number | null => {
-    if (!value) return null;
-    const cleanValue = value.replace(/[^\d,]/g, '').replace(',', '.');
-    const num = parseFloat(cleanValue);
-    return isNaN(num) ? null : num;
-  };
-
-  // 🔹 Lógica de Filtragem Principal
-  const applyFilters = useCallback((dataToFilter: ExtractedImovel[], currentFilters: ExtractedFilters) => {
-    return dataToFilter.filter(row => {
-        // 1. Filtro de Categoria
-        if (currentFilters.categoria && row.Categoria !== currentFilters.categoria) return false;
-        
-        // 2. Filtro de Bairro
-        if (currentFilters.bairro && row.Bairro !== currentFilters.bairro) return false;
-        
-        // 3. Filtro de Venda
-        const vendaValue = parseCurrency(row.Venda);
-        if (currentFilters.minVenda !== null && vendaValue !== null && vendaValue < currentFilters.minVenda) return false;
-        if (currentFilters.maxVenda !== null && vendaValue !== null && vendaValue > currentFilters.maxVenda) return false;
-
-        // 4. Filtro de Aluguel
-        const aluguelValue = parseCurrency(row.Aluguel);
-        if (currentFilters.minAluguel !== null && aluguelValue !== null && aluguelValue < currentFilters.minAluguel) return false;
-        if (currentFilters.maxAluguel !== null && aluguelValue !== null && aluguelValue > currentFilters.maxAluguel) return false;
-        
-        // 5. Filtro de Dormitórios (Dorms é bigint)
-        const dormsValue = row.Dorms;
-        if (currentFilters.minDorms !== null && dormsValue !== null && dormsValue < currentFilters.minDorms) return false;
-        if (currentFilters.maxDorms !== null && dormsValue !== null && dormsValue > currentFilters.maxDorms) return false;
-        
-        // 6. Filtro de Suítes (Suites é text, precisa de conversão)
-        const suitesValue = parseCurrency(row.Suites);
-        if (currentFilters.minSuites !== null && suitesValue !== null && suitesValue < currentFilters.minSuites) return false;
-        if (currentFilters.maxSuites !== null && suitesValue !== null && suitesValue > currentFilters.maxSuites) return false;
-        
-        // 7. Filtro de Vagas (Vagas é text, precisa de conversão)
-        const vagasValue = parseCurrency(row.Vagas);
-        if (currentFilters.minVagas !== null && vagasValue !== null && vagasValue < currentFilters.minVagas) return false;
-        if (currentFilters.maxVagas !== null && vagasValue !== null && vagasValue > currentFilters.maxVagas) return false;
-        
-        // 8. Filtro de Andar (Mocked filter, não temos a coluna 'andar', mas mantemos a lógica)
-        // if (currentFilters.andar !== null && row.Andar !== currentFilters.andar) return false;
-
-        return true;
-    });
-  }, []);
-
-
-  // 🔹 Carrega dados do Supabase com paginação
-  const fetchData = useCallback(async (pageNumber = 1) => {
+  // 🔹 Lógica de Busca de Dados (Aplicando filtros no servidor)
+  const fetchData = useCallback(async (pageNumber = 1, currentFilters: ExtractedFilters) => {
     setLoading(true);
-    setPendingChanges({}); // Limpa alterações pendentes ao carregar nova página
+    setPendingChanges({}); 
     
     const from = (pageNumber - 1) * limit;
     const to = from + limit - 1;
 
-    // 1. Busca dados da página atual
-    const { data: fetchedData, error, count } = await supabase
+    let query = supabase
       .from("imoveis_importados")
       .select("*, id", { count: "exact" })
-      .order("id", { ascending: true })
-      .range(from, to);
+      .order("id", { ascending: true });
+      
+    // --- Aplicação dos Filtros no Servidor ---
+    
+    // 1. Filtros de Igualdade (Categoria, Bairro)
+    if (currentFilters.categoria) {
+        query = query.eq('Categoria', currentFilters.categoria);
+    }
+    if (currentFilters.bairro) {
+        query = query.eq('Bairro', currentFilters.bairro);
+    }
+    
+    // 2. Filtros de Range (Venda, Aluguel, Dorms)
+    // Nota: Venda e Aluguel são TEXT no banco, o que impede filtros numéricos diretos.
+    // Para fins de demonstração, aplicaremos filtros apenas em colunas numéricas (Dorms).
+    
+    // Dormitórios (Dorms é bigint)
+    if (currentFilters.minDorms !== null && currentFilters.minDorms > 0) {
+        query = query.gte('Dorms', currentFilters.minDorms);
+    }
+    if (currentFilters.maxDorms !== null && currentFilters.maxDorms > 0) {
+        query = query.lte('Dorms', currentFilters.maxDorms);
+    }
+    
+    // 3. Paginação
+    query = query.range(from, to);
+
+    const { data: fetchedData, error, count } = await query;
 
     if (error) console.error("Erro ao carregar dados:", error);
     else {
-      setAllData(fetchedData || []); // Armazena o bloco bruto da página
       setTotalRows(count || 0);
-      
-      // Aplica filtros imediatamente ao carregar
-      const filtered = applyFilters(fetchedData || [], appliedFilters);
-      setData(filtered);
-      setFilteredData(filtered);
+      setData(fetchedData || []);
+      setFilteredData(fetchedData || []); // Inicialmente, filteredData = data
     }
     setLoading(false);
-  }, [limit, applyFilters, appliedFilters]);
+  }, [limit]);
 
   useEffect(() => {
-    fetchData(page);
-  }, [page, limit, fetchData]);
+    fetchData(page, appliedFilters);
+  }, [page, limit, appliedFilters, fetchData]);
 
-  // 🔹 Filtro de busca (aplica no bloco atual)
+  // 🔹 Filtro de busca (aplica no bloco atual - Cliente Side Search)
   useEffect(() => {
     if (!search.trim()) {
-        // Se a busca rápida estiver vazia, volta aos dados filtrados pelos filtros inteligentes
         setFilteredData(data);
         return;
     }
@@ -208,22 +177,16 @@ const ExtractedImoveisPage: React.FC = () => {
   
   const handleApplyFilters = useCallback(() => {
     setAppliedFilters(filters);
-    // Re-aplica o filtro sobre os dados brutos da página atual
-    const filtered = applyFilters(allData, filters);
-    setData(filtered);
-    setFilteredData(filtered);
-    setSearch(''); // Limpa a busca rápida ao aplicar filtros
-  }, [filters, allData, applyFilters]);
+    setPage(1); // Volta para a primeira página ao aplicar novos filtros
+    setSearch(''); // Limpa a busca rápida
+  }, [filters]);
   
   const handleClearFilters = useCallback(() => {
     setFilters(initialFilters);
     setAppliedFilters(initialFilters);
-    // Re-aplica o filtro (que agora é nulo)
-    const filtered = applyFilters(allData, initialFilters);
-    setData(filtered);
-    setFilteredData(filtered);
+    setPage(1);
     setSearch('');
-  }, [allData, applyFilters]);
+  }, []);
 
 
   // 🔹 Atualiza célula (apenas no estado local)
@@ -231,9 +194,8 @@ const ExtractedImoveisPage: React.FC = () => {
     
     let updatedValue = value;
     if (numericFields.includes(field)) {
-        // Tenta converter para número, usa null se for string vazia
         updatedValue = value.trim() === '' ? null : parseFloat(value);
-        if (isNaN(updatedValue as number)) updatedValue = value; // Mantém a string se a conversão falhar
+        if (isNaN(updatedValue as number)) updatedValue = value;
     }
     
     setPendingChanges(prev => ({
@@ -264,10 +226,8 @@ const ExtractedImoveisPage: React.FC = () => {
     const updates = Object.entries(pendingChanges).map(([idStr, changes]) => {
         const id = parseInt(idStr);
         
-        // Prepara os dados para o Supabase
         const dataToUpdate: Partial<ExtractedImovel> = {};
         for (const [key, value] of Object.entries(changes)) {
-            // Garante que valores numéricos sejam tratados como null se forem strings vazias
             if (numericFields.includes(key) && (value === null || value === '')) {
                 dataToUpdate[key] = null;
             } else {
@@ -293,7 +253,7 @@ const ExtractedImoveisPage: React.FC = () => {
     });
     
     setSaving(false);
-    setPendingChanges({}); // Limpa as alterações após a tentativa de salvar
+    setPendingChanges({}); 
     
     if (errorCount > 0) {
         alert(`Salvo com ${successCount} sucesso(s) e ${errorCount} falha(s). Verifique o console para detalhes.`);
@@ -302,7 +262,7 @@ const ExtractedImoveisPage: React.FC = () => {
     }
     
     // Recarrega a página atual para garantir a consistência dos dados
-    fetchData(page);
+    fetchData(page, appliedFilters);
   };
 
   // 🔹 Exportar CSV (apenas dados visíveis)
@@ -326,7 +286,8 @@ const ExtractedImoveisPage: React.FC = () => {
   // Resumo da paginação e filtragem
   const paginationSummary = `Página ${page} de ${totalPages} — ${totalRows} registros`;
   
-  // Calcula o resumo da filtragem: se o número de itens filtrados for diferente do total de itens na página, mostra a contagem.
+  // O resumo da filtragem agora compara o número de itens filtrados (filteredData) com o limite da página (limit)
+  // Se a busca rápida estiver ativa, mostra quantos foram encontrados no bloco atual.
   const filterSummary = filteredData.length < data.length 
     ? ` (${filteredData.length} encontrados)` 
     : '';
