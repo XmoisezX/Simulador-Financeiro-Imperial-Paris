@@ -175,11 +175,19 @@ const ExtractedImoveisPage: React.FC = () => {
   // 🔹 Atualiza célula (apenas no estado local)
   const handleEdit = (id: number, field: string, value: any) => {
     
-    let updatedValue = value;
+    let updatedValue: any = value;
     
     if (numericFields.includes(field)) {
+        // Lógica para campos numéricos
         updatedValue = value.trim() === '' ? null : parseFloat(value);
         if (isNaN(updatedValue as number)) updatedValue = value;
+    } else {
+        // Lógica para campos de texto/ENUM (garante que string vazia seja tratada como null, exceto para ENUMs que usam 'Vazio')
+        if (field === 'Responsáveis') {
+            updatedValue = value; // ENUMs devem manter o valor string
+        } else {
+            updatedValue = value.trim() === '' ? null : value;
+        }
     }
     
     setPendingChanges(prev => ({
@@ -214,6 +222,8 @@ const ExtractedImoveisPage: React.FC = () => {
         for (const [key, value] of Object.entries(changes)) {
             // Trata campos nulos para o banco de dados
             if (numericFields.includes(key) && (value === null || value === '')) {
+                dataToUpdate[key] = null;
+            } else if (value === null || value === '') {
                 dataToUpdate[key] = null;
             } else {
                 dataToUpdate[key] = value;
