@@ -182,14 +182,17 @@ const ExtractedImoveisPage: React.FC = () => {
         updatedValue = value.trim() === '' ? null : parseFloat(value);
         if (isNaN(updatedValue as number)) updatedValue = value;
     } else {
-        // Lógica para campos de texto/ENUM (garante que string vazia seja tratada como null, exceto para ENUMs que usam 'Vazio')
+        // Lógica para campos de texto/ENUM
         if (field === 'Responsáveis') {
-            updatedValue = value; // ENUMs devem manter o valor string
+            // Para ENUM, o valor é sempre a string exata, mesmo que seja 'Vazio'
+            updatedValue = value; 
         } else {
+            // Para outros campos de texto, string vazia vira null
             updatedValue = value.trim() === '' ? null : value;
         }
     }
     
+    // 1. Atualiza o estado de alterações pendentes
     setPendingChanges(prev => ({
         ...prev,
         [id]: {
@@ -198,7 +201,7 @@ const ExtractedImoveisPage: React.FC = () => {
         }
     }));
     
-    // Atualiza o estado 'data' imediatamente para refletir a mudança na UI
+    // 2. Atualiza o estado 'data' imediatamente para refletir a mudança na UI
     setData(prev => prev.map(item => 
         item.id === id ? { ...item, [field]: updatedValue } : item
     ));
@@ -206,7 +209,8 @@ const ExtractedImoveisPage: React.FC = () => {
   
   // 🔹 Salva todas as alterações pendentes
   const handleSaveAll = async () => {
-    if (Object.keys(pendingChanges).length === 0) {
+    const pendingKeys = Object.keys(pendingChanges);
+    if (pendingKeys.length === 0) {
         alert("Nenhuma alteração pendente para salvar.");
         return;
     }
@@ -215,8 +219,9 @@ const ExtractedImoveisPage: React.FC = () => {
     let successCount = 0;
     let errorCount = 0;
     
-    const updates = Object.entries(pendingChanges).map(([idStr, changes]) => {
+    const updates = pendingKeys.map((idStr) => {
         const id = parseInt(idStr);
+        const changes = pendingChanges[id];
         
         const dataToUpdate: Partial<ExtractedImovel> = {};
         for (const [key, value] of Object.entries(changes)) {
@@ -461,7 +466,8 @@ const ExtractedImoveisPage: React.FC = () => {
                                             style={{ minWidth: columnWidths[col] || '120px' }}
                                         >
                                             <select
-                                                value={currentValue || 'Vazio'}
+                                                // Se o valor for null, usa 'Vazio' para o select funcionar
+                                                value={currentValue === null ? 'Vazio' : currentValue}
                                                 onChange={(e) => handleEdit(row.id, col, e.target.value)}
                                                 className={`w-full h-full text-xs border-none focus:ring-0 p-2 bg-transparent ${isCellPending ? 'font-bold text-dark-text' : 'text-gray-700'}`}
                                             >
