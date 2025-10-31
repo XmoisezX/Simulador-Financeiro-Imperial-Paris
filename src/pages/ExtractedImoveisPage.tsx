@@ -12,7 +12,7 @@ import { formatCurrencyHalfTone, parseCurrencyToNumber } from '../utils/format';
 // Define a interface para os dados da linha, baseada na tabela imoveis_importados
 interface ExtractedImovel {
     id: number; // Internal Supabase row ID (SERIAL PRIMARY KEY)
-    "Responsáveis": 'Vazio' | 'Alessandro' | 'Tamires' | 'Moisez' | string | null; // NOVO: ENUM
+    "Responsáveis": 'Vazio' | 'Alessandro Gomes' | 'Tamires Torres' | 'Moisez Torres' | string | null; // NOVO: ENUM
     Referencia: string | null;
     Categoria: string | null;
     Endereco: string | null;
@@ -87,8 +87,8 @@ const ExtractedImoveisPage: React.FC = () => {
     "ID",
   ];
   
-  // Opções para o ENUM Responsáveis
-  const responsavelOptions = ['Vazio', 'Alessandro', 'Tamires', 'Moisez'];
+  // Opções para o ENUM Responsáveis (ATUALIZADO)
+  const responsavelOptions = ['Vazio', 'Alessandro Gomes', 'Tamires Torres', 'Moisez Torres'];
   
   // Larguras mínimas ajustadas para tentar caber mais na tela
   const columnWidths: Record<string, string> = {
@@ -184,7 +184,7 @@ const ExtractedImoveisPage: React.FC = () => {
     } else {
         // Lógica para campos de texto/ENUM
         if (field === 'Responsáveis') {
-            // Para ENUM, o valor é sempre a string exata, mesmo que seja 'Vazio'
+            // Para ENUM, o valor é sempre a string exata ('Vazio', 'Alessandro Gomes', etc.)
             updatedValue = value; 
         } else {
             // Para outros campos de texto, string vazia vira null
