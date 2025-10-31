@@ -1,49 +1,18 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { Briefcase, Upload, Loader2, Save, Trash2, RefreshCw, Plus } from 'lucide-react';
-import SpreadsheetEditor from '../components/SpreadsheetEditor';
+import React, { useState, useCallback } from 'react';
+import { Briefcase, Upload, Loader2, Save, Trash2, RefreshCw, Plus, FileText } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import TextInput from '../components/TextInput';
 import Papa from 'papaparse';
 import { useAgenciamentoData, Planilha } from '../hooks/useAgenciamentoData';
 import { TARGET_PLANILHA_NAME, DEFAULT_AGENCIAMENTO_PLANILHA, DEFAULT_AGENCIAMENTO_HEADERS } from '../constants/agenciamento';
+import { useNavigate } from 'react-router-dom';
 
 const AgenciamentoPage: React.FC = () => {
     const { planilhas, isLoading, error, savePlanilha, deletePlanilha, fetchPlanilhas } = useAgenciamentoData();
+    const navigate = useNavigate();
     
-    const [data, setData] = useState<string[][]>(DEFAULT_AGENCIAMENTO_PLANILHA.data);
-    const [headers, setHeaders] = useState<string[]>(DEFAULT_AGENCIAMENTO_PLANILHA.headers);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
-    
-    const [planilhaName, setPlanilhaName] = useState(DEFAULT_AGENCIAMENTO_PLANILHA.nome);
-    const [currentPlanilhaId, setCurrentPlanilhaId] = useState<string | undefined>(DEFAULT_AGENCIAMENTO_PLANILHA.id);
-    const [isSaving, setIsSaving] = useState(false);
-
-    // 1. Efeito para carregar a planilha alvo do Supabase ou inicializar com dados fixos
-    useEffect(() => {
-        if (!isLoading) {
-            const targetPlanilha = planilhas.find(p => p.nome.toLowerCase() === TARGET_PLANILHA_NAME);
-            
-            if (targetPlanilha) {
-                // Carrega a versão salva no Supabase
-                handleLoad(targetPlanilha);
-            } else if (currentPlanilhaId === DEFAULT_AGENCIAMENTO_PLANILHA.id) {
-                // Se não encontrou no Supabase e o estado atual é o default, garante que o default esteja carregado
-                handleLoad(DEFAULT_AGENCIAMENTO_PLANILHA);
-            }
-        }
-    }, [isLoading, planilhas]);
-
-    // 2. Garante que sempre haja pelo menos uma linha vazia se os dados estiverem vazios
-    useEffect(() => {
-        if (data.length === 0 && headers.length > 0) {
-            setData([Array(headers.length).fill('')]);
-        }
-    }, [data.length, headers.length]);
-
-    const handleDataChange = useCallback((newData: string[][]) => {
-        setData(newData);
-    }, []);
     
     const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -60,7 +29,7 @@ const AgenciamentoPage: React.FC = () => {
         Papa.parse(file, {
             header: false,
             skipEmptyLines: true,
-            complete: (results) => {
+            complete: async (results) => {
                 setIsUploading(false);
                 
                 if (results.errors.length > 0) {
@@ -71,18 +40,22 @@ const AgenciamentoPage: React.FC = () => {
                 const rawData = results.data as string[][];
                 if (rawData.length === 0) {
                     setUploadError('O arquivo CSV está vazio.');
-                    setData([]);
-                    setHeaders(DEFAULT_AGENCIAMENTO_HEADERS);
                     return;
                 }
                 
                 const newHeaders = rawData[0];
                 const newData = rawData.slice(1);
+                const planilhaName = file.name.replace('.csv', '').trim() || 'Planilha Importada';
                 
-                setHeaders(newHeaders);
-                setData(newData.length > 0 ? newData : [Array(newHeaders.length).fill('')]);
-                setPlanilhaName(file.name.replace('.csv', ''));
-                setCurrentPlanilhaId(undefined); // Novo upload = nova planilha
+                // Salva a nova planilha importada
+                const { success, id } = await savePlanilha(planilhaName, newHeaders, newData);
+                
+                if (success && id) {
+                    alert(`Planilha "${planilhaName}" importada e salva com sucesso!`);
+                    navigate(`/crm/agenciamento/${id}`);
+                } else {
+                    setUploadError('Falha ao salvar a planilha importada.');
+                }
             },
             error: (error) => {
                 setIsUploading(false);
@@ -91,32 +64,17 @@ const AgenciamentoPage: React.FC = () => {
         });
     };
     
-    const handleSave = async (isNew: boolean) => {
-        if (!planilhaName.trim()) {
-            alert('O nome da planilha é obrigatório.');
-            return;
-        }
+    const handleCreateNew = async () => {
+        const newPlanilhaName = `Nova Planilha ${new Date().toLocaleDateString('pt-BR')}`;
         
-        setIsSaving(true);
-        // Se o ID for 'default', forçamos a criação de uma nova planilha no Supabase
-        const idToSave = currentPlanilhaId === DEFAULT_AGENCIAMENTO_PLANILHA.id ? undefined : currentPlanilhaId;
+        // Salva uma planilha vazia com headers padrão
+        const { success, id } = await savePlanilha(newPlanilhaName, DEFAULT_AGENCIAMENTO_HEADERS, []);
         
-        const { success, id } = await savePlanilha(planilhaName, headers, data, idToSave);
-        
-        if (success) {
-            alert(`Planilha "${planilhaName}" salva com sucesso!`);
-            setCurrentPlanilhaId(id);
+        if (success && id) {
+            navigate(`/crm/agenciamento/${id}`);
         } else {
-            alert('Falha ao salvar a planilha.');
+            alert('Falha ao criar nova planilha.');
         }
-        setIsSaving(false);
-    };
-    
-    const handleLoad = (planilha: Planilha) => {
-        setPlanilhaName(planilha.nome);
-        setHeaders(planilha.headers);
-        setData(planilha.data);
-        setCurrentPlanilhaId(planilha.id);
     };
     
     const handleDelete = async (id: string, nome: string) => {
@@ -124,21 +82,10 @@ const AgenciamentoPage: React.FC = () => {
             const success = await deletePlanilha(id);
             if (success) {
                 alert('Planilha excluída.');
-                if (currentPlanilhaId === id) {
-                    // Resetar para o estado inicial (default)
-                    handleLoad(DEFAULT_AGENCIAMENTO_PLANILHA);
-                }
             } else {
                 alert('Falha ao excluir a planilha.');
             }
         }
-    };
-    
-    const handleNewPlanilha = () => {
-        setPlanilhaName('Nova Planilha');
-        setHeaders(DEFAULT_AGENCIAMENTO_HEADERS);
-        setData([Array(DEFAULT_AGENCIAMENTO_HEADERS.length).fill('')]);
-        setCurrentPlanilhaId(undefined);
     };
 
     return (
@@ -147,96 +94,86 @@ const AgenciamentoPage: React.FC = () => {
                 <Briefcase className="w-6 h-6 mr-2 text-blue-600" /> Gestão de Agenciamento
             </h1>
             <p className="text-lg text-light-text mb-8">
-                Edite e gerencie a lista de imóveis extraídos ou captados.
+                Gerencie suas planilhas de imóveis extraídos e captados.
             </p>
             
-            {/* Seção de Gerenciamento de Planilhas */}
-            <div className="mb-6 p-4 bg-white rounded-lg shadow-md border border-gray-200 space-y-4">
-                <h2 className="text-xl font-semibold text-dark-text border-b pb-2">Gerenciamento de Dados</h2>
+            {/* Ações de Criação e Importação */}
+            <div className="mb-8 p-6 bg-white rounded-lg shadow-md border border-gray-200 space-y-4">
+                <h2 className="text-xl font-semibold text-dark-text border-b pb-2">Ações Rápidas</h2>
                 
-                <TextInput 
-                    label="Nome da Planilha"
-                    id="planilhaName"
-                    value={planilhaName}
-                    onChange={(e) => setPlanilhaName(e.target.value)}
-                    placeholder="Ex: Imóveis Extraídos 2024"
-                />
-                
-                <div className="flex space-x-3">
+                <div className="flex flex-wrap gap-4">
                     <Button 
-                        onClick={() => handleSave(currentPlanilhaId === undefined || currentPlanilhaId === DEFAULT_AGENCIAMENTO_PLANILHA.id)}
-                        disabled={isSaving || !planilhaName.trim()}
-                        className="bg-green-600 hover:bg-green-700 text-white"
+                        onClick={handleCreateNew}
+                        className="bg-blue-600 hover:bg-blue-700 text-white flex items-center"
                     >
-                        {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                        {currentPlanilhaId && currentPlanilhaId !== DEFAULT_AGENCIAMENTO_PLANILHA.id ? 'Atualizar Planilha' : 'Salvar Nova Planilha'}
+                        <Plus className="w-4 h-4 mr-2" /> Criar Nova Planilha
                     </Button>
-                    <Button 
-                        onClick={handleNewPlanilha}
-                        variant="outline"
-                        className="text-blue-600 border-blue-600 hover:bg-blue-50"
-                    >
-                        <Plus className="w-4 h-4 mr-2" /> Nova Planilha
-                    </Button>
+                    
+                    <label className="inline-flex items-center cursor-pointer">
+                        <input
+                            type="file"
+                            accept=".csv"
+                            onChange={handleFileUpload}
+                            className="hidden"
+                            disabled={isUploading}
+                        />
+                        <Button 
+                            asChild
+                            variant="outline"
+                            className="text-primary-orange border-primary-orange hover:bg-orange-50 flex items-center"
+                            disabled={isUploading}
+                        >
+                            <span>
+                                {isUploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+                                Importar CSV
+                            </span>
+                        </Button>
+                    </label>
                 </div>
                 
-                <div className="pt-4 border-t border-gray-100">
-                    <h3 className="text-lg font-semibold text-dark-text mb-2">Importar CSV</h3>
-                    <input
-                        type="file"
-                        accept=".csv"
-                        onChange={handleFileUpload}
-                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                        disabled={isUploading}
-                    />
-                    {isUploading && (
-                        <div className="flex items-center mt-2 text-blue-600 text-sm">
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processando arquivo...
-                        </div>
-                    )}
-                    {uploadError && (
-                        <div className="text-red-600 text-sm p-2 bg-red-50 rounded-md mt-2">{uploadError}</div>
-                    )}
-                </div>
+                {uploadError && (
+                    <div className="text-red-600 text-sm p-2 bg-red-50 rounded-md mt-2">{uploadError}</div>
+                )}
             </div>
             
             {/* Lista de Planilhas Salvas */}
-            <div className="mb-6 p-4 bg-white rounded-lg shadow-md border border-gray-200">
+            <div className="p-6 bg-white rounded-lg shadow-md border border-gray-200">
                 <h2 className="text-xl font-semibold text-dark-text mb-3 flex justify-between items-center">
                     Planilhas Salvas ({planilhas.length})
                     <Button onClick={fetchPlanilhas} variant="outline" size="sm" disabled={isLoading}>
                         <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
                     </Button>
                 </h2>
+                
+                {/* Link para a planilha fixa (imoveis_extraidos) */}
+                <div className={`flex justify-between items-center p-2 rounded-md transition-colors bg-gray-100 border border-gray-300 mb-3`}>
+                    <Link to={`/crm/agenciamento/${DEFAULT_AGENCIAMENTO_PLANILHA.id}`} className="text-left text-blue-600 hover:underline font-medium flex-1 min-w-0 truncate pr-2">
+                        {TARGET_PLANILHA_NAME} (Padrão do Sistema)
+                    </Link>
+                    <span className="text-xs text-gray-500">Dados fixos</span>
+                </div>
+
                 {isLoading ? (
                     <p className="text-sm text-gray-500">Carregando...</p>
                 ) : (
                     <div className="space-y-2">
                         {planilhas.map(p => (
-                            <div key={p.id} className={`flex justify-between items-center p-2 rounded-md transition-colors ${currentPlanilhaId === p.id ? 'bg-blue-100 border border-blue-300' : 'hover:bg-gray-100'}`}>
-                                <button onClick={() => handleLoad(p)} className="text-left text-blue-600 hover:underline font-medium flex-1 min-w-0 truncate pr-2">
-                                    {p.nome} {currentPlanilhaId === p.id && '(Atual)'}
-                                </button>
+                            <div key={p.id} className={`flex justify-between items-center p-2 rounded-md transition-colors hover:bg-gray-100`}>
+                                <Link to={`/crm/agenciamento/${p.id}`} className="text-left text-blue-600 hover:underline font-medium flex-1 min-w-0 truncate pr-2 flex items-center">
+                                    <FileText className="w-4 h-4 mr-2 text-gray-500" /> {p.nome}
+                                </Link>
                                 <div className="flex space-x-2 items-center">
                                     <span className="text-xs text-gray-500 hidden sm:block">Atualizado: {new Date(p.updated_at).toLocaleDateString('pt-BR')}</span>
-                                    <Button onClick={() => handleDelete(p.id, p.nome)} size="sm" variant="outline" className="text-red-500 hover:bg-red-50" disabled={p.id === DEFAULT_AGENCIAMENTO_PLANILHA.id}>
+                                    <Button onClick={() => handleDelete(p.id, p.nome)} size="sm" variant="outline" className="text-red-500 hover:bg-red-50">
                                         <Trash2 className="w-4 h-4" />
                                     </Button>
                                 </div>
                             </div>
                         ))}
-                        {planilhas.length === 0 && <p className="text-sm text-gray-500">Nenhuma planilha salva.</p>}
+                        {planilhas.length === 0 && <p className="text-sm text-gray-500">Nenhuma planilha salva no banco de dados.</p>}
                     </div>
                 )}
             </div>
-
-            {/* Editor de Planilha */}
-            <SpreadsheetEditor 
-                title={`Editor: ${planilhaName}`}
-                headers={headers}
-                data={data}
-                onDataChange={handleDataChange}
-            />
         </div>
     );
 };

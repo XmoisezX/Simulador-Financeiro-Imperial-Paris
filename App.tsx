@@ -17,6 +17,7 @@ import CondominiosPage from './src/pages/CondominiosPage'; // NOVO
 import NewCondominioPage from './src/pages/NewCondominioPage'; // NOVO
 import ViewCondominioPage from './src/pages/ViewCondominioPage'; // NOVO
 import AgenciamentoPage from './src/pages/AgenciamentoPage'; // NOVO
+import PlanilhaPage from './src/pages/PlanilhaPage'; // NOVO
 import CRMLayout from './src/components/CRMLayout';
 import PublicHomePage from './src/pages/PublicHomePage';
 import PublicLayout from './src/layouts/PublicLayout';
@@ -65,8 +66,9 @@ const AppContent: React.FC = () => {
                 <Route path="/crm/condominios/novo" element={<NewCondominioPage />} />
                 <Route path="/crm/condominios/:id" element={<ViewCondominioPage />} />
                 
-                {/* Rota de Agenciamento (NOVO) */}
+                {/* Rotas de Agenciamento */}
                 <Route path="/crm/agenciamento" element={<AgenciamentoPage />} />
+                <Route path="/crm/agenciamento/:id" element={<PlanilhaPage />} />
                 
                 <Route path="/crm/pessoas" element={<PessoasPage />} />
                 
