@@ -370,6 +370,15 @@ const ExtractedImoveisPage: React.FC = () => {
         onApply={handleApplyFilters}
         onClear={handleClearFilters}
       />
+      
+      {/* Resumo da Paginação (Movido para cima da tabela) */}
+      <div className="flex justify-between items-center">
+        <div className="text-sm text-gray-500 font-semibold">
+          Página {page} de {totalPages} — {totalRows} registros
+        </div>
+        {/* Espaço para ações futuras ou alinhamento */}
+        <div></div>
+      </div>
 
       {/* Tabela */}
       <Card className="shadow-lg">
@@ -434,10 +443,10 @@ const ExtractedImoveisPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Paginação */}
+      {/* Paginação (Mantida no rodapé) */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="text-sm text-gray-500">
-          Página {page} de {totalPages} — {totalRows} registros
+          {/* Resumo removido daqui */}
         </div>
         <div className="flex items-center gap-2">
           <Button
