@@ -12,7 +12,8 @@ interface NavItemProps {
 
 const NavItem: React.FC<NavItemProps> = ({ to, icon, label, isSidebarOpen, onClick }) => {
     const location = useLocation();
-    const isActive = location.pathname === to;
+    // Verifica se a rota atual começa com o 'to' (para sub-rotas como /crm/agenciamento/planilhas/123)
+    const isActive = location.pathname.startsWith(to);
     
     // Cores para o modo expandido (fundo branco)
     const expandedClasses = isActive 
@@ -109,7 +110,7 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                     {!isOpen && <div className="h-4"></div>}
                     <NavItem to="/crm/imoveis" icon={<Building className="w-5 h-5" />} label="Imóveis" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     <NavItem to="/crm/condominios" icon={<Building2 className="w-5 h-5" />} label="Condomínios" isSidebarOpen={isOpen} onClick={handleNavClick} />
-                    <NavItem to="/crm/agenciamento/planilhas" icon={<Briefcase className="w-5 h-5" />} label="Agenciamento" isSidebarOpen={isOpen} onClick={handleNavClick} />
+                    <NavItem to="/crm/agenciamento" icon={<Briefcase className="w-5 h-5" />} label="Agenciamento" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     <NavItem to="/crm/chaves" icon={<Key className="w-5 h-5" />} label="Chaves" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     <NavItem to="/crm/propostas" icon={<FileText className="w-5 h-5" />} label="Propostas" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     <NavItem to="/crm/leads" icon={<Zap className="w-5 h-5" />} label="Leads" isSidebarOpen={isOpen} onClick={handleNavClick} />
@@ -174,7 +175,7 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                     <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1 px-3">Imóveis & Vendas</h3>
                     <NavItem to="/crm/imoveis" icon={<Building className="w-5 h-5" />} label="Imóveis" isSidebarOpen={true} onClick={handleNavClick} />
                     <NavItem to="/crm/condominios" icon={<Building2 className="w-5 h-5" />} label="Condomínios" isSidebarOpen={true} onClick={handleNavClick} />
-                    <NavItem to="/crm/agenciamento/planilhas" icon={<Briefcase className="w-5 h-5" />} label="Agenciamento" isSidebarOpen={true} onClick={handleNavClick} />
+                    <NavItem to="/crm/agenciamento" icon={<Briefcase className="w-5 h-5" />} label="Agenciamento" isSidebarOpen={true} onClick={handleNavClick} />
                     <NavItem to="/crm/chaves" icon={<Key className="w-5 h-5" />} label="Chaves" isSidebarOpen={true} onClick={handleNavClick} />
                     <NavItem to="/crm/propostas" icon={<FileText className="w-5 h-5" />} label="Propostas" isSidebarOpen={true} onClick={handleNavClick} />
                     <NavItem to="/crm/leads" icon={<Zap className="w-5 h-5" />} label="Leads" isSidebarOpen={true} onClick={handleNavClick} />
