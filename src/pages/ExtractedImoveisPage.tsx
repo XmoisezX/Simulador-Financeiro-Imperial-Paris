@@ -7,7 +7,7 @@ import { Card, CardContent } from '../components/ui/Card';
 
 // Define a interface para os dados da linha, baseada na tabela imoveis_importados
 interface ExtractedImovel {
-    id: number; // Internal Supabase row ID (assuming it exists)
+    id: number; // Internal Supabase row ID (SERIAL PRIMARY KEY)
     Pagina: number | null; // bigint
     Referencia: string | null;
     Categoria: string | null;
@@ -65,9 +65,9 @@ const ExtractedImoveisPage: React.FC = () => {
     const to = from + limit - 1;
 
     const { data: fetchedData, error, count } = await supabase
-      .from("imoveis_importados") // Alterado para a tabela correta
-      .select("*, ID", { count: "exact" })
-      .order("ID", { ascending: true })
+      .from("imoveis_importados")
+      .select("*, id", { count: "exact" }) // Seleciona a nova chave primária 'id'
+      .order("id", { ascending: true }) // Ordena pela chave primária interna
       .range(from, to);
 
     if (error) console.error("Erro ao carregar dados:", error);
@@ -110,9 +110,9 @@ const ExtractedImoveisPage: React.FC = () => {
     }
     
     const { error } = await supabase
-      .from("imoveis_importados") // Alterado para a tabela correta
+      .from("imoveis_importados")
       .update({ [field]: updatedValue })
-      .eq("id", id); // Assumindo 'id' (lowercase) é a chave primária interna
+      .eq("id", id); // Usa a chave primária interna 'id'
       
     if (error) {
         console.error("Erro ao salvar:", error);
