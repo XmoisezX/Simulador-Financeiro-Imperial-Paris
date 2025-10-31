@@ -157,10 +157,6 @@ const ExtractedImoveisPage: React.FC = () => {
     setLoading(true);
     setPendingChanges({}); // Limpa alterações pendentes ao carregar nova página
     
-    // Para aplicar filtros globais, precisamos de todos os dados.
-    // Vamos carregar todos os dados (ou um bloco grande) para filtrar no cliente.
-    // Para fins de simulação, vamos carregar apenas a página atual, mas o filtro será aplicado sobre ela.
-    
     const from = (pageNumber - 1) * limit;
     const to = from + limit - 1;
 
@@ -190,7 +186,11 @@ const ExtractedImoveisPage: React.FC = () => {
 
   // 🔹 Filtro de busca (aplica no bloco atual)
   useEffect(() => {
-    if (!search.trim()) return setFilteredData(data);
+    if (!search.trim()) {
+        // Se a busca rápida estiver vazia, volta aos dados filtrados pelos filtros inteligentes
+        setFilteredData(data);
+        return;
+    }
     const lower = search.toLowerCase();
     setFilteredData(
       data.filter((row) =>
@@ -322,6 +322,12 @@ const ExtractedImoveisPage: React.FC = () => {
 
   const totalPages = Math.ceil(totalRows / limit);
   const hasPendingChanges = Object.keys(pendingChanges).length > 0;
+  
+  // Resumo da paginação e filtragem
+  const paginationSummary = `Página ${page} de ${totalPages} — ${totalRows} registros`;
+  const filterSummary = filteredData.length < data.length 
+    ? ` (${filteredData.length} encontrados)` 
+    : '';
 
   if (loading && data.length === 0)
     return (
@@ -330,6 +336,43 @@ const ExtractedImoveisPage: React.FC = () => {
         <p className="ml-3 text-gray-600">Carregando dados extraídos...</p>
       </div>
     );
+
+  // Componente de Paginação Duplicado
+  const PaginationControls = () => (
+    <div className="flex items-center gap-2">
+        <Button
+            variant="outline"
+            disabled={page === 1 || saving}
+            onClick={() => setPage((p) => p - 1)}
+            className="h-9"
+        >
+            <ChevronLeft className="w-4 h-4 mr-1" /> Anterior
+        </Button>
+        <Button
+            variant="outline"
+            disabled={page === totalPages || saving}
+            onClick={() => setPage((p) => p + 1)}
+            className="h-9"
+        >
+            Próxima <ChevronRight className="w-4 h-4 ml-1" />
+        </Button>
+        <select
+            className="border rounded px-2 py-1 text-sm h-9 bg-white"
+            value={limit}
+            onChange={(e) => {
+                setLimit(Number(e.target.value));
+                setPage(1); // Reset page when limit changes
+            }}
+            disabled={saving}
+        >
+            {[10, 20, 50, 100].map((n) => (
+                <option key={n} value={n}>
+                    {n} por página
+                </option>
+            ))}
+        </select>
+    </div>
+  );
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
@@ -371,13 +414,12 @@ const ExtractedImoveisPage: React.FC = () => {
         onClear={handleClearFilters}
       />
       
-      {/* Resumo da Paginação (Movido para cima da tabela) */}
+      {/* Resumo da Paginação (Topo) */}
       <div className="flex justify-between items-center">
         <div className="text-sm text-gray-500 font-semibold">
-          Página {page} de {totalPages} — {totalRows} registros
+          {paginationSummary} {filterSummary}
         </div>
-        {/* Espaço para ações futuras ou alinhamento */}
-        <div></div>
+        <PaginationControls />
       </div>
 
       {/* Tabela */}
@@ -443,44 +485,12 @@ const ExtractedImoveisPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Paginação (Mantida no rodapé) */}
+      {/* Paginação (Rodapé) */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="text-sm text-gray-500">
-          {/* Resumo removido daqui */}
+        <div className="text-sm text-gray-500 font-semibold">
+          {paginationSummary} {filterSummary}
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            disabled={page === 1 || saving}
-            onClick={() => setPage((p) => p - 1)}
-            className="h-9"
-          >
-            <ChevronLeft className="w-4 h-4 mr-1" /> Anterior
-          </Button>
-          <Button
-            variant="outline"
-            disabled={page === totalPages || saving}
-            onClick={() => setPage((p) => p + 1)}
-            className="h-9"
-          >
-            Próxima <ChevronRight className="w-4 h-4 ml-1" />
-          </Button>
-          <select
-            className="border rounded px-2 py-1 text-sm h-9 bg-white"
-            value={limit}
-            onChange={(e) => {
-                setLimit(Number(e.target.value));
-                setPage(1); // Reset page when limit changes
-            }}
-            disabled={saving}
-          >
-            {[10, 20, 50, 100].map((n) => (
-              <option key={n} value={n}>
-                {n} por página
-              </option>
-            ))}
-          </select>
-        </div>
+        <PaginationControls />
       </div>
     </div>
   );
