@@ -4,14 +4,16 @@ import { supabase } from '../integrations/supabase/client';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
-import ExtractedImovelFilters, { ExtractedFilters } from '../components/ExtractedImovelFilters'; // Importando o novo componente e tipos
+import ExtractedImovelFilters, { ExtractedFilters } from '../components/ExtractedImovelFilters';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { formatCurrencyHalfTone, parseCurrencyToNumber } from '../utils/format';
+import ExtractedUserSelect from '../components/ExtractedUserSelect';
 
 // Define a interface para os dados da linha, baseada na tabela imoveis_importados
 interface ExtractedImovel {
     id: number; // Internal Supabase row ID (SERIAL PRIMARY KEY)
-    Pagina: number | null; // bigint
+    responsible_user_id: string | null; // UUID do responsável (Substitui Pagina)
     Referencia: string | null;
     Categoria: string | null;
     Endereco: string | null;
@@ -51,15 +53,6 @@ const initialFilters: ExtractedFilters = {
     enderecoSearch: '', // NOVO CAMPO
 };
 
-// Função auxiliar para limpar e converter valor de moeda (R$ 1.000,00 -> 1000.00)
-const parseCurrency = (value: string | null): number | null => {
-    if (!value) return null;
-    const cleanValue = value.replace(/[^\d,]/g, '').replace(',', '.');
-    const num = parseFloat(cleanValue);
-    return isNaN(num) ? null : num;
-};
-
-
 const ExtractedImoveisPage: React.FC = () => {
   const [data, setData] = useState<ExtractedImovel[]>([]); // Dados brutos da página (sem filtro de busca rápida)
   const [filteredData, setFilteredData] = useState<ExtractedImovel[]>([]); // Dados após filtro de busca rápida e filtros de valor
@@ -76,7 +69,7 @@ const ExtractedImoveisPage: React.FC = () => {
   const [appliedFilters, setAppliedFilters] = useState<ExtractedFilters>(initialFilters);
 
   const columns = [
-    "Pagina",
+    "Responsavel", // New column replacing "Pagina"
     "Referencia",
     "Categoria",
     "Endereco",
@@ -97,6 +90,7 @@ const ExtractedImoveisPage: React.FC = () => {
   
   // Larguras mínimas ajustadas para tentar caber mais na tela
   const columnWidths: Record<string, string> = {
+    "Responsavel": "150px", // New width
     "Endereco": "180px",
     "NomeProprietario": "150px",
     "Referencia": "120px",
@@ -104,14 +98,14 @@ const ExtractedImoveisPage: React.FC = () => {
     "Bairro": "120px",
     "AreaTotal": "80px",
     "AreaPrivada": "80px",
-    "Venda": "100px",
-    "Aluguel": "100px",
+    "Venda": "120px", // Increased width for currency
+    "Aluguel": "120px", // Increased width for currency
     "Fones": "120px",
     "Email": "150px",
   };
   
   // Fields that are numeric in the database schema
-  const numericFields = ["Pagina", "AreaPrivada", "Dorms", "ID"];
+  const numericFields = ["AreaPrivada", "Dorms", "ID"];
 
   // 🔹 Lógica de Busca de Dados (Aplicando filtros no servidor via RPC)
   const fetchData = useCallback(async (pageNumber = 1, currentFilters: ExtractedFilters, currentSearch: string) => {
@@ -158,9 +152,6 @@ const ExtractedImoveisPage: React.FC = () => {
     fetchData(page, appliedFilters, search);
   }, [page, limit, appliedFilters, search, fetchData]);
 
-  // 🔹 Filtro de busca e valor (REMOVIDO: Agora tudo é feito no servidor)
-  // O estado `filteredData` agora é atualizado diretamente no `fetchData`.
-  
   // 🔹 Handlers do componente de filtro
   const handleFilterChange = useCallback((key: keyof ExtractedFilters, value: string | number | null) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -169,7 +160,6 @@ const ExtractedImoveisPage: React.FC = () => {
   const handleApplyFilters = useCallback(() => {
     setAppliedFilters(filters);
     setPage(1); // Volta para a primeira página ao aplicar novos filtros
-    // A busca rápida (search) é mantida separada, mas o fetchData a usará.
   }, [filters]);
   
   const handleClearFilters = useCallback(() => {
@@ -183,7 +173,18 @@ const ExtractedImoveisPage: React.FC = () => {
   // 🔹 Atualiza célula (apenas no estado local)
   const handleEdit = (id: number, field: string, value: any) => {
     
+    // Se for a coluna Responsavel, o salvamento é tratado pelo componente ExtractedUserSelect
+    if (field === 'responsible_user_id') {
+        // Apenas atualiza o estado local, pois o componente filho já chamou a API
+        setData(prev => prev.map(item => 
+            item.id === id ? { ...item, responsible_user_id: value } : item
+        ));
+        // Não rastreamos em pendingChanges
+        return;
+    }
+    
     let updatedValue = value;
+    
     if (numericFields.includes(field)) {
         updatedValue = value.trim() === '' ? null : parseFloat(value);
         if (isNaN(updatedValue as number)) updatedValue = value;
@@ -219,6 +220,7 @@ const ExtractedImoveisPage: React.FC = () => {
         
         const dataToUpdate: Partial<ExtractedImovel> = {};
         for (const [key, value] of Object.entries(changes)) {
+            // Trata campos nulos para o banco de dados
             if (numericFields.includes(key) && (value === null || value === '')) {
                 dataToUpdate[key] = null;
             } else {
@@ -260,7 +262,11 @@ const ExtractedImoveisPage: React.FC = () => {
   const exportCSV = () => {
     const header = columns.join(",");
     const rows = filteredData
-      .map((r) => columns.map((c) => `"${r[c] ?? ""}"`).join(","))
+      .map((r) => columns.map((c) => {
+          // Mapeia o campo correto para a exportação
+          const fieldName = c === 'Responsavel' ? 'responsible_user_id' : c;
+          return `"${r[fieldName] ?? ""}"`;
+      }).join(","))
       .join("\n");
     const csv = `${header}\n${rows}`;
     const blob = new Blob([csv], { type: "text/csv" });
@@ -280,7 +286,10 @@ const ExtractedImoveisPage: React.FC = () => {
     });
 
     const head = [columns];
-    const body = filteredData.map(row => columns.map(col => row[col] ?? ''));
+    const body = filteredData.map(row => columns.map(col => {
+        const fieldName = col === 'Responsavel' ? 'responsible_user_id' : col;
+        return row[fieldName] ?? '';
+    }));
 
     autoTable(doc, {
         head: head,
@@ -440,10 +449,44 @@ const ExtractedImoveisPage: React.FC = () => {
                     return (
                         <tr key={row.id} className={`hover:bg-yellow-50 transition-colors ${isRowPending ? 'bg-yellow-100' : ''}`}>
                             {columns.map((col) => {
-                                // Usa o valor do estado 'data' que inclui as alterações pendentes
-                                const currentValue = row[col] ?? '';
-                                const isCellPending = isRowPending && pendingChanges[row.id] && pendingChanges[row.id][col] !== undefined;
                                 
+                                const fieldName = col === 'Responsavel' ? 'responsible_user_id' : col;
+                                const currentValue = row[fieldName] ?? '';
+                                const isCellPending = isRowPending && pendingChanges[row.id] && pendingChanges[row.id][fieldName] !== undefined;
+                                
+                                // 1. Coluna Responsável (Select com salvamento imediato)
+                                if (col === 'Responsavel') {
+                                    return (
+                                        <td 
+                                            key={col} 
+                                            className="border border-gray-300 p-0 relative"
+                                            style={{ minWidth: columnWidths[col] || '150px' }}
+                                        >
+                                            <ExtractedUserSelect 
+                                                imovelId={row.id}
+                                                currentUserId={row.responsible_user_id}
+                                                onUpdate={(newUserId) => handleEdit(row.id, 'responsible_user_id', newUserId)}
+                                            />
+                                        </td>
+                                    );
+                                }
+                                
+                                // 2. Colunas Venda e Aluguel (Formatação de Moeda)
+                                if (col === 'Venda' || col === 'Aluguel') {
+                                    return (
+                                        <td 
+                                            key={col} 
+                                            className="border border-gray-300 p-0 relative text-right"
+                                            style={{ minWidth: columnWidths[col] || '120px' }}
+                                        >
+                                            <div className="p-2">
+                                                {formatCurrencyHalfTone(currentValue)}
+                                            </div>
+                                        </td>
+                                    );
+                                }
+                                
+                                // 3. Outras colunas (Textarea editável com salvamento em lote)
                                 return (
                                     <td 
                                         key={col} 
