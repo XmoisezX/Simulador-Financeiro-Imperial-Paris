@@ -4,7 +4,7 @@ import { Button } from '../components/ui/Button';
 import TextInput from '../components/TextInput';
 import Papa from 'papaparse';
 import { useAgenciamentoData, Planilha } from '../hooks/useAgenciamentoData';
-import { TARGET_PLANILHA_NAME, DEFAULT_AGENCIAMENTO_PLANILHA, DEFAULT_AGENCIAMENTO_HEADERS } from '../constants/agenciamento';
+import { TARGET_PLANILHA_NAME, DEFAULT_AGENCIAMENTO_HEADERS } from '../constants/agenciamento';
 import { useNavigate, Link } from 'react-router-dom';
 
 const AgenciamentoPage: React.FC = () => {
@@ -145,14 +145,6 @@ const AgenciamentoPage: React.FC = () => {
                     </Button>
                 </h2>
                 
-                {/* Link para a planilha fixa (imoveis_extraidos) */}
-                <div className={`flex justify-between items-center p-2 rounded-md transition-colors bg-gray-100 border border-gray-300 mb-3`}>
-                    <Link to={`/crm/agenciamento/${DEFAULT_AGENCIAMENTO_PLANILHA.id}`} className="text-left text-blue-600 hover:underline font-medium flex-1 min-w-0 truncate pr-2">
-                        {TARGET_PLANILHA_NAME} (Padrão do Sistema)
-                    </Link>
-                    <span className="text-xs text-gray-500">Dados fixos</span>
-                </div>
-
                 {isLoading ? (
                     <p className="text-sm text-gray-500">Carregando...</p>
                 ) : (

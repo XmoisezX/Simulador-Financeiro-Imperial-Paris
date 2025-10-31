@@ -5,7 +5,7 @@ import SpreadsheetEditor from '../components/SpreadsheetEditor';
 import { Button } from '../components/ui/Button';
 import TextInput from '../components/TextInput';
 import { useAgenciamentoData, Planilha } from '../hooks/useAgenciamentoData';
-import { TARGET_PLANILHA_NAME, DEFAULT_AGENCIAMENTO_PLANILHA } from '../constants/agenciamento';
+import { DEFAULT_AGENCIAMENTO_HEADERS } from '../constants/agenciamento';
 
 const PlanilhaPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -22,17 +22,7 @@ const PlanilhaPage: React.FC = () => {
 
     // Efeito para carregar a planilha com base no ID
     useEffect(() => {
-        if (isPlanilhasLoading) return;
-
-        if (id === DEFAULT_AGENCIAMENTO_PLANILHA.id) {
-            // Carrega a versão default do código
-            setPlanilha(DEFAULT_AGENCIAMENTO_PLANILHA);
-            setPlanilhaName(DEFAULT_AGENCIAMENTO_PLANILHA.nome);
-            setHeaders(DEFAULT_AGENCIAMENTO_PLANILHA.headers);
-            setData(DEFAULT_AGENCIAMENTO_PLANILHA.data);
-            setLoadError(null);
-            return;
-        }
+        if (isPlanilhasLoading || !id) return;
 
         const foundPlanilha = planilhas.find(p => p.id === id);
         
@@ -42,7 +32,7 @@ const PlanilhaPage: React.FC = () => {
             setHeaders(foundPlanilha.headers);
             setData(foundPlanilha.data);
             setLoadError(null);
-        } else if (id) {
+        } else {
             setLoadError('Planilha não encontrada.');
         }
     }, [id, isPlanilhasLoading, planilhas]);
@@ -56,26 +46,19 @@ const PlanilhaPage: React.FC = () => {
 
         setIsSaving(true);
         
-        // Se for a planilha default, forçamos a criação de uma nova
-        const idToSave = planilha.id === DEFAULT_AGENCIAMENTO_PLANILHA.id ? undefined : planilha.id;
-        
-        const { success, id: newId } = await savePlanilha(planilhaName, headers, data, idToSave);
+        const { success } = await savePlanilha(planilhaName, headers, data, planilha.id);
         
         setIsSaving(false);
         
         if (success) {
             alert(`Planilha "${planilhaName}" salva com sucesso!`);
-            if (newId && newId !== id) {
-                // Redireciona para a nova URL se for um novo salvamento (ex: salvou o default)
-                navigate(`/crm/agenciamento/${newId}`);
-            }
         } else {
             alert('Falha ao salvar a planilha.');
         }
-    }, [planilha, planilhaName, headers, data, savePlanilha, navigate, id]);
+    }, [planilha, planilhaName, headers, data, savePlanilha]);
     
     const handleDelete = useCallback(async () => {
-        if (!planilha || planilha.id === DEFAULT_AGENCIAMENTO_PLANILHA.id) return;
+        if (!planilha) return;
         
         if (window.confirm(`Tem certeza que deseja excluir a planilha "${planilha.nome}"?`)) {
             setIsDeleting(true);
@@ -91,7 +74,7 @@ const PlanilhaPage: React.FC = () => {
         }
     }, [planilha, deletePlanilha, navigate]);
 
-    if (isPlanilhasLoading || (id && !planilha && !loadError)) {
+    if (isPlanilhasLoading || !planilha) {
         return (
             <div className="p-8 flex items-center justify-center min-h-[500px]">
                 <Loader2 className="w-8 h-8 animate-spin text-blue-600 mr-3" />
@@ -109,15 +92,7 @@ const PlanilhaPage: React.FC = () => {
         );
     }
     
-    if (!planilha) {
-        return (
-            <div className="p-8 text-center">
-                <h1 className="text-2xl font-bold text-dark-text">Selecione uma planilha para editar.</h1>
-                <Link to="/crm/agenciamento" className="text-blue-600 hover:underline mt-4 block">Voltar para o Índice</Link>
-            </div>
-        );
-    }
-
+    // Se o ID for válido e a planilha carregada
     return (
         <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-full">
             <div className="flex justify-between items-center mb-6">
@@ -130,17 +105,15 @@ const PlanilhaPage: React.FC = () => {
                     {planilhaName}
                 </h1>
                 <div className="flex space-x-3">
-                    {planilha.id !== DEFAULT_AGENCIAMENTO_PLANILHA.id && (
-                        <Button 
-                            onClick={handleDelete}
-                            disabled={isDeleting || isSaving}
-                            variant="outline"
-                            className="text-red-600 border-red-600 hover:bg-red-50"
-                        >
-                            {isDeleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
-                            Excluir
-                        </Button>
-                    )}
+                    <Button 
+                        onClick={handleDelete}
+                        disabled={isDeleting || isSaving}
+                        variant="outline"
+                        className="text-red-600 border-red-600 hover:bg-red-50"
+                    >
+                        {isDeleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
+                        Excluir
+                    </Button>
                     <Button 
                         onClick={handleSave}
                         disabled={isSaving}

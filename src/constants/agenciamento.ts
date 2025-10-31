@@ -18,11 +18,3 @@ export const INITIAL_AGENCIAMENTO_DATA: string[][] = [
     ['2', 'Av. B, 45', 'Laranjal', 'Casa', '800000', '', 'Usado', 'Maria Torres'],
     ['3', 'Rua C, 789', 'Areal', 'Terreno', '120000', '', 'Novo', 'Pedro Souza'],
 ];
-
-export const DEFAULT_AGENCIAMENTO_PLANILHA: Planilha = {
-    id: 'default',
-    nome: TARGET_PLANILHA_NAME,
-    headers: DEFAULT_AGENCIAMENTO_HEADERS,
-    data: INITIAL_AGENCIAMENTO_DATA,
-    updated_at: new Date().toISOString(),
-};
