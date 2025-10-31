@@ -3,33 +3,33 @@ import { Save, Plus, Trash2, Loader2 } from 'lucide-react';
 import { Button } from './ui/Button';
 
 interface SpreadsheetEditorProps {
-    initialData: string[][];
+    data: string[][];
     headers: string[];
     title: string;
+    onDataChange: (newData: string[][]) => void;
 }
 
-const SpreadsheetEditor: React.FC<SpreadsheetEditorProps> = ({ initialData, headers, title }) => {
-    const [data, setData] = useState(initialData);
+const SpreadsheetEditor: React.FC<SpreadsheetEditorProps> = ({ data, headers, title, onDataChange }) => {
     const [isSaving, setIsSaving] = useState(false);
 
     const handleCellChange = useCallback((rowIndex: number, colIndex: number, value: string) => {
-        setData(prevData => {
-            const newData = [...prevData];
-            if (!newData[rowIndex]) {
-                newData[rowIndex] = Array(headers.length).fill('');
-            }
-            newData[rowIndex][colIndex] = value;
-            return newData;
-        });
-    }, [headers.length]);
+        const newData = [...data];
+        if (!newData[rowIndex]) {
+            newData[rowIndex] = Array(headers.length).fill('');
+        }
+        newData[rowIndex][colIndex] = value;
+        onDataChange(newData);
+    }, [data, headers.length, onDataChange]);
 
     const handleAddRow = useCallback(() => {
-        setData(prevData => [...prevData, Array(headers.length).fill('')]);
-    }, [headers.length]);
+        const newRow = Array(headers.length).fill('');
+        onDataChange([...data, newRow]);
+    }, [data, headers.length, onDataChange]);
 
     const handleDeleteRow = useCallback((rowIndex: number) => {
-        setData(prevData => prevData.filter((_, index) => index !== rowIndex));
-    }, []);
+        const newData = data.filter((_, index) => index !== rowIndex);
+        onDataChange(newData);
+    }, [data, onDataChange]);
 
     const handleSave = () => {
         setIsSaving(true);
@@ -40,6 +40,9 @@ const SpreadsheetEditor: React.FC<SpreadsheetEditorProps> = ({ initialData, head
             alert('Dados salvos com sucesso! (Simulação)');
         }, 1000);
     };
+    
+    // Garante que sempre haja pelo menos uma linha vazia se os dados estiverem vazios
+    const displayData = data.length > 0 ? data : [Array(headers.length).fill('')];
 
     return (
         <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200 space-y-4">
@@ -72,7 +75,7 @@ const SpreadsheetEditor: React.FC<SpreadsheetEditorProps> = ({ initialData, head
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {data.map((row, rowIndex) => (
+                        {displayData.map((row, rowIndex) => (
                             <tr key={rowIndex} className="hover:bg-gray-50">
                                 <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{rowIndex + 1}</td>
                                 {headers.map((_, colIndex) => (
