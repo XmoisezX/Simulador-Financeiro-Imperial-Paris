@@ -16,8 +16,9 @@ import SiteSettingsPage from './src/pages/SiteSettingsPage'; // NOVO
 import CondominiosPage from './src/pages/CondominiosPage'; // NOVO
 import NewCondominioPage from './src/pages/NewCondominioPage'; // NOVO
 import ViewCondominioPage from './src/pages/ViewCondominioPage'; // NOVO
-import AgenciamentoPage from './src/pages/AgenciamentoPage'; // NOVO
-import PlanilhaPage from './src/pages/PlanilhaPage'; // NOVO
+import PlanilhasIndexPage from './src/pages/PlanilhasIndexPage'; // NOVO
+import PlanilhaPage from './src/pages/PlanilhaPage'; // MANTIDO
+import ExtractedImoveisPage from './src/pages/ExtractedImoveisPage'; // NOVO
 import CRMLayout from './src/components/CRMLayout';
 import PublicHomePage from './src/pages/PublicHomePage';
 import PublicLayout from './src/layouts/PublicLayout';
@@ -67,8 +68,11 @@ const AppContent: React.FC = () => {
                 <Route path="/crm/condominios/:id" element={<ViewCondominioPage />} />
                 
                 {/* Rotas de Agenciamento */}
-                <Route path="/crm/agenciamento" element={<AgenciamentoPage />} />
-                <Route path="/crm/agenciamento/:id" element={<PlanilhaPage />} />
+                {/* A rota principal de agenciamento agora aponta para a nova página de visualização direta */}
+                <Route path="/crm/agenciamento" element={<ExtractedImoveisPage />} />
+                {/* Mantemos a rota de planilha caso o usuário queira acessar planilhas salvas */}
+                <Route path="/crm/agenciamento/planilhas" element={<PlanilhasIndexPage />} />
+                <Route path="/crm/agenciamento/planilhas/:id" element={<PlanilhaPage />} />
                 
                 <Route path="/crm/pessoas" element={<PessoasPage />} />
                 

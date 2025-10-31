@@ -67,7 +67,7 @@ const PlanilhaPage: React.FC = () => {
             
             if (success) {
                 alert('Planilha excluída.');
-                navigate('/crm/agenciamento');
+                navigate('/crm/agenciamento/planilhas'); // Updated navigation
             } else {
                 alert('Falha ao excluir a planilha.');
             }
@@ -87,7 +87,7 @@ const PlanilhaPage: React.FC = () => {
         return (
             <div className="p-8 text-center">
                 <h1 className="text-2xl font-bold text-red-600">{loadError}</h1>
-                <Link to="/crm/agenciamento" className="text-blue-600 hover:underline mt-4 block">Voltar para o Índice</Link>
+                <Link to="/crm/agenciamento/planilhas" className="text-blue-600 hover:underline mt-4 block">Voltar para o Índice</Link>
             </div>
         );
     }
@@ -98,8 +98,8 @@ const PlanilhaPage: React.FC = () => {
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-dark-text flex items-center">
                     <Briefcase className="w-6 h-6 mr-2 text-blue-600" /> 
-                    <Link to="/crm/agenciamento" className="text-gray-500 hover:text-blue-600 transition-colors flex items-center">
-                        <ArrowLeft className="w-5 h-5 mr-2" /> Agenciamento
+                    <Link to="/crm/agenciamento/planilhas" className="text-gray-500 hover:text-blue-600 transition-colors flex items-center">
+                        <ArrowLeft className="w-5 h-5 mr-2" /> Planilhas
                     </Link>
                     <span className="mx-2 text-gray-400">&gt;</span> 
                     {planilhaName}
