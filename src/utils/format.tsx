@@ -13,18 +13,12 @@ export const formatCurrencyHalfTone = (value: number | string | null | undefined
     const num = typeof value === 'string' ? parseFloat(value.replace(/[^\d,]/g, '').replace(',', '.')) : Number(value);
     if (isNaN(num) || !isFinite(num)) return <span className="text-gray-400">N/A</span>;
     
-    const formatted = num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const formatted = num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     
-    // Separa a parte inteira e decimal para aplicar estilos diferentes
-    const parts = formatted.split(',');
-    const integerPart = parts[0];
-    const decimalPart = parts.length > 1 ? parts[1] : '00';
-    
+    // Retorna a formatação padrão sem meio tom
     return (
-        <span className="whitespace-nowrap">
-            <span className="text-gray-400 text-xs">R$</span>
-            <span className="font-medium text-dark-text">{integerPart}</span>
-            <span className="text-gray-400 text-xs">,{decimalPart}</span>
+        <span className="font-medium text-dark-text whitespace-nowrap">
+            {formatted}
         </span>
     );
 };
