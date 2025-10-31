@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, DollarSign, Bed, Car, Building, ChevronDown } from 'lucide-react';
+import { Search, DollarSign, Bed, Car, Building, ChevronDown, MapPin } from 'lucide-react';
 import { Button } from './ui/Button';
 import TextInput from './TextInput';
 import NumberInput from './NumberInput';
