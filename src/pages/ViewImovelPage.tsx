@@ -307,7 +307,7 @@ const ViewImovelPage: React.FC = () => {
                 logradouro: cepData.logradouro || prev.logradouro,
                 bairro: cepData.bairro || prev.bairro,
                 cidade: cepData.localidade || prev.cidade,
-                estado: cepData.uf || prev.uf,
+                estado: cepData.uf || prev.estado,
                 cep: cepData.cep || prev.cep,
             }) : null);
         }
@@ -589,7 +589,7 @@ const ViewImovelPage: React.FC = () => {
                             nominatimLocation={nominatimLocation}
                             nominatimLoading={nominatimLoading}
                             nominatimError={nominatimError}
-                            setFormData={setFormData} {/* NOVO: Passando setFormData */}
+                            setFormData={setFormData}
                         />
                     </ImovelStep>
                 </div>
