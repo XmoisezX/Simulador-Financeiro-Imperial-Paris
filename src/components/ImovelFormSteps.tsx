@@ -991,8 +991,13 @@ const ImovelFormSteps: React.FC<ImovelFormStepsProps> = ({
                         <div className="text-center">
                             <Button 
                                 onClick={() => { 
+                                    // 1. Reseta o formulário de edição/adição para garantir que é uma nova chave
+                                    setCurrentChave({
+                                        id: crypto.randomUUID(), responsavel_tipo: '', codigo_chave: '', disponivel_emprestimo: true, nome_contato: '', telefone_contato: '', observacoes: '',
+                                    });
+                                    setEditingChaveIndex(null);
+                                    // 2. Exibe o formulário
                                     setShowChaveForm(true); 
-                                    handleCancelChaveEdit(); // Reset currentChave state
                                 }}
                                 className="bg-blue-600 hover:bg-blue-700 text-white"
                                 disabled={!isEditing}
