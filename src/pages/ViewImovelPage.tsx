@@ -103,6 +103,7 @@ const ViewImovelPage: React.FC = () => {
             ...data.dados_valores,
             ...data.dados_internos,
             ...data.dados_caracteristicas,
+            permutas: data.dados_valores.permutas || [], // NOVO: Extrai permutas
         };
 
         setFormData(mappedData);
@@ -170,9 +171,7 @@ const ViewImovelPage: React.FC = () => {
                 newImages = newImages.filter(img => !selectedImageIds.includes(img.id));
                 selectedImageIds.forEach(id => {
                     const img = prev.find(i => i.id === id);
-                    if (img && img.url.startsWith('blob:')) {
-                        URL.revokeObjectURL(img.url);
-                    }
+                    if (img) URL.revokeObjectURL(img.url);
                 });
                 setSelectedImageIds([]);
                 alert(`${selectedImageIds.length} imagem(ns) excluída(s).`);
@@ -308,7 +307,7 @@ const ViewImovelPage: React.FC = () => {
                 logradouro: cepData.logradouro || prev.logradouro,
                 bairro: cepData.bairro || prev.bairro,
                 cidade: cepData.localidade || prev.cidade,
-                estado: cepData.uf || prev.estado,
+                estado: cepData.uf || prev.uf,
                 cep: cepData.cep || prev.cep,
             }) : null);
         }
@@ -364,7 +363,7 @@ const ViewImovelPage: React.FC = () => {
             locacao_ativo, locacao_disponibilidade, locacao_motivo_indisponibilidade,
             temporada_ativo, temporada_disponibilidade, temporada_motivo_indisponibilidade,
             cep, estado, cidade, condominio_id, bloco_torre, complemento, referencia, andar, ultimo_andar, mapa_visibilidade,
-            valor_venda, valor_locacao, valor_condominio, condominio_isento, valor_iptu, iptu_isento, seguro_incendio, taxa_limpeza, indice_reajuste, valor_base, iptu_periodo, financiavel,
+            valor_venda, valor_locacao, valor_condominio, condominio_isento, valor_iptu, iptu_isento, seguro_incendio, taxa_limpeza, indice_reajuste, valor_base, iptu_periodo, financiavel, permutas, // INCLUINDO PERMUTAS
             proprietario_id, comissao_proprietario_percent, periodo_email_atualizacao, enviar_email_atualizacao, agenciador_id, responsavel_id, honorarios_venda_percent, honorarios_locacao_percent, honorarios_temporada_percent, data_agenciamento, numero_matricula, nao_possui_matricula, numero_iptu, vencimento_exclusividade, ocupacao, exclusivo, placa, medidor_energia, medidor_agua, medidor_gas, observacoes_internas,
             etiquetas, dormitorios, suites, banheiros, vagas_garagem, area_privativa_m2, condicao, mobiliado, orientacao_solar, posicao, entrega_obra, pessoas_acomodacoes, distancia_mar_m, tipos_piso, titulo_site, descricao_site, meta_title, meta_description, vis_endereco, vis_venda, vis_locacao, vis_temporada, vis_iptu, vis_condominio,
             observacoes_aprovacao,
@@ -388,7 +387,7 @@ const ViewImovelPage: React.FC = () => {
                 cep, estado, cidade, condominio_id, bloco_torre, complemento, referencia, andar, ultimo_andar, mapa_visibilidade,
             },
             dados_valores: {
-                valor_venda, valor_locacao, valor_condominio, condominio_isento, valor_iptu, iptu_isento, seguro_incendio, taxa_limpeza, indice_reajuste, valor_base, iptu_periodo, financiavel,
+                valor_venda, valor_locacao, valor_condominio, condominio_isento, valor_iptu, iptu_isento, seguro_incendio, taxa_limpeza, indice_reajuste, valor_base, iptu_periodo, financiavel, permutas, // INCLUINDO PERMUTAS
             },
             dados_internos: {
                 proprietario_id, comissao_proprietario_percent, periodo_email_atualizacao, enviar_email_atualizacao, agenciador_id, responsavel_id, honorarios_venda_percent, honorarios_locacao_percent, honorarios_temporada_percent, data_agenciamento, numero_matricula, nao_possui_matricula, numero_iptu, vencimento_exclusividade, ocupacao, exclusivo, placa, medidor_energia, medidor_agua, medidor_gas, observacoes_internas,

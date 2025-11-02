@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect } from 'react';
-import { Home, MapPin, DollarSign, Eye, Lock, Key, FileText, Image, List, CheckCircle, Zap, Loader2, Plus, Building2, Link as LinkIcon } from 'lucide-react';
-import { ImovelInput, VisibilidadeMapa, Ocupacao, ImovelImage } from '../../types';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Home, MapPin, DollarSign, Eye, Lock, Key, FileText, Image, List, CheckCircle, Zap, Loader2, Plus, Building2, Link as LinkIcon, Trash2, Edit } from 'lucide-react';
+import { ImovelInput, VisibilidadeMapa, Ocupacao, ImovelImage, Permuta, TipoBemPermuta, TipoMovelPermuta } from '../../types';
 import TextInput from './TextInput';
 import NumberInput from './NumberInput';
 import { Button } from './ui/Button';
@@ -43,6 +43,12 @@ const visibilidadeEnderecoOptions = [
     'Todos acima incluindo o andar',
     'Todos acima incluindo o complemento',
 ];
+
+// Opções para Tipo de Bem (Permuta)
+const tipoBemOptions: TipoBemPermuta[] = ['Imóvel', 'Móvel'];
+const tipoMovelOptions: TipoMovelPermuta[] = ['Automóvel', 'Motocicleta', 'Barco'];
+const estadoOptions = ['RS', 'SC', 'PR', 'SP', 'MG', 'RJ', 'Outro']; // Mock de estados
+const cidadeOptions = ['Pelotas', 'Rio Grande', 'Porto Alegre', 'Outra']; // Mock de cidades
 
 interface ImovelFormStepsProps {
     step: number;
@@ -98,6 +104,20 @@ const ImovelFormSteps: React.FC<ImovelFormStepsProps> = ({
     nominatimError,
 }) => {
     
+    // --- Estado para a seção de Permutas ---
+    const [showPermutaForm, setShowPermutaForm] = useState(false);
+    const [currentPermuta, setCurrentPermuta] = useState<Permuta>({
+        id: crypto.randomUUID(),
+        tipo_bem: '',
+        tipo_especifico: '',
+        valor_minimo: null,
+        valor_maximo: null,
+        estado: '',
+        cidade: '',
+        bairros_condominios: '',
+    });
+    const [editingPermutaIndex, setEditingPermutaIndex] = useState<number | null>(null);
+
     // A lógica de geocodificação e CEP lookup foi movida para o componente pai.
     // Aqui, apenas usamos os resultados passados via props.
     
@@ -143,6 +163,81 @@ const ImovelFormSteps: React.FC<ImovelFormStepsProps> = ({
     
     const isAddressValid = formData.cep.replace(/\D/g, '').length === 8 && formData.bairro && formData.logradouro && formData.numero;
     const fullAddress = `${formData.logradouro}, ${formData.numero} - ${formData.bairro}, ${formData.cidade} - ${formData.estado}`;
+
+    // --- Handlers de Permuta ---
+    const handlePermutaInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { id, value, type } = e.target;
+        setCurrentPermuta(prev => {
+            let newValue: any = value;
+            if (type === 'number' || id.includes('valor')) {
+                newValue = value === '' ? null : parseFloat(value);
+            }
+            return { ...prev, [id]: newValue };
+        });
+    }, []);
+
+    const handleAddPermuta = useCallback(() => {
+        if (!isEditing) return;
+        // Validação básica da permuta
+        if (!currentPermuta.tipo_bem || !currentPermuta.tipo_especifico) {
+            alert('Por favor, preencha o tipo de bem e o tipo específico da permuta.');
+            return;
+        }
+
+        setFormData(prev => {
+            const updatedPermutas = editingPermutaIndex !== null
+                ? prev.permutas.map((p, idx) => idx === editingPermutaIndex ? currentPermuta : p)
+                : [...prev.permutas, currentPermuta];
+            return { ...prev, permutas: updatedPermutas };
+        });
+
+        // Resetar formulário de permuta
+        setCurrentPermuta({
+            id: crypto.randomUUID(),
+            tipo_bem: '',
+            tipo_especifico: '',
+            valor_minimo: null,
+            valor_maximo: null,
+            estado: '',
+            cidade: '',
+            bairros_condominios: '',
+        });
+        setEditingPermutaIndex(null);
+        setShowPermutaForm(false);
+    }, [currentPermuta, editingPermutaIndex, isEditing, setFormData]);
+
+    const handleEditPermuta = useCallback((index: number) => {
+        if (!isEditing) return;
+        setCurrentPermuta({ ...formData.permutas[index] });
+        setEditingPermutaIndex(index);
+        setShowPermutaForm(true);
+    }, [formData.permutas, isEditing]);
+
+    const handleDeletePermuta = useCallback((id: string) => {
+        if (!isEditing) return;
+        if (window.confirm('Tem certeza que deseja remover esta permuta?')) {
+            setFormData(prev => ({
+                ...prev,
+                permutas: prev.permutas.filter(p => p.id !== id),
+            }));
+            // Se a permuta sendo editada for a excluída, reseta o formulário
+            if (currentPermuta.id === id) {
+                setShowPermutaForm(false);
+                setCurrentPermuta({
+                    id: crypto.randomUUID(), tipo_bem: '', tipo_especifico: '', valor_minimo: null, valor_maximo: null, estado: '', cidade: '', bairros_condominios: '',
+                });
+                setEditingPermutaIndex(null);
+            }
+        }
+    }, [currentPermuta.id, isEditing, setFormData]);
+
+    const handleCancelPermutaEdit = useCallback(() => {
+        setShowPermutaForm(false);
+        setCurrentPermuta({
+            id: crypto.randomUUID(), tipo_bem: '', tipo_especifico: '', valor_minimo: null, valor_maximo: null, estado: '', cidade: '', bairros_condominios: '',
+        });
+        setEditingPermutaIndex(null);
+    }, []);
 
     switch (step) {
         case 1:
@@ -424,6 +519,181 @@ const ImovelFormSteps: React.FC<ImovelFormStepsProps> = ({
                             <label className="block text-sm font-medium text-light-text">Financiável <RequiredAsterisk /></label>
                             {renderRadioGroup('financiavel', ['Sim', 'Não', 'MCMV'])}
                         </div>
+                    </div>
+
+                    {/* --- Seção de Permutas --- */}
+                    <div className="mt-8 pt-6 border-t border-gray-200 space-y-4">
+                        <h3 className="text-lg font-semibold text-primary-orange">Adicionar Nova Permuta</h3>
+                        
+                        {formData.permutas.length > 0 && (
+                            <div className="space-y-2">
+                                <h4 className="text-sm font-medium text-light-text">Permutas Cadastradas ({formData.permutas.length})</h4>
+                                {formData.permutas.map((permuta, index) => (
+                                    <div key={permuta.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md border border-gray-200">
+                                        <p className="text-sm text-dark-text font-medium">
+                                            {permuta.tipo_especifico} ({permuta.tipo_bem}) - R$ {permuta.valor_minimo?.toLocaleString('pt-BR') || 'N/A'}
+                                        </p>
+                                        <div className="flex space-x-2">
+                                            <Button 
+                                                variant="outline" 
+                                                size="sm" 
+                                                onClick={() => handleEditPermuta(index)}
+                                                disabled={!isEditing}
+                                                className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                                            >
+                                                <Edit className="w-4 h-4" />
+                                            </Button>
+                                            <Button 
+                                                variant="outline" 
+                                                size="sm" 
+                                                onClick={() => handleDeletePermuta(permuta.id)}
+                                                disabled={!isEditing}
+                                                className="text-red-600 border-red-600 hover:bg-red-50"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {!showPermutaForm && (
+                            <div className="text-center">
+                                <Button 
+                                    onClick={() => { 
+                                        setShowPermutaForm(true); 
+                                        setCurrentPermuta({
+                                            id: crypto.randomUUID(), tipo_bem: '', tipo_especifico: '', valor_minimo: null, valor_maximo: null, estado: '', cidade: '', bairros_condominios: '',
+                                        });
+                                        setEditingPermutaIndex(null);
+                                    }}
+                                    className="bg-primary-orange hover:bg-secondary-orange text-white"
+                                    disabled={!isEditing}
+                                >
+                                    <Plus className="w-4 h-4 mr-2" /> Adicionar Nova Permuta
+                                </Button>
+                            </div>
+                        )}
+
+                        {showPermutaForm && (
+                            <div className={`p-4 border rounded-lg bg-gray-50 space-y-4 ${!isEditing ? 'opacity-50 pointer-events-none' : ''}`}>
+                                <h4 className="text-md font-semibold text-dark-text">
+                                    {editingPermutaIndex !== null ? 'Editar Permuta' : 'Nova Permuta'}
+                                </h4>
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-light-text">Tipo de bem</label>
+                                    <div className="flex space-x-4">
+                                        {tipoBemOptions.map(option => (
+                                            <label key={option} className="flex items-center space-x-2 text-sm">
+                                                <input 
+                                                    type="radio" 
+                                                    name="tipo_bem" 
+                                                    value={option} 
+                                                    checked={currentPermuta.tipo_bem === option}
+                                                    onChange={(e) => setCurrentPermuta(prev => ({ ...prev, tipo_bem: e.target.value as TipoBemPermuta, tipo_especifico: '' }))}
+                                                    className="text-blue-600 focus:ring-blue-500" 
+                                                    disabled={!isEditing}
+                                                />
+                                                <span>{option}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {currentPermuta.tipo_bem && (
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-light-text">Tipo</label>
+                                        <select 
+                                            id="tipo_especifico"
+                                            value={currentPermuta.tipo_especifico}
+                                            onChange={handlePermutaInputChange}
+                                            disabled={!isEditing}
+                                            className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100"
+                                        >
+                                            <option value="">Selecione o tipo</option>
+                                            {currentPermuta.tipo_bem === 'Móvel' && tipoMovelOptions.map(t => <option key={t} value={t}>{t}</option>)}
+                                            {currentPermuta.tipo_bem === 'Imóvel' && propertyTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                                        </select>
+                                    </div>
+                                )}
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <NumberInput 
+                                        label="Valor mínimo" 
+                                        id="valor_minimo" 
+                                        isCurrency 
+                                        value={currentPermuta.valor_minimo || ''} 
+                                        onChange={handlePermutaInputChange} 
+                                        placeholder="R$ 0,00" 
+                                        disabled={!isEditing}
+                                    />
+                                    <NumberInput 
+                                        label="Valor máximo" 
+                                        id="valor_maximo" 
+                                        isCurrency 
+                                        value={currentPermuta.valor_maximo || ''} 
+                                        onChange={handlePermutaInputChange} 
+                                        placeholder="R$ 0,00" 
+                                        disabled={!isEditing}
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-light-text">Estado</label>
+                                        <select 
+                                            id="estado"
+                                            value={currentPermuta.estado}
+                                            onChange={handlePermutaInputChange}
+                                            disabled={!isEditing}
+                                            className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100"
+                                        >
+                                            <option value="">Selecione o estado</option>
+                                            {estadoOptions.map(e => <option key={e} value={e}>{e}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-light-text">Cidade</label>
+                                        <select 
+                                            id="cidade"
+                                            value={currentPermuta.cidade}
+                                            onChange={handlePermutaInputChange}
+                                            disabled={!isEditing}
+                                            className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100"
+                                        >
+                                            <option value="">Selecione a cidade</option>
+                                            {cidadeOptions.map(c => <option key={c} value={c}>{c}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <TextInput 
+                                    label="Bairros e condomínios" 
+                                    id="bairros_condominios" 
+                                    value={currentPermuta.bairros_condominios} 
+                                    onChange={handlePermutaInputChange} 
+                                    placeholder="Ex: Centro, Laranjal, Condomínio X" 
+                                    disabled={!isEditing}
+                                />
+                                
+                                <div className="flex justify-end space-x-2 pt-2 border-t border-gray-200">
+                                    <Button 
+                                        variant="outline" 
+                                        onClick={handleCancelPermutaEdit}
+                                        disabled={!isEditing}
+                                    >
+                                        Cancelar
+                                    </Button>
+                                    <Button 
+                                        onClick={handleAddPermuta}
+                                        disabled={!isEditing}
+                                    >
+                                        {editingPermutaIndex !== null ? 'Salvar Alterações' : 'Adicionar Permuta'}
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </>
             );

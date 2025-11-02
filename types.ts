@@ -147,6 +147,21 @@ export type VisibilidadeMapa = 'Exata' | 'Aproximada' | 'Não mostrar';
 export type StatusAprovacao = 'Aprovado' | 'Não aprovado' | 'Aguardando';
 export type Ocupacao = 'Desocupado' | 'Ocupado' | 'Locado'; // NOVO TIPO
 
+// NOVO: Tipos para Permuta
+export type TipoBemPermuta = 'Imóvel' | 'Móvel' | '';
+export type TipoMovelPermuta = 'Automóvel' | 'Motocicleta' | 'Barco' | '';
+
+export interface Permuta {
+  id: string; // ID único para cada entrada de permuta
+  tipo_bem: TipoBemPermuta;
+  tipo_especifico: string; // Ex: 'Automóvel' ou 'Apartamento'
+  valor_minimo: number | null;
+  valor_maximo: number | null;
+  estado: string;
+  cidade: string;
+  bairros_condominios: string;
+}
+
 export interface ImovelInput {
   // Step 1: Dados do Imóvel
   tipo_imovel: string;
@@ -189,6 +204,7 @@ export interface ImovelInput {
   valor_base: number;
   iptu_periodo: 'Mensal' | 'Anual';
   financiavel: Financiavel;
+  permutas: Permuta[]; // NOVO CAMPO: Array de permutas
 
   // Step 4: Visibilidade
   vis_endereco: string;

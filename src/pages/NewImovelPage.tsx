@@ -72,6 +72,7 @@ const getInitialState = (): ImovelInput => ({
     valor_base: 0,
     iptu_periodo: 'Mensal',
     financiavel: 'Não',
+    permutas: [], // NOVO: Inicializa array de permutas
 
     // Step 4: Visibilidade
     vis_endereco: 'Todas acima incluindo logradouro',
@@ -402,7 +403,7 @@ const NewImovelPage: React.FC = () => {
             locacao_ativo, locacao_disponibilidade, locacao_motivo_indisponibilidade,
             temporada_ativo, temporada_disponibilidade, temporada_motivo_indisponibilidade,
             cep, estado, cidade, condominio_id, bloco_torre, complemento, referencia, andar, ultimo_andar, mapa_visibilidade,
-            valor_venda, valor_locacao, valor_condominio, condominio_isento, valor_iptu, iptu_isento, seguro_incendio, taxa_limpeza, indice_reajuste, valor_base, iptu_periodo, financiavel,
+            valor_venda, valor_locacao, valor_condominio, condominio_isento, valor_iptu, iptu_isento, seguro_incendio, taxa_limpeza, indice_reajuste, valor_base, iptu_periodo, financiavel, permutas, // INCLUINDO PERMUTAS
             proprietario_id, comissao_proprietario_percent, periodo_email_atualizacao, enviar_email_atualizacao, agenciador_id, responsavel_id, honorarios_venda_percent, honorarios_locacao_percent, honorarios_temporada_percent, data_agenciamento, numero_matricula, nao_possui_matricula, numero_iptu, vencimento_exclusividade, ocupacao, exclusivo, placa, medidor_energia, medidor_agua, medidor_gas, observacoes_internas,
             etiquetas, dormitorios, suites, banheiros, vagas_garagem, area_privativa_m2, condicao, mobiliado, orientacao_solar, posicao, entrega_obra, pessoas_acomodacoes, distancia_mar_m, tipos_piso, titulo_site, descricao_site, meta_title, meta_description, vis_endereco, vis_venda, vis_locacao, vis_temporada, vis_iptu, vis_condominio,
             observacoes_aprovacao,
@@ -426,7 +427,7 @@ const NewImovelPage: React.FC = () => {
                 cep, estado, cidade, condominio_id, bloco_torre, complemento, referencia, andar, ultimo_andar, mapa_visibilidade,
             },
             dados_valores: {
-                valor_venda, valor_locacao, valor_condominio, condominio_isento, valor_iptu, iptu_isento, seguro_incendio, taxa_limpeza, indice_reajuste, valor_base, iptu_periodo, financiavel,
+                valor_venda, valor_locacao, valor_condominio, condominio_isento, valor_iptu, iptu_isento, seguro_incendio, taxa_limpeza, indice_reajuste, valor_base, iptu_periodo, financiavel, permutas, // INCLUINDO PERMUTAS
             },
             dados_internos: {
                 proprietario_id, comissao_proprietario_percent, periodo_email_atualizacao, enviar_email_atualizacao, agenciador_id, responsavel_id, honorarios_venda_percent, honorarios_locacao_percent, honorarios_temporada_percent, data_agenciamento, numero_matricula, nao_possui_matricula, numero_iptu, vencimento_exclusividade, ocupacao, exclusivo, placa, medidor_energia, medidor_agua, medidor_gas, observacoes_internas,
