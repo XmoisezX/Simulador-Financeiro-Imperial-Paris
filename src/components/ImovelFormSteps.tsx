@@ -78,6 +78,9 @@ interface ImovelFormStepsProps {
     nominatimLocation: { lat: number, lng: number, display_name: string } | null;
     nominatimLoading: boolean;
     nominatimError: string | null;
+
+    // NOVO: Setter de formData do componente pai
+    setFormData: React.Dispatch<React.SetStateAction<ImovelInput | null>>;
 }
 
 const ImovelFormSteps: React.FC<ImovelFormStepsProps> = ({
@@ -102,6 +105,7 @@ const ImovelFormSteps: React.FC<ImovelFormStepsProps> = ({
     nominatimLocation,
     nominatimLoading,
     nominatimError,
+    setFormData, // NOVO: Recebendo setFormData
 }) => {
     
     // --- Estado para a seção de Permutas ---
@@ -185,6 +189,7 @@ const ImovelFormSteps: React.FC<ImovelFormStepsProps> = ({
         }
 
         setFormData(prev => {
+            if (!prev) return null; // Adicionado para lidar com prev nulo
             const updatedPermutas = editingPermutaIndex !== null
                 ? prev.permutas.map((p, idx) => idx === editingPermutaIndex ? currentPermuta : p)
                 : [...prev.permutas, currentPermuta];
@@ -216,10 +221,13 @@ const ImovelFormSteps: React.FC<ImovelFormStepsProps> = ({
     const handleDeletePermuta = useCallback((id: string) => {
         if (!isEditing) return;
         if (window.confirm('Tem certeza que deseja remover esta permuta?')) {
-            setFormData(prev => ({
-                ...prev,
-                permutas: prev.permutas.filter(p => p.id !== id),
-            }));
+            setFormData(prev => {
+                if (!prev) return null; // Adicionado para lidar com prev nulo
+                return {
+                    ...prev,
+                    permutas: prev.permutas.filter(p => p.id !== id),
+                };
+            });
             // Se a permuta sendo editada for a excluída, reseta o formulário
             if (currentPermuta.id === id) {
                 setShowPermutaForm(false);

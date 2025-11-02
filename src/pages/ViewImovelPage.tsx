@@ -589,6 +589,7 @@ const ViewImovelPage: React.FC = () => {
                             nominatimLocation={nominatimLocation}
                             nominatimLoading={nominatimLoading}
                             nominatimError={nominatimError}
+                            setFormData={setFormData} {/* NOVO: Passando setFormData */}
                         />
                     </ImovelStep>
                 </div>
