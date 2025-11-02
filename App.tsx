@@ -18,6 +18,7 @@ import NewCondominioPage from './src/pages/NewCondominioPage'; // NOVO
 import ViewCondominioPage from './src/pages/ViewCondominioPage'; // NOVO
 import PlanilhaPage from './src/pages/PlanilhaPage'; // MANTIDO
 import ExtractedImoveisPage from './src/pages/ExtractedImoveisPage'; // NOVO
+import ChavesPage from './src/pages/ChavesPage';
 import CRMLayout from './src/components/CRMLayout';
 import PublicHomePage from './src/pages/PublicHomePage';
 import PublicLayout from './src/layouts/PublicLayout';
@@ -67,12 +68,13 @@ const AppContent: React.FC = () => {
                 <Route path="/crm/condominios/:id" element={<ViewCondominioPage />} />
                 
                 {/* Rotas de Agenciamento */}
-                {/* A rota principal de agenciamento agora aponta para a tabela direta */}
                 <Route path="/crm/agenciamento" element={<ExtractedImoveisPage />} />
-                {/* Mantemos a rota de planilha para edição direta, mas sem o índice */}
                 <Route path="/crm/agenciamento/planilhas/:id" element={<PlanilhaPage />} />
                 
                 <Route path="/crm/pessoas" element={<PessoasPage />} />
+                
+                {/* Rotas de Chaves */}
+                <Route path="/crm/chaves" element={<ChavesPage />} />
                 
                 {/* Rotas de Sistema */}
                 <Route path="/crm/sistema" element={<SystemSettingsPage />} />
@@ -80,7 +82,6 @@ const AppContent: React.FC = () => {
                 <Route path="/crm/sistema/geral" element={<div className="p-4 text-xl">Configurações Gerais (Em construção)</div>} />
                 
                 {/* Rotas placeholder para as outras funcionalidades do CRM */}
-                <Route path="/crm/chaves" element={<div className="p-4 text-xl">Página de Chaves (Em construção)</div>} />
                 <Route path="/crm/propostas" element={<div className="p-4 text-xl">Página de Propostas (Em construção)</div>} />
                 <Route path="/crm/leads" element={<div className="p-4 text-xl">Página de Leads (Em construção)</div>} />
                 <Route path="/crm/oportunidades" element={<div className="p-4 text-xl">Página de Oportunidades (Em construção)</div>} />

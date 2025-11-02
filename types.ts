@@ -164,6 +164,9 @@ export interface Permuta {
 
 // Tipos para Chaves (NOVO)
 export type ResponsavelChave = 'Imobiliária' | 'Agenciador' | 'Proprietário' | 'Corretor Externo' | 'Familiar' | 'Porteiro' | 'Síndico' | 'Zelador' | '';
+export type KeyStatus = 'Disponível' | 'Retirada' | 'Atrasada'; // NOVO
+export type WithdrawalType = 'Temporária' | 'Definitiva'; // NOVO
+export type WithdrawalReason = 'Visita' | 'Vistoria' | 'Manutenção'; // NOVO
 
 export interface ImovelChave {
     id: string; // Client-side UUID for tracking
@@ -174,6 +177,37 @@ export interface ImovelChave {
     telefone_contato: string;
     observacoes: string;
 }
+
+// Interface para a tabela de Chaves (usada na listagem)
+export interface KeyListingData {
+    id: string;
+    codigo_chave: string; // Código da chave
+    agencia: string;
+    status: KeyStatus;
+    retirada_por: string | null;
+    previsao_entrega: string | null; // Date string
+    hora_entrega: string | null; // Time string
+    imovel_id: string;
+    // Dados do Imóvel (join)
+    imoveis: {
+        codigo: string;
+        logradouro: string;
+        numero: string;
+        bairro: string;
+    } | null;
+}
+
+
+// Interface para o formulário de retirada
+export interface WithdrawalFormData {
+    tipo_retirada: WithdrawalType | '';
+    motivo: WithdrawalReason | '';
+    retirada_por: string;
+    previsao_entrega: string;
+    hora_entrega: string;
+    imprimir_termo: boolean;
+}
+
 
 export interface ImovelInput {
   // Step 1: Dados do Imóvel
