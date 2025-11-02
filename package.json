@@ -25,6 +25,7 @@
     "react-leaflet": "5.0.0",
     "react-router-dom": "^7.9.4",
     "tailwind-merge": "^3.3.1"
+    "@radix-ui/react-label
   },
   "devDependencies": {
     "@types/leaflet": "^1.9.21",
