@@ -147,7 +147,7 @@ export type VisibilidadeMapa = 'Exata' | 'Aproximada' | 'Não mostrar';
 export type StatusAprovacao = 'Aprovado' | 'Não aprovado' | 'Aguardando';
 export type Ocupacao = 'Desocupado' | 'Ocupado' | 'Locado'; // NOVO TIPO
 
-// NOVO: Tipos para Permuta
+// Tipos para Permuta
 export type TipoBemPermuta = 'Imóvel' | 'Móvel' | '';
 export type TipoMovelPermuta = 'Automóvel' | 'Motocicleta' | 'Barco' | '';
 
@@ -160,6 +160,19 @@ export interface Permuta {
   estado: string;
   cidade: string;
   bairros_condominios: string;
+}
+
+// Tipos para Chaves (NOVO)
+export type ResponsavelChave = 'Imobiliária' | 'Agenciador' | 'Proprietário' | 'Corretor Externo' | 'Familiar' | 'Porteiro' | 'Síndico' | 'Zelador' | '';
+
+export interface ImovelChave {
+    id: string; // Client-side UUID for tracking
+    responsavel_tipo: ResponsavelChave;
+    codigo_chave: string;
+    disponivel_emprestimo: boolean;
+    nome_contato: string;
+    telefone_contato: string;
+    observacoes: string;
 }
 
 export interface ImovelInput {
@@ -236,6 +249,9 @@ export interface ImovelInput {
   medidor_agua: string;
   medidor_gas: string;
   observacoes_internas: string;
+  
+  // Step 6: Chaves (NOVO)
+  chaves: ImovelChave[];
 
   // Step 9: Características
   etiquetas: string;

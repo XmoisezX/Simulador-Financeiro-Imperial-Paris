@@ -12,6 +12,7 @@ import { useUnsavedChangesWarning } from '../hooks/useUnsavedChangesWarning';
 import ImovelFormSteps from '../components/ImovelFormSteps';
 import { validateImovelStep } from '../utils/imovelValidation';
 import { supabase } from '../integrations/supabase/client';
+import { syncImovelChaves } from '../utils/chaveManagement';
 
 // --- Mock Data ---
 const propertyTypes = [
@@ -104,6 +105,9 @@ const getInitialState = (): ImovelInput => ({
     medidor_agua: '',
     medidor_gas: '',
     observacoes_internas: '',
+    
+    // Step 6: Chaves (NOVO)
+    chaves: [],
 
     // Step 9: Características
     etiquetas: '',
@@ -407,6 +411,7 @@ const NewImovelPage: React.FC = () => {
             proprietario_id, comissao_proprietario_percent, periodo_email_atualizacao, enviar_email_atualizacao, agenciador_id, responsavel_id, honorarios_venda_percent, honorarios_locacao_percent, honorarios_temporada_percent, data_agenciamento, numero_matricula, nao_possui_matricula, numero_iptu, vencimento_exclusividade, ocupacao, exclusivo, placa, medidor_energia, medidor_agua, medidor_gas, observacoes_internas,
             etiquetas, dormitorios, suites, banheiros, vagas_garagem, area_privativa_m2, condicao, mobiliado, orientacao_solar, posicao, entrega_obra, pessoas_acomodacoes, distancia_mar_m, tipos_piso, titulo_site, descricao_site, meta_title, meta_description, vis_endereco, vis_venda, vis_locacao, vis_temporada, vis_iptu, vis_condominio,
             observacoes_aprovacao,
+            chaves, // NOVO: Destructure chaves
         } = formData;
 
         const imovelData = {
@@ -467,6 +472,11 @@ const NewImovelPage: React.FC = () => {
                 }
             }
         }
+        
+        // 4. Salvar Chaves (Syncing new keys with an empty initial list)
+        if (chaves.length > 0) {
+            await syncImovelChaves(imovelId, session.user.id, chaves, []);
+        }
 
         setIsSaving(false);
         alert('Imóvel cadastrado com sucesso!');
@@ -480,7 +490,7 @@ const NewImovelPage: React.FC = () => {
             { icon: <DollarSign className="w-5 h-5 mr-2" />, text: 'Valores' },
             { icon: <Eye className="w-5 h-5 mr-2" />, text: 'Visibilidade' },
             { icon: <Lock className="w-5 h-5 mr-2" />, text: 'Dados não visíveis no site' },
-            { icon: <Key className="w-5 h-5 mr-2" />, text: 'Chaves (Placeholder)' },
+            { icon: <Key className="w-5 h-5 mr-2" />, text: 'Chaves' },
             { icon: <FileText className="w-5 h-5 mr-2" />, text: 'Documentos Anexados (Placeholder)' },
             { icon: <Image className="w-5 h-5 mr-2" />, text: 'Mídias' },
             { icon: <List className="w-5 h-5 mr-2" />, text: 'Características' },

@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Home, MapPin, DollarSign, Eye, Lock, Key, FileText, Image, List, CheckCircle, Zap, Loader2, Plus, Edit, Save, X } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ImovelInput, VisibilidadeMapa, Ocupacao, ImovelImage } from '../../types';
+import { ImovelInput, VisibilidadeMapa, Ocupacao, ImovelImage, ImovelChave } from '../../types';
 import { useAuth } from '../contexts/AuthContext';
 import ImovelStep from '../components/ImovelStep';
 import { Button } from '../components/ui/Button';
@@ -13,6 +13,7 @@ import { useUnsavedChangesWarning } from '../hooks/useUnsavedChangesWarning';
 import { supabase } from '../integrations/supabase/client';
 import ImovelFormSteps from '../components/ImovelFormSteps';
 import { validateAllImovelSteps } from '../utils/imovelValidation';
+import { syncImovelChaves, fetchImovelChaves } from '../utils/chaveManagement';
 
 // --- Mock Data (Mantido apenas para referência de validação) ---
 const propertyTypes = [
@@ -48,6 +49,9 @@ const ViewImovelPage: React.FC = () => {
     const [selectedImageIds, setSelectedImageIds] = useState<string[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
     
+    // --- Estado de Chaves ---
+    const [initialChaves, setInitialChaves] = useState<ImovelChave[]>([]);
+    
     const { data: cepData, lookup: lookupCep } = useCepLookup();
     const { 
         location: nominatimLocation, 
@@ -65,8 +69,11 @@ const ViewImovelPage: React.FC = () => {
         const imagesChanged = JSON.stringify(images.map(img => ({ id: img.id, legend: img.legend, isVisible: img.isVisible, rotation: img.rotation, ordem: img.ordem, file: img.file ? true : false }))) !== 
                               JSON.stringify(initialImages.map(img => ({ id: img.id, legend: img.legend, isVisible: img.isVisible, rotation: img.rotation, ordem: img.ordem, file: img.file ? true : false })));
 
-        return formChanged || imagesChanged;
-    }, [formData, initialFormData, images, initialImages]);
+        // NEW: Check if keys changed
+        const chavesChanged = JSON.stringify(formData.chaves) !== JSON.stringify(initialChaves);
+
+        return formChanged || imagesChanged || chavesChanged;
+    }, [formData, initialFormData, images, initialImages, initialChaves]);
     
     useUnsavedChangesWarning(isEditing && isFormDirty(), 'Você tem alterações não salvas. Tem certeza que quer sair?');
 
@@ -94,6 +101,9 @@ const ViewImovelPage: React.FC = () => {
             navigate('/crm/imoveis');
             return;
         }
+        
+        // Fetch Chaves
+        const chavesData = await fetchImovelChaves(imovelId);
 
         // Mapear dados para o formato do formulário
         const mappedData: ImovelInput = {
@@ -103,11 +113,13 @@ const ViewImovelPage: React.FC = () => {
             ...data.dados_valores,
             ...data.dados_internos,
             ...data.dados_caracteristicas,
-            permutas: data.dados_valores.permutas || [], // NOVO: Extrai permutas
+            permutas: data.dados_valores.permutas || [],
+            chaves: chavesData, // NEW: Map chaves
         };
 
         setFormData(mappedData);
         setInitialFormData(mappedData);
+        setInitialChaves(chavesData); // NEW: Set initial chaves state
 
         const mappedImages: ImovelImage[] = data.imagens_imovel
             .map((media: any) => ({
@@ -367,6 +379,7 @@ const ViewImovelPage: React.FC = () => {
             proprietario_id, comissao_proprietario_percent, periodo_email_atualizacao, enviar_email_atualizacao, agenciador_id, responsavel_id, honorarios_venda_percent, honorarios_locacao_percent, honorarios_temporada_percent, data_agenciamento, numero_matricula, nao_possui_matricula, numero_iptu, vencimento_exclusividade, ocupacao, exclusivo, placa, medidor_energia, medidor_agua, medidor_gas, observacoes_internas,
             etiquetas, dormitorios, suites, banheiros, vagas_garagem, area_privativa_m2, condicao, mobiliado, orientacao_solar, posicao, entrega_obra, pessoas_acomodacoes, distancia_mar_m, tipos_piso, titulo_site, descricao_site, meta_title, meta_description, vis_endereco, vis_venda, vis_locacao, vis_temporada, vis_iptu, vis_condominio,
             observacoes_aprovacao,
+            chaves, // NOVO: Destructure chaves
         } = formData;
 
         const imovelData = {
@@ -411,7 +424,7 @@ const ViewImovelPage: React.FC = () => {
             return;
         }
         
-        // --- Gerenciamento de Mídias ---
+        // 3. Gerenciamento de Mídias
         const existingImageIds = initialImages.map(img => img.id);
         const currentImageIds = images.map(img => img.id);
 
@@ -456,6 +469,9 @@ const ViewImovelPage: React.FC = () => {
                 console.error(`Erro ao atualizar metadados da imagem (${img.id}):`, updateError);
             }
         }
+        
+        // 4. Sincronizar Chaves
+        await syncImovelChaves(imovelId, session.user.id, chaves, initialChaves);
 
         setIsSaving(false);
         setIsEditing(false);
@@ -470,7 +486,7 @@ const ViewImovelPage: React.FC = () => {
             { icon: <DollarSign className="w-5 h-5 mr-2" />, text: 'Valores' },
             { icon: <Eye className="w-5 h-5 mr-2" />, text: 'Visibilidade' },
             { icon: <Lock className="w-5 h-5 mr-2" />, text: 'Dados não visíveis no site' },
-            { icon: <Key className="w-5 h-5 mr-2" />, text: 'Chaves (Placeholder)' },
+            { icon: <Key className="w-5 h-5 mr-2" />, text: 'Chaves' },
             { icon: <FileText className="w-5 h-5 mr-2" />, text: 'Documentos Anexados (Placeholder)' },
             { icon: <Image className="w-5 h-5 mr-2" />, text: 'Mídias' },
             { icon: <List className="w-5 h-5 mr-2" />, text: 'Características' },

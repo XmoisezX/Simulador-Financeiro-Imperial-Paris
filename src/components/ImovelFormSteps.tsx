@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Home, MapPin, DollarSign, Eye, Lock, Key, FileText, Image, List, CheckCircle, Zap, Loader2, Plus, Building2, Link as LinkIcon, Trash2, Edit } from 'lucide-react';
-import { ImovelInput, VisibilidadeMapa, Ocupacao, ImovelImage, Permuta, TipoBemPermuta, TipoMovelPermuta } from '../../types';
+import { ImovelInput, VisibilidadeMapa, Ocupacao, ImovelImage, Permuta, TipoBemPermuta, TipoMovelPermuta, ImovelChave, ResponsavelChave } from '../../types';
 import TextInput from './TextInput';
 import NumberInput from './NumberInput';
 import { Button } from './ui/Button';
@@ -49,6 +49,12 @@ const tipoBemOptions: TipoBemPermuta[] = ['Imóvel', 'Móvel'];
 const tipoMovelOptions: TipoMovelPermuta[] = ['Automóvel', 'Motocicleta', 'Barco'];
 const estadoOptions = ['RS', 'SC', 'PR', 'SP', 'MG', 'RJ', 'Outro']; // Mock de estados
 const cidadeOptions = ['Pelotas', 'Rio Grande', 'Porto Alegre', 'Outra']; // Mock de cidades
+
+// Opções para Responsável pela Chave (NOVO)
+const responsavelChaveOptions: ResponsavelChave[] = [
+    'Imobiliária', 'Agenciador', 'Proprietário', 'Corretor Externo', 
+    'Familiar', 'Porteiro', 'Síndico', 'Zelador'
+];
 
 interface ImovelFormStepsProps {
     step: number;
@@ -105,7 +111,7 @@ const ImovelFormSteps: React.FC<ImovelFormStepsProps> = ({
     nominatimLocation,
     nominatimLoading,
     nominatimError,
-    setFormData, // NOVO: Recebendo setFormData
+    setFormData,
 }) => {
     
     // --- Estado para a seção de Permutas ---
@@ -121,6 +127,19 @@ const ImovelFormSteps: React.FC<ImovelFormStepsProps> = ({
         bairros_condominios: '',
     });
     const [editingPermutaIndex, setEditingPermutaIndex] = useState<number | null>(null);
+    
+    // --- Estado para a seção de Chaves (NOVO) ---
+    const [showChaveForm, setShowChaveForm] = useState(false);
+    const [currentChave, setCurrentChave] = useState<ImovelChave>({
+        id: crypto.randomUUID(),
+        responsavel_tipo: '',
+        codigo_chave: '',
+        disponivel_emprestimo: true,
+        nome_contato: '',
+        telefone_contato: '',
+        observacoes: '',
+    });
+    const [editingChaveIndex, setEditingChaveIndex] = useState<number | null>(null);
 
     // A lógica de geocodificação e CEP lookup foi movida para o componente pai.
     // Aqui, apenas usamos os resultados passados via props.
@@ -246,6 +265,82 @@ const ImovelFormSteps: React.FC<ImovelFormStepsProps> = ({
         });
         setEditingPermutaIndex(null);
     }, []);
+    
+    // --- Handlers de Chaves (NOVO) ---
+    const handleChaveInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+        const { id, value } = e.target;
+        setCurrentChave(prev => ({ ...prev, [id]: value }));
+    }, []);
+    
+    const handleChaveToggleChange = useCallback((checked: boolean) => {
+        setCurrentChave(prev => ({ ...prev, disponivel_emprestimo: checked }));
+    }, []);
+
+    const handleAddChave = useCallback(() => {
+        if (!isEditing) return;
+        
+        if (!currentChave.responsavel_tipo || !currentChave.codigo_chave) {
+            alert('O tipo de responsável e o código da chave são obrigatórios.');
+            return;
+        }
+
+        setFormData(prev => {
+            if (!prev) return null;
+            const updatedChaves = editingChaveIndex !== null
+                ? prev.chaves.map((c, idx) => idx === editingChaveIndex ? currentChave : c)
+                : [...prev.chaves, currentChave];
+            return { ...prev, chaves: updatedChaves };
+        });
+
+        // Resetar formulário de chave
+        setCurrentChave({
+            id: crypto.randomUUID(),
+            responsavel_tipo: '',
+            codigo_chave: '',
+            disponivel_emprestimo: true,
+            nome_contato: '',
+            telefone_contato: '',
+            observacoes: '',
+        });
+        setEditingChaveIndex(null);
+        setShowChaveForm(false);
+    }, [currentChave, editingChaveIndex, isEditing, setFormData]);
+
+    const handleEditChave = useCallback((index: number) => {
+        if (!isEditing) return;
+        setCurrentChave({ ...formData.chaves[index] });
+        setEditingChaveIndex(index);
+        setShowChaveForm(true);
+    }, [formData.chaves, isEditing]);
+
+    const handleDeleteChave = useCallback((id: string) => {
+        if (!isEditing) return;
+        if (window.confirm('Tem certeza que deseja remover esta chave?')) {
+            setFormData(prev => {
+                if (!prev) return null;
+                return {
+                    ...prev,
+                    chaves: prev.chaves.filter(c => c.id !== id),
+                };
+            });
+            if (currentChave.id === id) {
+                setShowChaveForm(false);
+                setCurrentChave({
+                    id: crypto.randomUUID(), responsavel_tipo: '', codigo_chave: '', disponivel_emprestimo: true, nome_contato: '', telefone_contato: '', observacoes: '',
+                });
+                setEditingChaveIndex(null);
+            }
+        }
+    }, [currentChave.id, isEditing, setFormData]);
+
+    const handleCancelChaveEdit = useCallback(() => {
+        setShowChaveForm(false);
+        setCurrentChave({
+            id: crypto.randomUUID(), responsavel_tipo: '', codigo_chave: '', disponivel_emprestimo: true, nome_contato: '', telefone_contato: '', observacoes: '',
+        });
+        setEditingChaveIndex(null);
+    }, []);
+
 
     switch (step) {
         case 1:
@@ -538,10 +633,10 @@ const ImovelFormSteps: React.FC<ImovelFormStepsProps> = ({
                                 <h4 className="text-sm font-medium text-light-text">Permutas Cadastradas ({formData.permutas.length})</h4>
                                 {formData.permutas.map((permuta, index) => (
                                     <div key={permuta.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md border border-gray-200">
-                                        <p className="text-sm text-dark-text font-medium">
+                                        <p className="text-sm text-dark-text font-medium truncate">
                                             {permuta.tipo_especifico} ({permuta.tipo_bem}) - R$ {permuta.valor_minimo?.toLocaleString('pt-BR') || 'N/A'}
                                         </p>
-                                        <div className="flex space-x-2">
+                                        <div className="flex space-x-2 flex-shrink-0">
                                             <Button 
                                                 variant="outline" 
                                                 size="sm" 
@@ -849,13 +944,149 @@ const ImovelFormSteps: React.FC<ImovelFormStepsProps> = ({
                     </div>
                 </>
             );
-        case 6: // Chaves
+        case 6: // Chaves (NOVO)
             return (
-                <div className="text-center py-10 border border-dashed border-gray-300 rounded-lg">
-                    <p className="text-light-text">Nenhuma chave vinculada a este imóvel. (Mock)</p>
-                    <Button variant="outline" className="mt-4 bg-white text-blue-600 border-blue-600 hover:bg-blue-50" disabled={!isEditing}>
-                        + Nova chave
-                    </Button>
+                <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-primary-orange">Gerenciamento de Chaves</h3>
+                    
+                    {formData.chaves.length > 0 && (
+                        <div className="space-y-2">
+                            <h4 className="text-sm font-medium text-light-text">Chaves Cadastradas ({formData.chaves.length})</h4>
+                            {formData.chaves.map((chave, index) => (
+                                <div key={chave.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md border border-gray-200">
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm text-dark-text font-medium truncate">
+                                            <Key className="w-4 h-4 mr-1 inline text-gray-500" /> {chave.codigo_chave} ({chave.responsavel_tipo})
+                                        </p>
+                                        <p className="text-xs text-light-text truncate">
+                                            {chave.nome_contato || 'Contato não informado'} | {chave.disponivel_emprestimo ? 'Disponível para empréstimo' : 'Indisponível'}
+                                        </p>
+                                    </div>
+                                    <div className="flex space-x-2 flex-shrink-0">
+                                        <Button 
+                                            variant="outline" 
+                                            size="sm" 
+                                            onClick={() => handleEditChave(index)}
+                                            disabled={!isEditing}
+                                            className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                                        >
+                                            <Edit className="w-4 h-4" />
+                                        </Button>
+                                        <Button 
+                                            variant="outline" 
+                                            size="sm" 
+                                            onClick={() => handleDeleteChave(chave.id)}
+                                            disabled={!isEditing}
+                                            className="text-red-600 border-red-600 hover:bg-red-50"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {!showChaveForm && (
+                        <div className="text-center">
+                            <Button 
+                                onClick={() => { 
+                                    setShowChaveForm(true); 
+                                    handleCancelChaveEdit(); // Reset currentChave state
+                                }}
+                                className="bg-blue-600 hover:bg-blue-700 text-white"
+                                disabled={!isEditing}
+                            >
+                                <Plus className="w-4 h-4 mr-2" /> Adicionar Chave
+                            </Button>
+                        </div>
+                    )}
+
+                    {showChaveForm && (
+                        <div className={`p-4 border rounded-lg bg-gray-50 space-y-4 ${!isEditing ? 'opacity-50 pointer-events-none' : ''}`}>
+                            <h4 className="text-md font-semibold text-dark-text">
+                                {editingChaveIndex !== null ? 'Editar Chave' : 'Nova Chave'}
+                            </h4>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-light-text">Responsável pela chave <RequiredAsterisk /></label>
+                                    <select 
+                                        id="responsavel_tipo"
+                                        value={currentChave.responsavel_tipo}
+                                        onChange={handleChaveInputChange}
+                                        disabled={!isEditing}
+                                        className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100"
+                                    >
+                                        <option value="">Selecione o responsável</option>
+                                        {responsavelChaveOptions.map(r => <option key={r} value={r}>{r}</option>)}
+                                    </select>
+                                </div>
+                                <TextInput 
+                                    label={<span>Código da chave <RequiredAsterisk /></span>} 
+                                    id="codigo_chave" 
+                                    value={currentChave.codigo_chave} 
+                                    onChange={handleChaveInputChange} 
+                                    placeholder="Ex: 1A, 505" 
+                                    disabled={!isEditing}
+                                />
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <ToggleSwitch 
+                                    label="Disponível para empréstimo" 
+                                    id="disponivel_emprestimo" 
+                                    checked={currentChave.disponivel_emprestimo} 
+                                    onChange={handleChaveToggleChange}
+                                    disabled={!isEditing}
+                                />
+                                <TextInput 
+                                    label="Nome do Contato" 
+                                    id="nome_contato" 
+                                    value={currentChave.nome_contato} 
+                                    onChange={handleChaveInputChange} 
+                                    placeholder="Nome" 
+                                    disabled={!isEditing}
+                                />
+                                <TextInput 
+                                    label="Telefone do Contato" 
+                                    id="telefone_contato" 
+                                    value={currentChave.telefone_contato} 
+                                    onChange={handleChaveInputChange} 
+                                    placeholder="(53) 99999-9999" 
+                                    disabled={!isEditing}
+                                />
+                            </div>
+                            
+                            <div className="space-y-2">
+                                <label className="block text-sm font-medium text-light-text">Observações</label>
+                                <textarea 
+                                    id="observacoes" 
+                                    rows={2} 
+                                    value={currentChave.observacoes}
+                                    onChange={handleChaveInputChange}
+                                    className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100"
+                                    disabled={!isEditing}
+                                ></textarea>
+                            </div>
+                            
+                            <div className="flex justify-end space-x-2 pt-2 border-t border-gray-200">
+                                <Button 
+                                    variant="outline" 
+                                    onClick={handleCancelChaveEdit}
+                                    disabled={!isEditing}
+                                >
+                                    Cancelar
+                                </Button>
+                                <Button 
+                                    onClick={handleAddChave}
+                                    disabled={!isEditing}
+                                >
+                                    {editingChaveIndex !== null ? 'Salvar Alterações' : 'Adicionar Chave'}
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         case 7: // Documentos Anexados
