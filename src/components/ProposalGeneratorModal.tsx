@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { X, Save, Loader2, FileText, User, Home, DollarSign, Calendar, Printer } from 'lucide-react';
+import { X, Save, Loader2, FileText, User, Home, DollarSign, Calendar, Printer, Eye } from 'lucide-react';
 import { Button } from './ui/Button';
 import TextInput from './TextInput';
 import NumberInput from './NumberInput';
