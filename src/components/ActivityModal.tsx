@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { X, Save, Loader2, Clock, Calendar, MessageSquare, Phone, Mail, Users } from 'lucide-react';
+import { X, Save, Loader2, Clock, Calendar, MessageSquare, Phone, Mail, Users, Edit } from 'lucide-react';
 import { Button } from './ui/Button';
 import TextInput from './TextInput';
 import { Opportunity } from './NewOpportunityModal';
