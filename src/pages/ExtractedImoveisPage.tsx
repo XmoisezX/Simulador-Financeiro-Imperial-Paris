@@ -149,6 +149,7 @@ const ExtractedImoveisPage: React.FC = () => {
   const [totalRows, setTotalRows] = useState(0);
   const [limit, setLimit] = useState(20);
   const [fetchError, setFetchError] = useState<string | null>(null); // NOVO ESTADO DE ERRO
+  const [isExporting, setIsExporting] = useState(false); // NOVO ESTADO DE EXPORTAÇÃO
   
   // --- Estado de Ordenação ---
   const [sortColumn, setSortColumn] = useState<string>('id');
@@ -250,6 +251,46 @@ const ExtractedImoveisPage: React.FC = () => {
         setLoading(false);
     }
   }, [limit]);
+  
+  // 🔹 Nova função para buscar TODOS os dados filtrados (para exportação)
+  const fetchAllFilteredData = useCallback(async (currentFilters: ExtractedFilters, currentSearch: string, sortCol: string, sortDir: 'asc' | 'desc'): Promise<ExtractedImovel[]> => {
+    
+    // Se não houver linhas totais, não há o que buscar
+    if (totalRows === 0) return [];
+    
+    try {
+        const { data: fetchedData, error } = await supabase.rpc('filter_imoveis_importados', {
+            p_search: currentSearch.trim() || null,
+            p_min_venda: currentFilters.minVenda,
+            p_max_venda: currentFilters.maxVenda,
+            p_min_aluguel: currentFilters.minAluguel,
+            p_max_aluguel: currentFilters.maxAluguel,
+            p_min_dorms: currentFilters.minDorms,
+            p_max_dorms: currentFilters.maxDorms,
+            p_categoria: currentFilters.categoria || null,
+            p_bairro: currentFilters.bairro || null,
+            p_limit: totalRows, // Busca todos os registros
+            p_offset: 0,
+            p_andar: currentFilters.andar,
+            p_endereco_search: currentFilters.enderecoSearch.trim() || null,
+            p_sort_column: sortCol,
+            p_sort_direction: sortDir,
+            p_referencia_search: currentFilters.referenciaSearch.trim() || null,
+        });
+
+        if (error) {
+            console.error("Erro ao buscar todos os dados para exportação:", error);
+            throw new Error(error.message);
+        }
+        
+        return fetchedData as ExtractedImovel[];
+    } catch (e) {
+        console.error("Erro de exportação:", e);
+        alert(`Falha ao buscar todos os dados para exportação: ${e instanceof Error ? e.message : 'Erro desconhecido'}`);
+        return [];
+    }
+  }, [totalRows]);
+
 
   // Efeito para buscar dados quando a página, limite, filtros aplicados, busca rápida ou ordenação mudam
   useEffect(() => {
@@ -324,25 +365,54 @@ const ExtractedImoveisPage: React.FC = () => {
     }
   };
   
-  // 🔹 Exportar CSV (apenas dados visíveis)
-  const exportCSV = useCallback(() => {
+  // 🔹 Exportar CSV (TODOS os dados filtrados)
+  const exportCSV = useCallback(async () => {
+    if (totalRows === 0) {
+        alert("Nenhum dado para exportar.");
+        return;
+    }
+    setIsExporting(true);
+    
+    const allData = await fetchAllFilteredData(appliedFilters, search, sortColumn, sortDirection);
+    
+    if (allData.length === 0) {
+        setIsExporting(false);
+        return;
+    }
+    
     const header = columns.join(",");
-    const rows = data
+    const rows = allData
       .map((r) => columns.map((c) => {
           return `"${r[c] ?? ""}"`;
       }).join(","))
       .join("\n");
+      
     const csv = `${header}\n${rows}`;
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `imoveis_importados_pagina${page}.csv`;
+    a.download = `imoveis_importados_filtrados_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
-  }, [data, columns, page]);
+    
+    setIsExporting(false);
+  }, [appliedFilters, search, sortColumn, sortDirection, totalRows, fetchAllFilteredData, columns]);
   
-  // 🔹 Exportar PDF (apenas dados visíveis)
-  const exportPDF = useCallback(() => {
+  // 🔹 Exportar PDF (TODOS os dados filtrados)
+  const exportPDF = useCallback(async () => {
+    if (totalRows === 0) {
+        alert("Nenhum dado para exportar.");
+        return;
+    }
+    setIsExporting(true);
+    
+    const allData = await fetchAllFilteredData(appliedFilters, search, sortColumn, sortDirection);
+    
+    if (allData.length === 0) {
+        setIsExporting(false);
+        return;
+    }
+    
     const doc = new jsPDF({
         orientation: 'landscape', // Tabela larga, melhor em paisagem
         unit: 'mm',
@@ -350,7 +420,7 @@ const ExtractedImoveisPage: React.FC = () => {
     });
 
     const head = [columns];
-    const body = data.map(row => columns.map(col => {
+    const body = allData.map(row => columns.map(col => {
         return row[col] ?? '';
     }));
 
@@ -377,8 +447,10 @@ const ExtractedImoveisPage: React.FC = () => {
         }
     });
 
-    doc.save(`imoveis_importados_pagina${page}.pdf`);
-  }, [data, columns, page]);
+    doc.save(`imoveis_importados_filtrados_${new Date().toISOString().split('T')[0]}.pdf`);
+    
+    setIsExporting(false);
+  }, [appliedFilters, search, sortColumn, sortDirection, totalRows, fetchAllFilteredData, columns]);
 
 
   const totalPages = Math.ceil(totalRows / limit);
@@ -466,16 +538,16 @@ const ExtractedImoveisPage: React.FC = () => {
             />
           </div>
           {/* Removido botão Salvar Alterações */}
-          {saving && (
+          {(saving || isExporting) && (
             <Button disabled className="h-9 bg-primary-orange text-white">
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Salvando...
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" /> {isExporting ? 'Exportando...' : 'Salvando...'}
             </Button>
           )}
-          <Button onClick={exportCSV} variant="outline" className="h-9 text-green-600 border-green-600 hover:bg-green-50">
-            <Download className="w-4 h-4 mr-2" /> Exportar CSV
+          <Button onClick={exportCSV} variant="outline" className="h-9 text-green-600 border-green-600 hover:bg-green-50" disabled={isExporting || saving || totalRows === 0}>
+            <Download className="w-4 h-4 mr-2" /> Exportar CSV ({totalRows})
           </Button>
-          <Button onClick={exportPDF} variant="outline" className="h-9 text-red-600 border-red-600 hover:bg-red-50">
-            <Download className="w-4 h-4 mr-2" /> Exportar PDF
+          <Button onClick={exportPDF} variant="outline" className="h-9 text-red-600 border-red-600 hover:bg-red-50" disabled={isExporting || saving || totalRows === 0}>
+            <Download className="w-4 h-4 mr-2" /> Exportar PDF ({totalRows})
           </Button>
         </div>
       </div>
