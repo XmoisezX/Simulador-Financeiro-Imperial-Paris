@@ -53,6 +53,93 @@ const initialFilters: ExtractedFilters = {
     referenciaSearch: '', // NOVO FILTRO
 };
 
+// Função auxiliar para formatar texto para moeda (R$ 999.999,99)
+const formatTextToCurrency = (text: string | null | undefined): string => {
+    if (!text) return '';
+    
+    // 1. Limpa o texto, removendo R$, pontos e substituindo vírgula por ponto para parse
+    const cleanText = text.replace(/[^\d,]/g, '').replace(',', '.');
+    const num = parseFloat(cleanText);
+    
+    if (isNaN(num)) return text; // Se não for um número, retorna o texto original
+    
+    // 2. Formata o número para o padrão brasileiro
+    return num.toLocaleString('pt-BR', { 
+        style: 'currency', 
+        currency: 'BRL', 
+        minimumFractionDigits: 2, 
+        maximumFractionDigits: 2 
+    });
+};
+
+// Componente de Célula Editável de Moeda
+interface CurrencyEditableCellProps {
+    rowId: number;
+    column: string;
+    initialValue: string | null;
+    onSave: (id: number, field: string, value: string) => void;
+    disabled: boolean;
+}
+
+const CurrencyEditableCell: React.FC<CurrencyEditableCellProps> = React.memo(({ rowId, column, initialValue, onSave, disabled }) => {
+    // Estado local para gerenciar a exibição formatada
+    const [displayValue, setDisplayValue] = useState(() => formatTextToCurrency(initialValue));
+    const [isFocused, setIsFocused] = useState(false);
+
+    // Atualiza o estado local quando o valor inicial muda (ex: paginação ou recarga)
+    useEffect(() => {
+        if (!isFocused) {
+            setDisplayValue(formatTextToCurrency(initialValue));
+        }
+    }, [initialValue, isFocused]);
+
+    const handleFocus = (e: React.FocusEvent<HTMLTextAreaElement>) => {
+        setIsFocused(true);
+        // Ao focar, remove a formatação de moeda para facilitar a edição
+        const cleanValue = initialValue?.replace(/[^\d,]/g, '').replace('.', ',') || '';
+        setDisplayValue(cleanValue);
+    };
+
+    const handleBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
+        setIsFocused(false);
+        const rawInput = e.target.value;
+        
+        // 1. Formata o valor de volta para exibição
+        const formattedValue = formatTextToCurrency(rawInput);
+        setDisplayValue(formattedValue);
+
+        // 2. Verifica se o valor mudou (comparando o valor formatado com o valor inicial)
+        if (formattedValue !== formatTextToCurrency(initialValue)) {
+            // 3. Salva o valor formatado no banco de dados
+            onSave(rowId, column, formattedValue);
+        }
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        // Permite apenas dígitos, vírgula e ponto durante a edição
+        const rawInput = e.target.value;
+        // Lógica simples para permitir a edição de números e vírgulas
+        setDisplayValue(rawInput);
+    };
+
+    return (
+        <td 
+            className="border border-gray-300 p-0 relative"
+            style={{ height: '60px' }}
+        >
+            <textarea
+                className={`w-full h-full text-xs border-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent resize-none p-2 overflow-y-auto text-gray-700 text-right ${isFocused ? 'bg-yellow-50' : ''}`}
+                value={displayValue}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                onChange={handleChange}
+                disabled={disabled}
+            />
+        </td>
+    );
+});
+
+
 const ExtractedImoveisPage: React.FC = () => {
   const [data, setData] = useState<ExtractedImovel[]>([]); // Dados brutos da página
   const [loading, setLoading] = useState(true);
@@ -474,26 +561,17 @@ const ExtractedImoveisPage: React.FC = () => {
                                     );
                                 }
                                 
-                                // Colunas Venda e Aluguel (AGORA EDITÁVEIS)
+                                // Colunas Venda e Aluguel (Usando CurrencyEditableCell)
                                 if (col === 'Venda' || col === 'Aluguel') {
                                     return (
-                                        <td 
-                                            key={col} 
-                                            className="border border-gray-300 p-0 relative"
-                                            style={{ height: '60px' }}
-                                        >
-                                            <textarea
-                                                className={`w-full h-full text-xs border-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent resize-none p-2 overflow-y-auto text-gray-700 text-right`}
-                                                defaultValue={currentValue}
-                                                onBlur={(e) => {
-                                                    // Salva se o valor mudou
-                                                    if (e.target.value !== currentValue?.toString()) {
-                                                        handleSaveCell(row.id, col, e.target.value);
-                                                    }
-                                                }}
-                                                disabled={saving}
-                                            />
-                                        </td>
+                                        <CurrencyEditableCell
+                                            key={col}
+                                            rowId={row.id}
+                                            column={col}
+                                            initialValue={currentValue}
+                                            onSave={handleSaveCell}
+                                            disabled={saving}
+                                        />
                                     );
                                 }
                                 
