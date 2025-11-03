@@ -20,6 +20,7 @@ import PlanilhaPage from './src/pages/PlanilhaPage'; // MANTIDO
 import ExtractedImoveisPage from './src/pages/ExtractedImoveisPage'; // NOVO
 import ChavesPage from './src/pages/ChavesPage';
 import OportunidadesPage from './src/pages/OportunidadesPage'; // NOVO: Página de Oportunidades
+import PropostasPage from './src/pages/PropostasPage'; // NOVO: Página de Propostas
 import CRMLayout from './src/components/CRMLayout';
 import PublicHomePage from './src/pages/PublicHomePage';
 import PublicLayout from './src/layouts/PublicLayout';
@@ -77,8 +78,11 @@ const AppContent: React.FC = () => {
                 {/* Rotas de Chaves */}
                 <Route path="/crm/chaves" element={<ChavesPage />} />
                 
-                {/* NOVO: Rotas de Oportunidades */}
+                {/* Rotas de Oportunidades */}
                 <Route path="/crm/oportunidades" element={<OportunidadesPage />} />
+                
+                {/* Rotas de Propostas */}
+                <Route path="/crm/propostas" element={<PropostasPage />} />
                 
                 {/* Rotas de Sistema */}
                 <Route path="/crm/sistema" element={<SystemSettingsPage />} />
@@ -86,7 +90,6 @@ const AppContent: React.FC = () => {
                 <Route path="/crm/sistema/geral" element={<div className="p-4 text-xl">Configurações Gerais (Em construção)</div>} />
                 
                 {/* Rotas placeholder para as outras funcionalidades do CRM */}
-                <Route path="/crm/propostas" element={<div className="p-4 text-xl">Página de Propostas (Em construção)</div>} />
                 <Route path="/crm/leads" element={<div className="p-4 text-xl">Página de Leads (Em construção)</div>} />
                 <Route path="/crm/atividades" element={<div className="p-4 text-xl">Página de Atividades (Em construção)</div>} />
                 

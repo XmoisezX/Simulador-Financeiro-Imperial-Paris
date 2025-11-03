@@ -63,7 +63,10 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ isOpen, onClose, opportun
         setIsLoadingActivities(true);
         const { data, error } = await supabase
             .from('atividades')
-            .select('*')
+            .select(`
+                id, tipo, descricao, data_agendamento, status,
+                oportunidades:oportunidade_id(nome)
+            `)
             .eq('oportunidade_id', opportunity.id)
             .eq('user_id', session.user.id)
             .order('data_agendamento', { ascending: false });
