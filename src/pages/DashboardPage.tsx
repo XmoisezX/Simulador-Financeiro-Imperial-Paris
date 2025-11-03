@@ -1,6 +1,9 @@
-import React from 'react';
-import { ArrowRight, Building, Key, FileText, Clock, Gift, DollarSign } from 'lucide-react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { ArrowRight, Building, Key, FileText, Clock, Gift, DollarSign, TrendingUp, AlertTriangle, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../integrations/supabase/client';
+import { Activity } from '../components/ActivityModal'; // Importa a interface de Atividade
 
 interface WidgetCardProps {
     title: string;
@@ -27,6 +30,43 @@ const WidgetCard: React.FC<WidgetCardProps> = ({ title, children, linkTo }) => (
 );
 
 const DashboardPage: React.FC = () => {
+    const { session } = useAuth();
+    const [pendingActivities, setPendingActivities] = useState<Activity[]>([]);
+    const [isLoadingActivities, setIsLoadingActivities] = useState(true);
+    const [activitiesError, setActivitiesError] = useState<string | null>(null);
+
+    const fetchPendingActivities = useCallback(async () => {
+        if (!session) return;
+        setIsLoadingActivities(true);
+        setActivitiesError(null);
+
+        const now = new Date().toISOString();
+
+        const { data, error } = await supabase
+            .from('atividades')
+            .select(`
+                id, tipo, descricao, data_agendamento, status,
+                oportunidades:oportunidade_id(nome)
+            `)
+            .eq('user_id', session.user.id)
+            .eq('status', 'Pendente')
+            .lt('data_agendamento', now) // Atividades atrasadas ou para hoje
+            .order('data_agendamento', { ascending: true });
+
+        if (error) {
+            console.error('Erro ao buscar atividades pendentes:', error);
+            setActivitiesError('Não foi possível carregar as atividades.');
+            setPendingActivities([]);
+        } else {
+            setPendingActivities(data as Activity[]);
+        }
+        setIsLoadingActivities(false);
+    }, [session]);
+
+    useEffect(() => {
+        fetchPendingActivities();
+    }, [fetchPendingActivities]);
+
     return (
         <div className="p-4 sm:p-6 lg:p-8 animate-fade-in space-y-6">
             <h1 className="text-3xl font-bold text-dark-text">Início do CRM</h1>
@@ -34,10 +74,39 @@ const DashboardPage: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Atividades */}
                 <WidgetCard title="Atividades" linkTo="/crm/atividades">
-                    <div className="text-center py-10">
-                        <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                        <p className="text-light-text">Nenhuma atividade atrasada ou agendada para hoje!</p>
-                    </div>
+                    {isLoadingActivities ? (
+                        <div className="flex items-center justify-center py-10">
+                            <Loader2 className="w-6 h-6 animate-spin text-blue-600 mr-3" />
+                            <p className="text-gray-600">Carregando atividades...</p>
+                        </div>
+                    ) : activitiesError ? (
+                        <div className="text-center py-10 text-red-600">
+                            <AlertTriangle className="w-8 h-8 mx-auto mb-2" />
+                            <p>{activitiesError}</p>
+                        </div>
+                    ) : pendingActivities.length === 0 ? (
+                        <div className="text-center py-10">
+                            <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                            <p className="text-light-text">Nenhuma atividade pendente ou atrasada!</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {pendingActivities.slice(0, 3).map(activity => (
+                                <div key={activity.id} className="flex justify-between items-center p-2 border-l-4 border-orange-500 bg-orange-50 rounded">
+                                    <div>
+                                        <p className="text-sm text-orange-700 font-medium">{activity.tipo} - {activity.oportunidades?.nome || 'Oportunidade'}</p>
+                                        <p className="text-xs text-orange-600">{new Date(activity.data_agendamento).toLocaleString('pt-BR')}</p>
+                                    </div>
+                                    <ArrowRight className="w-4 h-4 text-orange-500" />
+                                </div>
+                            ))}
+                            {pendingActivities.length > 3 && (
+                                <Link to="/crm/atividades" className="block text-center text-sm text-blue-600 hover:underline mt-2">
+                                    Ver mais {pendingActivities.length - 3} atividades
+                                </Link>
+                            )}
+                        </div>
+                    )}
                 </WidgetCard>
 
                 {/* Propostas */}
