@@ -354,9 +354,7 @@ const ExtractedImoveisPage: React.FC = () => {
             disabled={saving}
         >
             {[10, 20, 50, 100].map((n) => (
-                <option key={n} value={n}>
-                    {n} por página
-                </option>
+                <option key={n} value={n}>{n} por página</option>
             ))}
         </select>
     </div>
@@ -476,17 +474,25 @@ const ExtractedImoveisPage: React.FC = () => {
                                     );
                                 }
                                 
-                                // Colunas Venda e Aluguel (Formatação de Moeda)
+                                // Colunas Venda e Aluguel (AGORA EDITÁVEIS)
                                 if (col === 'Venda' || col === 'Aluguel') {
                                     return (
                                         <td 
                                             key={col} 
-                                            className="border border-gray-300 p-0 relative text-right"
-                                            style={{ minWidth: columnWidths[col] || '120px' }}
+                                            className="border border-gray-300 p-0 relative"
+                                            style={{ height: '60px' }}
                                         >
-                                            <div className="p-2">
-                                                {formatCurrencyHalfTone(currentValue)}
-                                            </div>
+                                            <textarea
+                                                className={`w-full h-full text-xs border-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent resize-none p-2 overflow-y-auto text-gray-700 text-right`}
+                                                defaultValue={currentValue}
+                                                onBlur={(e) => {
+                                                    // Salva se o valor mudou
+                                                    if (e.target.value !== currentValue?.toString()) {
+                                                        handleSaveCell(row.id, col, e.target.value);
+                                                    }
+                                                }}
+                                                disabled={saving}
+                                            />
                                         </td>
                                     );
                                 }
