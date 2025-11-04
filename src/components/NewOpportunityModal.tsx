@@ -14,7 +14,7 @@ export type OpportunityStage = 'Novos Leads' | 'Em Atendimento' | 'Visita Agenda
 export interface Opportunity {
     id?: string; // Opcional para novas oportunidades
     nome: string;
-    cliente_id: string;
+    cliente_id: string | null;
     imovel_id: string | null;
     etapa: OpportunityStage;
     valor_estimado: number | null;
@@ -34,7 +34,7 @@ interface NewOpportunityModalProps {
 
 const initialFormData: Opportunity = {
     nome: '',
-    cliente_id: '',
+    cliente_id: null,
     imovel_id: null,
     etapa: 'Novos Leads',
     valor_estimado: null,
@@ -167,7 +167,7 @@ const NewOpportunityModal: React.FC<NewOpportunityModalProps> = ({ isOpen, onClo
                     <PersonSelect 
                         label="Cliente" 
                         id="cliente_id" 
-                        value={formData.cliente_id} 
+                        value={formData.cliente_id || ''} 
                         onChange={handlePersonSelectChange} 
                         required
                         showNewButton

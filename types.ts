@@ -406,3 +406,24 @@ export interface CondominioMedia {
     destaque: boolean;
     ordem: number;
 }
+
+// --- Lead Types (NOVO) ---
+export type LeadStatus = 'Novo' | 'Contatado' | 'Qualificado' | 'Desqualificado';
+export type LeadSource = 'Indicação' | 'Site' | 'Instagram' | 'WhatsApp' | 'Portal Imobiliário' | 'Outro' | '';
+
+export interface LeadInput {
+    id?: string;
+    nome: string;
+    telefone: string;
+    email: string;
+    origem: LeadSource;
+    responsavel_id: string | null;
+    observacoes: string | null;
+    status: LeadStatus;
+    created_at?: string;
+}
+
+// Interface for listing (with joins)
+export interface LeadListing extends LeadInput {
+    responsavel: { full_name: string } | null;
+}
