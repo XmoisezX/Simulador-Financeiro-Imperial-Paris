@@ -10,15 +10,6 @@ import OpportunityStatusPieChart from '../components/charts/OpportunityStatusPie
 import BrokerComparisonBarChart from '../components/charts/BrokerComparisonBarChart';
 import BrokerPerformanceTable from '../components/BrokerPerformanceTable';
 
-return (
-  <div className="h-screen flex flex-col overflow-hidden">
-    {TabsBar}
-    <div className="flex-1 overflow-y-auto">
-      {/* resto do conteúdo atual */}
-    </div>
-  </div>
-);
-
 interface CompanyMetrics {
   total_leads: number;
   leads_to_opportunities_conversion: number;
@@ -182,7 +173,7 @@ const SalesDashboardPage: React.FC = () => {
     </div>
   );
 
-  // TabsBar: agora coladas imediatamente abaixo do cabeçalho (top-16)
+  // TabsBar: now sticky directly under header (top-16)
   const TabsBar = (
     <nav className="sticky top-16 z-10 bg-white border-b shadow-sm">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
