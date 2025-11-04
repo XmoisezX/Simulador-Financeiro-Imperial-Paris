@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Users, RefreshCw, Shield, Mail, User as UserIcon, Loader2, Lock, AlertTriangle } from 'lucide-react';
+import { Users, RefreshCw, Shield, Mail, User as UserIcon, Loader2, Lock, AlertTriangle, UserPlus } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
 import TextInput from '../components/TextInput';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../integrations/supabase/client';
+import NewUserModal from '../components/NewUserModal';
 
 interface Profile {
   id: string;
@@ -35,6 +36,9 @@ const SystemUsersPage: React.FC = () => {
   const [q, setQ] = useState('');
   const [roleFilterId, setRoleFilterId] = useState<number | ''>('');
 
+  // Modal de novo usuário
+  const [isNewOpen, setIsNewOpen] = useState(false);
+
   const fetchPermission = useCallback(async () => {
     const { data, error } = await supabase.rpc('has_permission', { p_permission: 'gerenciar_usuarios' });
     if (error) {
@@ -49,7 +53,6 @@ const SystemUsersPage: React.FC = () => {
     setLoading(true);
     setError(null);
 
-    // roles
     const rolesRes = await supabase.from('roles').select('id,nome,descricao').order('nome', { ascending: true });
     if (rolesRes.error) {
       setError('Erro ao carregar papéis.');
@@ -57,7 +60,6 @@ const SystemUsersPage: React.FC = () => {
       return;
     }
 
-    // profiles
     const profilesRes = await supabase.from('profiles').select('id, full_name, email, role, updated_at').order('full_name', { ascending: true });
     if (profilesRes.error) {
       setError('Erro ao carregar perfis.');
@@ -65,7 +67,6 @@ const SystemUsersPage: React.FC = () => {
       return;
     }
 
-    // user_roles
     const userRolesRes = await supabase.from('user_roles').select('user_id, role_id');
     if (userRolesRes.error) {
       setError('Erro ao carregar vínculos de papéis.');
@@ -160,15 +161,13 @@ const SystemUsersPage: React.FC = () => {
           <Shield className="w-6 h-6 mr-2 text-blue-600" /> Usuários e Permissões
         </h1>
         <div className="flex gap-3">
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-light-text">Filtrar por Papel</label>
-            <select value={roleFilterId} onChange={(e) => setRoleFilterId(e.target.value ? Number(e.target.value) : '')} className="p-2 border rounded-md text-sm bg-white">
-              <option value="">Todos</option>
-              {roles.map(r => (
-                <option key={r.id} value={r.id}>{r.nome}</option>
-              ))}
-            </select>
-          </div>
+          <Button
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+            onClick={() => setIsNewOpen(true)}
+            title="Criar novo usuário"
+          >
+            <UserPlus className="w-4 h-4 mr-2" /> Novo Usuário
+          </Button>
           <Button
             variant="outline"
             className="text-blue-600 border-blue-600 hover:bg-blue-50"
@@ -185,6 +184,15 @@ const SystemUsersPage: React.FC = () => {
         <CardContent className="p-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <TextInput id="search" label="Nome ou E-mail" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar..." />
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-light-text">Filtrar por Papel</label>
+              <select value={roleFilterId} onChange={(e) => setRoleFilterId(e.target.value ? Number(e.target.value) : '')} className="p-2 border rounded-md text-sm bg-white">
+                <option value="">Todos</option>
+                {roles.map(r => (
+                  <option key={r.id} value={r.id}>{r.nome}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -270,6 +278,13 @@ const SystemUsersPage: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      <NewUserModal
+        isOpen={isNewOpen}
+        onClose={() => setIsNewOpen(false)}
+        roles={roles}
+        onCreated={fetchData}
+      />
     </div>
   );
 };
