@@ -1,20 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Users, Plus, RefreshCw, Shield, Mail, User as UserIcon, ToggleLeft, ToggleRight, Trash2, KeyRound, Loader2, Lock, AlertTriangle } from 'lucide-react';
+import { Users, RefreshCw, Shield, Mail, User as UserIcon, Loader2, Lock, AlertTriangle } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
 import TextInput from '../components/TextInput';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../integrations/supabase/client';
 
-type Cargo = 'ADMIN' | 'GERENTE' | 'CORRETOR' | 'ASSISTENTE';
-
-interface AppUser {
+interface Profile {
   id: string;
-  nome: string;
-  email: string;
-  cargo: Cargo;
-  ativo: boolean;
-  created_at: string;
+  full_name: string | null;
+  email: string | null;
+  role: string | null;
+  updated_at: string | null;
 }
 
 interface Role {
@@ -27,7 +24,7 @@ const SystemUsersPage: React.FC = () => {
   const { session } = useAuth();
   const [canManage, setCanManage] = useState<boolean>(false);
 
-  const [users, setUsers] = useState<AppUser[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [userRoles, setUserRoles] = useState<Record<string, number[]>>({});
   const [loading, setLoading] = useState(true);
@@ -36,8 +33,7 @@ const SystemUsersPage: React.FC = () => {
 
   // Filtros
   const [q, setQ] = useState('');
-  const [cargo, setCargo] = useState<Cargo | ''>('');
-  const [status, setStatus] = useState<'ativo' | 'inativo' | ''>('');
+  const [roleFilterId, setRoleFilterId] = useState<number | ''>('');
 
   const fetchPermission = useCallback(async () => {
     const { data, error } = await supabase.rpc('has_permission', { p_permission: 'gerenciar_usuarios' });
@@ -61,10 +57,10 @@ const SystemUsersPage: React.FC = () => {
       return;
     }
 
-    // users
-    const usersRes = await supabase.from('users').select('id,nome,email,cargo,ativo,created_at').order('created_at', { ascending: false });
-    if (usersRes.error) {
-      setError('Erro ao carregar usuários.');
+    // profiles
+    const profilesRes = await supabase.from('profiles').select('id, full_name, email, role, updated_at').order('full_name', { ascending: true });
+    if (profilesRes.error) {
+      setError('Erro ao carregar perfis.');
       setLoading(false);
       return;
     }
@@ -84,7 +80,7 @@ const SystemUsersPage: React.FC = () => {
     });
 
     setRoles(rolesRes.data as Role[]);
-    setUsers(usersRes.data as AppUser[]);
+    setProfiles(profilesRes.data as Profile[]);
     setUserRoles(map);
     setLoading(false);
   }, []);
@@ -97,48 +93,16 @@ const SystemUsersPage: React.FC = () => {
   }, [session, fetchData, fetchPermission]);
 
   const filtered = useMemo(() => {
-    return users.filter(u => {
-      if (q && !(`${u.nome} ${u.email}`.toLowerCase().includes(q.toLowerCase()))) return false;
-      if (cargo && u.cargo !== cargo) return false;
-      if (status === 'ativo' && !u.ativo) return false;
-      if (status === 'inativo' && u.ativo) return false;
+    return profiles.filter(p => {
+      const nameEmail = `${p.full_name || ''} ${p.email || ''}`.toLowerCase();
+      if (q && !nameEmail.includes(q.toLowerCase())) return false;
+      if (roleFilterId) {
+        const assigned = userRoles[p.id] || [];
+        if (!assigned.includes(roleFilterId as number)) return false;
+      }
       return true;
     });
-  }, [users, q, cargo, status]);
-
-  const toggleActive = async (u: AppUser) => {
-    setBusyId(u.id);
-    const { error } = await supabase.from('users').update({ ativo: !u.ativo }).eq('id', u.id);
-    setBusyId(null);
-    if (error) {
-      alert(`Erro ao alterar status: ${error.message}`);
-    } else {
-      setUsers(prev => prev.map(x => x.id === u.id ? { ...x, ativo: !x.ativo } : x));
-    }
-  };
-
-  const handleDelete = async (u: AppUser) => {
-    if (!confirm(`Excluir o usuário ${u.nome}? Esta ação é irreversível.`)) return;
-    setBusyId(u.id);
-    const { error } = await supabase.from('users').delete().eq('id', u.id);
-    setBusyId(null);
-    if (error) {
-      alert(`Erro ao excluir: ${error.message}`);
-    } else {
-      setUsers(prev => prev.filter(x => x.id !== u.id));
-    }
-  };
-
-  const handleResetPassword = async (u: AppUser) => {
-    const redirectTo = `${window.location.origin}/login`;
-    try {
-      const { data, error } = await supabase.auth.resetPasswordForEmail(u.email, { redirectTo });
-      if (error) throw error;
-      alert(`E-mail de redefinição enviado para ${u.email}.`);
-    } catch (e: any) {
-      alert(`Falha ao disparar redefinição: ${e.message || e}`);
-    }
-  };
+  }, [profiles, q, roleFilterId, userRoles]);
 
   const handleRolesChange = async (userId: string, roleId: number, checked: boolean) => {
     setBusyId(userId);
@@ -158,6 +122,21 @@ const SystemUsersPage: React.FC = () => {
       }
     }
     setBusyId(null);
+  };
+
+  const handleResetPassword = async (p: Profile) => {
+    if (!p.email) {
+      alert('Perfil sem e-mail.');
+      return;
+    }
+    const redirectTo = `${window.location.origin}/login`;
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(p.email, { redirectTo });
+      if (error) throw error;
+      alert(`E-mail de redefinição enviado para ${p.email}.`);
+    } catch (e: any) {
+      alert(`Falha ao disparar redefinição: ${e.message || e}`);
+    }
   };
 
   if (!canManage) {
@@ -181,6 +160,15 @@ const SystemUsersPage: React.FC = () => {
           <Shield className="w-6 h-6 mr-2 text-blue-600" /> Usuários e Permissões
         </h1>
         <div className="flex gap-3">
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-light-text">Filtrar por Papel</label>
+            <select value={roleFilterId} onChange={(e) => setRoleFilterId(e.target.value ? Number(e.target.value) : '')} className="p-2 border rounded-md text-sm bg-white">
+              <option value="">Todos</option>
+              {roles.map(r => (
+                <option key={r.id} value={r.id}>{r.nome}</option>
+              ))}
+            </select>
+          </div>
           <Button
             variant="outline"
             className="text-blue-600 border-blue-600 hover:bg-blue-50"
@@ -197,24 +185,6 @@ const SystemUsersPage: React.FC = () => {
         <CardContent className="p-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <TextInput id="search" label="Nome ou E-mail" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar..." />
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-light-text">Cargo</label>
-              <select value={cargo} onChange={(e) => setCargo(e.target.value as Cargo | '')} className="w-full p-2 border rounded-md text-sm">
-                <option value="">Todos</option>
-                <option value="ADMIN">Admin</option>
-                <option value="GERENTE">Gerente</option>
-                <option value="CORRETOR">Corretor</option>
-                <option value="ASSISTENTE">Assistente</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-light-text">Status</label>
-              <select value={status} onChange={(e) => setStatus(e.target.value as any)} className="w-full p-2 border rounded-md text-sm">
-                <option value="">Todos</option>
-                <option value="ativo">Ativo</option>
-                <option value="inativo">Inativo</option>
-              </select>
-            </div>
           </div>
         </CardContent>
       </Card>
@@ -233,47 +203,44 @@ const SystemUsersPage: React.FC = () => {
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Usuário</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">E-mail</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cargo</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Papéis</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ações</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="text-center py-10 text-gray-500">
+                    <td colSpan={4} className="text-center py-10 text-gray-500">
                       <Loader2 className="w-6 h-6 animate-spin text-blue-600 mx-auto mb-2" />
                       Carregando usuários...
                     </td>
                   </tr>
                 ) : filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-center py-10 text-gray-500">
-                      Nenhum usuário encontrado com os filtros aplicados.
+                    <td colSpan={4} className="text-center py-10 text-gray-500">
+                      Nenhum usuário encontrado.
                     </td>
                   </tr>
                 ) : (
-                  filtered.map((u) => (
-                    <tr key={u.id} className="hover:bg-gray-50">
+                  filtered.map((p) => (
+                    <tr key={p.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-dark-text flex items-center gap-2">
-                        <UserIcon className="w-4 h-4 text-gray-400" /> {u.nome}
+                        <UserIcon className="w-4 h-4 text-gray-400" /> {p.full_name || '(Sem nome)'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-light-text flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-gray-400" /> {u.email}
+                        <Mail className="w-4 h-4 text-gray-400" /> {p.email || '—'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-light-text">{u.cargo}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <div className="flex flex-wrap gap-2">
                           {roles.map(r => {
-                            const checked = (userRoles[u.id] || []).includes(r.id);
+                            const checked = (userRoles[p.id] || []).includes(r.id);
                             return (
                               <label key={r.id} className="flex items-center gap-1 text-xs border px-2 py-1 rounded-md">
                                 <input
                                   type="checkbox"
                                   checked={checked}
-                                  disabled={busyId === u.id}
-                                  onChange={(e) => handleRolesChange(u.id, r.id, e.target.checked)}
+                                  disabled={busyId === p.id}
+                                  onChange={(e) => handleRolesChange(p.id, r.id, e.target.checked)}
                                 />
                                 {r.nome}
                               </label>
@@ -281,38 +248,17 @@ const SystemUsersPage: React.FC = () => {
                           })}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
-                        <button
-                          onClick={() => toggleActive(u)}
-                          disabled={busyId === u.id}
-                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs ${u.ativo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}
-                          title={u.ativo ? 'Desativar' : 'Ativar'}
-                        >
-                          {u.ativo ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
-                          {u.ativo ? 'Ativo' : 'Inativo'}
-                        </button>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                         <div className="flex justify-end gap-2">
                           <Button
                             variant="outline"
                             size="sm"
                             className="text-blue-600 hover:bg-blue-50"
-                            onClick={() => handleResetPassword(u)}
-                            disabled={busyId === u.id}
+                            onClick={() => handleResetPassword(p)}
+                            disabled={busyId === p.id}
                             title="Redefinir senha via e-mail"
                           >
-                            <KeyRound className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-red-600 hover:bg-red-50"
-                            onClick={() => handleDelete(u)}
-                            disabled={busyId === u.id}
-                            title="Excluir usuário"
-                          >
-                            <Trash2 className="w-4 h-4" />
+                            Redefinir Senha
                           </Button>
                         </div>
                       </td>
