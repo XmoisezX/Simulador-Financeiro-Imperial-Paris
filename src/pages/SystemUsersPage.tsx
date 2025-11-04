@@ -115,11 +115,11 @@ const SystemUsersPage: React.FC = () => {
     return counts;
   }, [roles, userRolesMap]);
 
-  // UPDATED: call Edge Function assign-role to add/remove role safely
+  // IMPORTANT CHANGE: call Edge Function assign-role with user's access token in Authorization header
   const handleRolesChange = async (userId: string, roleId: number, checked: boolean) => {
     setBusyId(userId);
     try {
-      // If profile has no email, avoid attempting creation
+      // Basic checks
       const profile = profiles.find(p => p.id === userId);
       if (!profile) throw new Error('Perfil não encontrado.');
       if (!profile.email && checked) {
@@ -130,20 +130,35 @@ const SystemUsersPage: React.FC = () => {
 
       const action = checked ? 'add' : 'remove';
 
-      const { data, error } = await supabase.functions.invoke('assign-role', {
+      // Use supabase.functions.invoke but include Authorization header with current user's access token.
+      // supabase.functions.invoke allows passing headers in the options.
+      const token = session?.access_token;
+      if (!token) {
+        throw new Error('Sessão inválida. Faça login novamente.');
+      }
+
+      const invokeOptions: any = {
         body: {
           profile_id: userId,
           role_id: roleId,
           action,
-        }
-      });
+        },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      };
 
-      if (error) {
-        console.error('Edge function error:', error);
-        throw error;
+      // Call the Edge Function
+      const { data, error: funcErr } = await supabase.functions.invoke('assign-role', invokeOptions);
+
+      if (funcErr) {
+        console.error('Edge function error:', funcErr);
+        // Provide clearer guidance to the user
+        alert(`Erro ao atualizar papel: ${funcErr.message || 'Falha ao enviar a requisição ao servidor (Edge Function).'}`);
+        throw funcErr;
       }
 
-      // If success, update local map to reflect immediate state
+      // Update local state optimistically and refresh authoritative state
       setUserRolesMap(prev => {
         const current = prev[userId] || [];
         if (action === 'add') {
@@ -156,12 +171,14 @@ const SystemUsersPage: React.FC = () => {
         }
       });
 
-      // Refresh counts/list to reflect authoritative state (optional)
+      // Refresh authoritative data (keeps UI in-sync)
       await fetchAll();
+
       alert(data?.message || (action === 'add' ? 'Papel atribuído com sucesso.' : 'Papel removido com sucesso.'));
     } catch (e: any) {
       console.error('Error assigning role:', e);
-      alert(`Erro ao atualizar papel: ${e.message || e}`);
+      // If the function failed, we already alerted; keep the local state consistent by refetching
+      await fetchAll();
     } finally {
       setBusyId(null);
     }
