@@ -78,7 +78,7 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                 bg-white border-r border-gray-200 
                 flex-shrink-0 overflow-y-auto h-full 
                 transition-all duration-300 
-                hidden lg:block sticky top-[64px] 
+                hidden lg:block sticky top-[88px] 
                 ${isOpen ? 'lg:w-64' : 'lg:w-20'}
             `}>
                 <div className="space-y-1 px-4 pb-4"> 

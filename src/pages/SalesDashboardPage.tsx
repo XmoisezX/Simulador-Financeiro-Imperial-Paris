@@ -174,8 +174,9 @@ const SalesDashboardPage: React.FC = () => {
     </div>
   );
 
+  // Tabs sticky colado ao cabeçalho (top = 88px) conforme solicitado
   const TabsBar = (
-    <nav className="sticky top-[64px] z-10 bg-white border-b shadow-sm">
+    <nav className="sticky top-[88px] z-10 bg-white border-b shadow-sm">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex space-x-4 overflow-x-auto">
           {tabs.map((t) => (
@@ -260,6 +261,9 @@ const SalesDashboardPage: React.FC = () => {
   return (
     <div className="p-0">
       {TabsBar}
+
+      {/* pequeno espaçamento abaixo das abas para garantir inputs visíveis */}
+      <div className="h-6" />
 
       <div key={activeTab} className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
