@@ -91,7 +91,7 @@ const SystemUsersPage: React.FC = () => {
     }
   }, [session, fetchAll, fetchPermission]);
 
-  const filteredProfiles = React.useMemo(() => {
+  const filteredProfiles = useMemo(() => {
     return profiles.filter(p => {
       const nameEmail = `${p.full_name || ''} ${p.email || ''}`.toLowerCase();
       if (q && !nameEmail.includes(q.toLowerCase())) return false;
@@ -103,9 +103,9 @@ const SystemUsersPage: React.FC = () => {
     });
   }, [profiles, q, roleFilterId, userRolesMap]);
 
-  const roleCounts = React.useMemo(() => {
+  const roleCounts = useMemo(() => {
     const counts: Record<number, number> = {};
-    roles.forEach(r => counts[r.id] = 0);
+    roles.forEach(r => (counts[r.id] = 0));
     Object.values(userRolesMap).forEach(roleIds => {
       roleIds.forEach(rid => {
         if (counts[rid] === undefined) counts[rid] = 0;
@@ -115,11 +115,9 @@ const SystemUsersPage: React.FC = () => {
     return counts;
   }, [roles, userRolesMap]);
 
-  // IMPORTANT CHANGE: call Edge Function assign-role with user's access token in Authorization header
   const handleRolesChange = async (userId: string, roleId: number, checked: boolean) => {
     setBusyId(userId);
     try {
-      // Basic checks
       const profile = profiles.find(p => p.id === userId);
       if (!profile) throw new Error('Perfil não encontrado.');
       if (!profile.email && checked) {
@@ -129,15 +127,14 @@ const SystemUsersPage: React.FC = () => {
       }
 
       const action = checked ? 'add' : 'remove';
-
-      // Use supabase.functions.invoke but include Authorization header with current user's access token.
-      // supabase.functions.invoke allows passing headers in the options.
       const token = session?.access_token;
       if (!token) {
         throw new Error('Sessão inválida. Faça login novamente.');
       }
 
-      const invokeOptions: any = {
+      console.log('[assign-role] Request', { userId, roleId, action });
+
+      const { data, error: funcErr } = await supabase.functions.invoke('assign-role', {
         body: {
           profile_id: userId,
           role_id: roleId,
@@ -146,19 +143,16 @@ const SystemUsersPage: React.FC = () => {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      };
-
-      // Call the Edge Function
-      const { data, error: funcErr } = await supabase.functions.invoke('assign-role', invokeOptions);
+      });
 
       if (funcErr) {
-        console.error('Edge function error:', funcErr);
-        // Provide clearer guidance to the user
+        console.error('[assign-role] Edge function error', funcErr);
         alert(`Erro ao atualizar papel: ${funcErr.message || 'Falha ao enviar a requisição ao servidor (Edge Function).'}`);
         throw funcErr;
       }
 
-      // Update local state optimistically and refresh authoritative state
+      console.log('[assign-role] Success response', data);
+
       setUserRolesMap(prev => {
         const current = prev[userId] || [];
         if (action === 'add') {
@@ -166,18 +160,15 @@ const SystemUsersPage: React.FC = () => {
             return { ...prev, [userId]: [...current, roleId] };
           }
           return prev;
-        } else {
-          return { ...prev, [userId]: current.filter(id => id !== roleId) };
         }
+        return { ...prev, [userId]: current.filter(id => id !== roleId) };
       });
 
-      // Refresh authoritative data (keeps UI in-sync)
       await fetchAll();
 
       alert(data?.message || (action === 'add' ? 'Papel atribuído com sucesso.' : 'Papel removido com sucesso.'));
     } catch (e: any) {
-      console.error('Error assigning role:', e);
-      // If the function failed, we already alerted; keep the local state consistent by refetching
+      console.error('[assign-role] Failure', e);
       await fetchAll();
     } finally {
       setBusyId(null);
@@ -206,7 +197,9 @@ const SystemUsersPage: React.FC = () => {
           <Lock className="w-6 h-6 text-yellow-700 mt-1" />
           <div>
             <h2 className="text-lg font-semibold text-yellow-800">Acesso restrito</h2>
-            <p className="text-sm text-yellow-700">Você não possui permissão para gerenciar usuários e papéis. Contate um administrador.</p>
+            <p className="text-sm text-yellow-700">
+              Você não possui permissão para gerenciar usuários e papéis. Contate um administrador.
+            </p>
           </div>
         </div>
       </div>
@@ -225,10 +218,24 @@ const SystemUsersPage: React.FC = () => {
 
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <TextInput id="search" label="" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Pesquise por nome ou e-mail" />
-            <select value={roleFilterId} onChange={(e) => setRoleFilterId(e.target.value ? Number(e.target.value) : '')} className="p-2 border rounded text-sm bg-white">
+            <TextInput
+              id="search"
+              label=""
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Pesquise por nome ou e-mail"
+            />
+            <select
+              value={roleFilterId}
+              onChange={(e) => setRoleFilterId(e.target.value ? Number(e.target.value) : '')}
+              className="p-2 border rounded text-sm bg-white"
+            >
               <option value="">Todos os grupos</option>
-              {roles.map(r => <option key={r.id} value={r.id}>{r.nome}</option>)}
+              {roles.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.nome}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -244,10 +251,16 @@ const SystemUsersPage: React.FC = () => {
       {/* Tabs */}
       <div className="mb-6 bg-white rounded-t-md border-b border-gray-200">
         <div className="flex space-x-6 px-4">
-          <button onClick={() => setTab('users')} className={`py-3 ${tab === 'users' ? 'border-b-2 border-primary-orange text-primary-orange font-semibold' : 'text-slate-600'}`}>
+          <button
+            onClick={() => setTab('users')}
+            className={`py-3 ${tab === 'users' ? 'border-b-2 border-primary-orange text-primary-orange font-semibold' : 'text-slate-600'}`}
+          >
             Usuários ({profiles.length})
           </button>
-          <button onClick={() => setTab('groups')} className={`py-3 ${tab === 'groups' ? 'border-b-2 border-primary-orange text-primary-orange font-semibold' : 'text-slate-600'}`}>
+          <button
+            onClick={() => setTab('groups')}
+            className={`py-3 ${tab === 'groups' ? 'border-b-2 border-primary-orange text-primary-orange font-semibold' : 'text-slate-600'}`}
+          >
             Grupos de permissão ({roles.length})
           </button>
         </div>
@@ -283,27 +296,39 @@ const SystemUsersPage: React.FC = () => {
                     </tr>
                   ) : filteredProfiles.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="text-center py-10 text-gray-500">Nenhum usuário encontrado.</td>
+                      <td colSpan={5} className="text-center py-10 text-gray-500">
+                        Nenhum usuário encontrado.
+                      </td>
                     </tr>
                   ) : (
-                    filteredProfiles.map(p => {
+                    filteredProfiles.map((p) => {
                       const assigned = userRolesMap[p.id] || [];
                       return (
                         <tr key={p.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap text-sm flex items-center gap-3">
-                            <img src={p.avatar_url || '/LOGO LARANJA.png'} alt={p.full_name || 'Avatar'} className="w-10 h-10 rounded-full object-cover border" />
+                            <img
+                              src={p.avatar_url || '/LOGO LARANJA.png'}
+                              alt={p.full_name || 'Avatar'}
+                              className="w-10 h-10 rounded-full object-cover border"
+                            />
                             <div>
                               <div className="font-medium text-dark-text">{p.full_name || '—'}</div>
+                              <div className="text-xs text-gray-500">{p.role || 'Sem registro'}</div>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-light-text">{p.email || '—'}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
                             <div className="flex flex-wrap gap-2">
-                              {roles.map(r => {
+                              {roles.map((r) => {
                                 const checked = assigned.includes(r.id);
                                 const disabled = busyId === p.id;
                                 return (
-                                  <label key={r.id} className={`flex items-center gap-1 text-xs border px-2 py-1 rounded-md ${checked ? 'bg-blue-50 border-blue-300' : 'bg-white border-gray-300'}`}>
+                                  <label
+                                    key={r.id}
+                                    className={`flex items-center gap-1 text-xs border px-2 py-1 rounded-md ${
+                                      checked ? 'bg-blue-50 border-blue-300' : 'bg-white border-gray-300'
+                                    }`}
+                                  >
                                     <input
                                       type="checkbox"
                                       checked={checked}
@@ -321,7 +346,9 @@ const SystemUsersPage: React.FC = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                             <div className="flex justify-end gap-2">
-                              <Button variant="outline" size="sm" className="text-blue-600 hover:bg-blue-50" onClick={() => handleResetPassword(p)}>Redefinir Senha</Button>
+                              <Button variant="outline" size="sm" className="text-blue-600 hover:bg-blue-50" onClick={() => handleResetPassword(p)}>
+                                Redefinir Senha
+                              </Button>
                             </div>
                           </td>
                         </tr>
@@ -358,17 +385,21 @@ const SystemUsersPage: React.FC = () => {
                     </tr>
                   ) : roles.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="text-center py-10 text-gray-500">Nenhum grupo cadastrado.</td>
+                      <td colSpan={4} className="text-center py-10 text-gray-500">
+                        Nenhum grupo cadastrado.
+                      </td>
                     </tr>
                   ) : (
-                    roles.map(r => (
+                    roles.map((r) => (
                       <tr key={r.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-dark-text">{r.nome}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-light-text">{roleCounts[r.id] ?? 0}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-light-text">Personalizado</td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                           <div className="flex justify-end gap-2">
-                            <Button variant="outline" size="sm" className="text-blue-600 hover:bg-blue-50" onClick={() => alert('Editar grupo (mock)')}>Editar</Button>
+                            <Button variant="outline" size="sm" className="text-blue-600 hover:bg-blue-50" onClick={() => alert('Editar grupo (mock)')}>
+                              Editar
+                            </Button>
                           </div>
                         </td>
                       </tr>
