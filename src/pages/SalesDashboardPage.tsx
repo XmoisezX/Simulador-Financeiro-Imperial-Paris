@@ -58,6 +58,11 @@ const formatCurrency = (value: number | null) =>
 const formatPercent = (value: number | null) =>
   value !== null ? `${(value * 100).toFixed(2)}%` : 'N/A';
 
+const isValidIsoDate = (s: string | null | undefined) => {
+  if (!s) return false;
+  return /^\d{4}-\d{2}-\d{2}$/.test(s);
+};
+
 const SalesDashboardPage: React.FC = () => {
   const { session } = useAuth();
 
@@ -97,18 +102,22 @@ const SalesDashboardPage: React.FC = () => {
     setError(null);
 
     try {
+      // Sanitize dates: if invalid/empty, pass null to RPC (avoids invalid input syntax)
+      const p_start_date = isValidIsoDate(startDate) ? startDate : null;
+      const p_end_date = isValidIsoDate(endDate) ? endDate : null;
+
       const { data: companyData, error: companyError } = await supabase.rpc('get_company_sales_metrics', {
         p_user_id: session.user.id,
-        p_start_date: startDate,
-        p_end_date: endDate,
+        p_start_date,
+        p_end_date,
       });
       if (companyError) throw new Error(`Falha ao carregar métricas da empresa: ${companyError.message}`);
       setCompanyMetrics(companyData && companyData.length > 0 ? (companyData[0] as CompanyMetrics) : null);
 
       const { data: brokerData, error: brokerError } = await supabase.rpc('get_broker_sales_performance', {
         p_user_id: session.user.id,
-        p_start_date: startDate,
-        p_end_date: endDate,
+        p_start_date,
+        p_end_date,
       });
       if (brokerError) throw new Error(`Falha ao carregar desempenho dos corretores: ${brokerError.message}`);
       const list = (brokerData || []) as BrokerPerformance[];
@@ -165,25 +174,18 @@ const SalesDashboardPage: React.FC = () => {
     </div>
   );
 
-  // Barra de abas (reduzindo o offset para encostar no header; sem espaçador extra)
   const TabsBar = (
     <nav className="sticky top-[64px] z-10 bg-white border-b shadow-sm">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex space-x-4 overflow-x-auto">
-          {[
-            { key: 'dashboard', label: 'Dashboard', icon: <Home className="w-4 h-4" /> },
-            { key: 'imoveis', label: 'Imóveis', icon: <Building className="w-4 h-4" /> },
-            { key: 'leads', label: 'Leads', icon: <Users className="w-4 h-4" /> },
-            { key: 'corretores', label: 'Corretores', icon: <User className="w-4 h-4" /> },
-            { key: 'relatorios', label: 'Relatórios', icon: <FileText className="w-4 h-4" /> },
-          ].map((t) => (
+          {tabs.map((t) => (
             <button
               key={t.key}
               className={`flex items-center gap-2 py-4 px-3 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === (t.key as TabKey) ? 'border-blue-600 text-blue-800' : 'border-transparent text-slate-500 hover:text-blue-700'
+                activeTab === t.key ? 'border-blue-600 text-blue-800' : 'border-transparent text-slate-500 hover:text-blue-700'
               }`}
-              onClick={() => setActiveTab(t.key as TabKey)}
-              aria-current={activeTab === (t.key as TabKey) ? 'page' : undefined}
+              onClick={() => setActiveTab(t.key)}
+              aria-current={activeTab === t.key ? 'page' : undefined}
             >
               {t.icon}
               {t.label}
@@ -259,9 +261,7 @@ const SalesDashboardPage: React.FC = () => {
     <div className="p-0">
       {TabsBar}
 
-      {/* Conteúdo (sem espaçador extra) */}
       <div key={activeTab} className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
-        {/* Header + Filtros */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-dark-text flex items-center">
