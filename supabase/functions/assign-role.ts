@@ -4,6 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS"
 };
 
 type Action = "add" | "remove";
@@ -35,22 +36,44 @@ serve(async (req) => {
       return jsonResponse({ error: "Server misconfiguration" }, 500);
     }
 
+    // Client that uses the caller's token to run the permission check RPC
     const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       global: {
         headers: { Authorization: `Bearer ${token}` },
       },
     });
 
-    const { data: canManage, error: permError } = await userClient.rpc("has_permission", {
-      p_permission: "gerenciar_usuarios",
-    });
+    // Call the has_permission RPC. It may return boolean or an array/object depending on SQL.
+    const { data: permData, error: permError } = await userClient.rpc("has_permission", { p_permission: "gerenciar_usuarios" });
 
     if (permError) {
-      console.error("Permission check error:", permError);
+      console.error("Permission RPC error:", permError);
       return jsonResponse({ error: "Falha ao checar permissão" }, 500);
     }
 
+    // Normalize various possible return shapes into a boolean
+    let canManage = false;
+    if (typeof permData === "boolean") {
+      canManage = permData;
+    } else if (Array.isArray(permData) && permData.length > 0) {
+      // could be [ true ] or [ { has_permission: true } ]
+      const first = permData[0];
+      if (typeof first === "boolean") canManage = first;
+      else if (typeof first === "object" && first !== null) {
+        // try common patterns
+        canManage = Boolean(first.has_permission ?? first.result ?? first);
+      } else {
+        canManage = Boolean(first);
+      }
+    } else if (typeof permData === "object" && permData !== null) {
+      // e.g., { has_permission: true } or similar
+      canManage = Boolean((permData as any).has_permission ?? (permData as any).result ?? permData);
+    } else {
+      canManage = Boolean(permData);
+    }
+
     if (!canManage) {
+      console.warn("Permission denied for caller when checking has_permission.");
       return jsonResponse({ error: "Forbidden" }, 403);
     }
 
@@ -83,6 +106,7 @@ serve(async (req) => {
     const now = new Date().toISOString();
 
     if (action === "add") {
+      // Upsert user_roles relationship
       const { error: insertError } = await adminClient
         .from("user_roles")
         .upsert({ user_id: profile_id, role_id }, { onConflict: "user_id,role_id" });
@@ -92,6 +116,7 @@ serve(async (req) => {
         return jsonResponse({ error: "Falha ao atribuir papel." }, 500);
       }
 
+      // Update profile.role for display (best-effort)
       const { error: updateProfileError } = await adminClient
         .from("profiles")
         .update({ role: roleInfo.nome, updated_at: now })
@@ -104,6 +129,7 @@ serve(async (req) => {
       return jsonResponse({ message: `Papel ${roleInfo.nome} atribuído com sucesso.` });
     }
 
+    // REMOVE path
     const { error: deleteError } = await adminClient
       .from("user_roles")
       .delete()
@@ -114,9 +140,13 @@ serve(async (req) => {
       return jsonResponse({ error: "Falha ao remover papel." }, 500);
     }
 
+    // Try to find another role to set as profile.role (optional)
     const { data: remainingRoles, error: remainingError } = await adminClient
       .from("user_roles")
-      .select("roles(nome)")
+      .select(`
+        role_id,
+        roles:role_id ( nome )
+      `)
       .eq("user_id", profile_id)
       .limit(1);
 
@@ -124,7 +154,10 @@ serve(async (req) => {
       console.error("Fetch remaining roles error:", remainingError);
     }
 
-    const nextRoleName = remainingRoles?.[0]?.roles?.nome ?? null;
+    let nextRoleName: string | null = null;
+    if (Array.isArray(remainingRoles) && remainingRoles.length > 0) {
+      nextRoleName = remainingRoles[0]?.roles?.nome ?? null;
+    }
 
     const { error: updateProfileError } = await adminClient
       .from("profiles")
