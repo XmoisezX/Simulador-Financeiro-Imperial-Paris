@@ -10,6 +10,15 @@ import OpportunityStatusPieChart from '../components/charts/OpportunityStatusPie
 import BrokerComparisonBarChart from '../components/charts/BrokerComparisonBarChart';
 import BrokerPerformanceTable from '../components/BrokerPerformanceTable';
 
+return (
+  <div className="h-screen flex flex-col overflow-hidden">
+    {TabsBar}
+    <div className="flex-1 overflow-y-auto">
+      {/* resto do conteúdo atual */}
+    </div>
+  </div>
+);
+
 interface CompanyMetrics {
   total_leads: number;
   leads_to_opportunities_conversion: number;
