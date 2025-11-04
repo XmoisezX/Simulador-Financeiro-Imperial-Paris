@@ -3,6 +3,7 @@ import { X, Save, Loader2, UserPlus, Mail, Shield } from 'lucide-react';
 import { Button } from './ui/Button';
 import TextInput from './TextInput';
 import { useAuth } from '../contexts/AuthContext';
+import { invokeEdgeFunction } from '../utils/edgeFunctions';
 
 interface Role {
   id: number;
@@ -18,7 +19,7 @@ interface NewUserModalProps {
 }
 
 const NewUserModal: React.FC<NewUserModalProps> = ({ isOpen, onClose, roles, onCreated }) => {
-  const { supabase, session } = useAuth();
+  const { session } = useAuth();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [selectedRoleIds, setSelectedRoleIds] = useState<number[]>([]);
@@ -67,24 +68,20 @@ const NewUserModal: React.FC<NewUserModalProps> = ({ isOpen, onClose, roles, onC
     setIsSaving(true);
     setError(null);
 
-    // Chama a Edge Function para criação segura com Service Role
-    const { data, error } = await supabase.functions.invoke('admin-create-user', {
-      body: {
-        email: email.trim(),
-        full_name: fullName.trim(),
-        roles: roleNamesForPayload, // nomes de papéis, e.g., ['Admin', 'Gerente']
-      }
-    });
+    const { data, error, status } = await invokeEdgeFunction('admin-create-user', {
+      email: email.trim(),
+      full_name: fullName.trim(),
+      roles: roleNamesForPayload,
+    }, session.access_token);
 
     setIsSaving(false);
 
     if (error) {
-      console.error('Erro ao criar usuário:', error);
+      console.error('Erro ao criar usuário (edge):', error, 'status:', status);
       setError(error.message || 'Falha ao criar usuário.');
       return;
     }
 
-    // Sucesso
     onCreated();
     onClose();
   };

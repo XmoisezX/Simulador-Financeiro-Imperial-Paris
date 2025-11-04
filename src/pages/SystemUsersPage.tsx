@@ -6,6 +6,7 @@ import TextInput from '../components/TextInput';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../integrations/supabase/client';
 import NewUserModal from '../components/NewUserModal';
+import { invokeEdgeFunction } from '../utils/edgeFunctions';
 
 interface Profile {
   id: string;
@@ -134,20 +135,15 @@ const SystemUsersPage: React.FC = () => {
 
       console.log('[assign-role] Request', { userId, roleId, action });
 
-      const { data, error: funcErr } = await supabase.functions.invoke('assign-role', {
-        body: {
-          profile_id: userId,
-          role_id: roleId,
-          action,
-        },
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const { data, error: funcErr, status } = await invokeEdgeFunction(
+        'assign-role',
+        { profile_id: userId, role_id: roleId, action },
+        token
+      );
 
       if (funcErr) {
-        console.error('[assign-role] Edge function error', funcErr);
-        alert(`Erro ao atualizar papel: ${funcErr.message || 'Falha ao enviar a requisição ao servidor (Edge Function).'}`);
+        console.error('[assign-role] Edge function error', funcErr, 'status:', status);
+        alert(`Erro ao atualizar papel: ${funcErr.message}`);
         throw funcErr;
       }
 
@@ -166,7 +162,7 @@ const SystemUsersPage: React.FC = () => {
 
       await fetchAll();
 
-      alert(data?.message || (action === 'add' ? 'Papel atribuído com sucesso.' : 'Papel removido com sucesso.'));
+      alert((data as any)?.message || (action === 'add' ? 'Papel atribuído com sucesso.' : 'Papel removido com sucesso.'));
     } catch (e: any) {
       console.error('[assign-role] Failure', e);
       await fetchAll();
