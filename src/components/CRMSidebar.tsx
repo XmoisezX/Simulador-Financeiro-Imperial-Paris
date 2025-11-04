@@ -1,26 +1,21 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Building, Key, FileText, Users, Briefcase, CalendarCheck, Zap, DollarSign, Target, Map, Menu, X, Settings, Globe, Building2, TrendingUp } from 'lucide-react'; // Adicionado TrendingUp para Oportunidades
+import { Home, Building, Key, FileText, Users, Briefcase, CalendarCheck, Zap, DollarSign, Target, Map, Menu, X, Settings, Globe, Building2, TrendingUp } from 'lucide-react';
 
 interface NavItemProps {
     to: string;
     icon: React.ReactNode;
     label: string;
     isSidebarOpen: boolean;
-    onClick?: () => void; // Adicionado para fechar no mobile
+    onClick?: () => void;
 }
 
 const NavItem: React.FC<NavItemProps> = ({ to, icon, label, isSidebarOpen, onClick }) => {
     const location = useLocation();
-    // Verifica se a rota atual começa com o 'to' (para sub-rotas como /crm/agenciamento/planilhas/123)
     const isActive = location.pathname.startsWith(to);
-    
-    // Cores para o modo expandido (fundo branco)
     const expandedClasses = isActive 
         ? 'bg-blue-100 text-blue-800 font-semibold' 
         : 'text-slate-600 hover:bg-gray-100';
-        
-    // Cores para o modo recolhido (fundo claro)
     const collapsedClasses = isActive 
         ? 'bg-blue-100 text-blue-800 font-semibold' 
         : 'text-slate-600 hover:bg-gray-100';
@@ -34,7 +29,6 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon, label, isSidebarOpen, onCli
             } ${isSidebarOpen ? 'justify-start' : 'justify-center'}`}
             title={label}
         >
-            {/* O ícone herda a cor do texto do Link */}
             {icon}
             {isSidebarOpen && <span className="ml-3 text-sm whitespace-nowrap">{label}</span>}
         </Link>
@@ -47,10 +41,9 @@ interface CRMSidebarProps {
 }
 
 const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
-    const sidebarWidth = isOpen ? 'w-64' : 'w-20'; // 64 (256px) vs 20 (80px)
-    const [isSystemOpen, setIsSystemOpen] = useState(false); // Estado para o submenu Sistema
+    const sidebarWidth = isOpen ? 'w-64' : 'w-20';
+    const [isSystemOpen, setIsSystemOpen] = useState(false);
 
-    // Estilos para o modo mobile (overlay)
     const mobileClasses = isOpen 
         ? 'fixed inset-0 z-40 transform translate-x-0 transition-transform duration-300 w-64'
         : 'fixed inset-0 z-40 transform -translate-x-full transition-transform duration-300 w-64';
@@ -59,7 +52,6 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
         if (isOpen) {
             setIsSystemOpen(prev => !prev);
         } else {
-            // Se o menu estiver recolhido, expande-o primeiro
             toggleSidebar();
             setIsSystemOpen(true);
         }
@@ -73,7 +65,6 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
 
     return (
         <>
-            {/* Overlay para Mobile quando aberto */}
             {isOpen && (
                 <div 
                     className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden" 
@@ -81,24 +72,21 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                 ></div>
             )}
 
-            {/* Sidebar Principal (Desktop) */}
+            {/* Ajuste principal: encostar ao header (top reduzido) */}
             <aside className={`
                 ${sidebarWidth} 
                 bg-white border-r border-gray-200 
                 flex-shrink-0 overflow-y-auto h-full 
                 transition-all duration-300 
-                hidden lg:block sticky top-[88px] 
+                hidden lg:block sticky top-[64px] 
                 ${isOpen ? 'lg:w-64' : 'lg:w-20'}
             `}>
-                {/* Removendo p-4 do div principal e aplicando padding interno onde necessário */}
                 <div className="space-y-1 px-4 pb-4"> 
-                    {/* Botão de Toggle (Apenas para Desktop) */}
                     <button 
                         onClick={toggleSidebar}
                         className={`flex items-center p-3 rounded-lg transition-colors duration-150 w-full ${isOpen ? 'justify-end text-slate-600 hover:bg-gray-100' : 'justify-center text-slate-600 hover:bg-gray-100'}`}
                         title={isOpen ? 'Recolher Menu' : 'Expandir Menu'}
                     >
-                        {/* O ícone herda a cor do texto do Link */}
                         <Menu className={`w-5 h-5 text-slate-600`} />
                     </button>
 
@@ -108,14 +96,14 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                     
                     {isOpen && <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1">Imóveis & Vendas</h3>}
                     {!isOpen && <div className="h-4"></div>}
-                    <NavItem to="/crm/sales-dashboard" icon={<DollarSign className="w-5 h-5" />} label="Painel de Vendas" isSidebarOpen={isOpen} onClick={handleNavClick} /> {/* NOVO ITEM */}
+                    <NavItem to="/crm/sales-dashboard" icon={<DollarSign className="w-5 h-5" />} label="Painel de Vendas" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     <NavItem to="/crm/imoveis" icon={<Building className="w-5 h-5" />} label="Imóveis" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     <NavItem to="/crm/condominios" icon={<Building2 className="w-5 h-5" />} label="Condomínios" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     <NavItem to="/crm/agenciamento" icon={<Briefcase className="w-5 h-5" />} label="Agenciamento" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     <NavItem to="/crm/chaves" icon={<Key className="w-5 h-5" />} label="Chaves" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     <NavItem to="/crm/propostas" icon={<FileText className="w-5 h-5" />} label="Propostas" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     <NavItem to="/crm/leads" icon={<Zap className="w-5 h-5" />} label="Leads" isSidebarOpen={isOpen} onClick={handleNavClick} />
-                    <NavItem to="/crm/oportunidades" icon={<TrendingUp className="w-5 h-5" />} label="Oportunidades" isSidebarOpen={isOpen} onClick={handleNavClick} /> {/* NOVO ITEM */}
+                    <NavItem to="/crm/oportunidades" icon={<TrendingUp className="w-5 h-5" />} label="Oportunidades" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     
                     {isOpen && <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1">Pessoas & Rotinas</h3>}
                     {!isOpen && <div className="h-4"></div>}
@@ -130,7 +118,6 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                     <NavItem to="/mapa-teste" icon={<Map className="w-5 h-5" />} label="Teste de Mapa" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     
                     {isOpen && <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1">Administração</h3>}
-                    {!isOpen && <div className="h-4"></div>}
                     
                     <div className="relative">
                         <button
@@ -156,7 +143,7 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                 </div>
             </aside>
             
-            {/* Sidebar para Mobile (Overlay) - A prop isSidebarOpen é sempre true aqui */}
+            {/* Mobile overlay (inalterado) */}
             <aside className={`
                 ${mobileClasses} 
                 bg-white border-r border-gray-200 flex-shrink-0 overflow-y-auto h-full 
@@ -174,14 +161,14 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                     <NavItem to="/crm/dashboard" icon={<Home className="w-5 h-5" />} label="Início" isSidebarOpen={true} onClick={handleNavClick} />
                     
                     <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1 px-3">Imóveis & Vendas</h3>
-                    <NavItem to="/crm/sales-dashboard" icon={<DollarSign className="w-5 h-5" />} label="Painel de Vendas" isSidebarOpen={true} onClick={handleNavClick} /> {/* NOVO ITEM */}
+                    <NavItem to="/crm/sales-dashboard" icon={<DollarSign className="w-5 h-5" />} label="Painel de Vendas" isSidebarOpen={true} onClick={handleNavClick} />
                     <NavItem to="/crm/imoveis" icon={<Building className="w-5 h-5" />} label="Imóveis" isSidebarOpen={true} onClick={handleNavClick} />
                     <NavItem to="/crm/condominios" icon={<Building2 className="w-5 h-5" />} label="Condomínios" isSidebarOpen={true} onClick={handleNavClick} />
                     <NavItem to="/crm/agenciamento" icon={<Briefcase className="w-5 h-5" />} label="Agenciamento" isSidebarOpen={true} onClick={handleNavClick} />
                     <NavItem to="/crm/chaves" icon={<Key className="w-5 h-5" />} label="Chaves" isSidebarOpen={true} onClick={handleNavClick} />
                     <NavItem to="/crm/propostas" icon={<FileText className="w-5 h-5" />} label="Propostas" isSidebarOpen={true} onClick={handleNavClick} />
                     <NavItem to="/crm/leads" icon={<Zap className="w-5 h-5" />} label="Leads" isSidebarOpen={true} onClick={handleNavClick} />
-                    <NavItem to="/crm/oportunidades" icon={<TrendingUp className="w-5 h-5" />} label="Oportunidades" isSidebarOpen={true} onClick={handleNavClick} /> {/* NOVO ITEM */}
+                    <NavItem to="/crm/oportunidades" icon={<TrendingUp className="w-5 h-5" />} label="Oportunidades" isSidebarOpen={true} onClick={handleNavClick} />
                     
                     <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1 px-3">Pessoas & Rotinas</h3>
                     <NavItem to="/crm/pessoas" icon={<Users className="w-5 h-5" />} label="Pessoas" isSidebarOpen={true} onClick={handleNavClick} />

@@ -61,7 +61,6 @@ const formatPercent = (value: number | null) =>
 const SalesDashboardPage: React.FC = () => {
   const { session } = useAuth();
 
-  // Abas
   const tabs = [
     { key: 'dashboard', label: 'Dashboard', icon: <Home className="w-4 h-4" /> },
     { key: 'imoveis', label: 'Imóveis', icon: <Building className="w-4 h-4" /> },
@@ -72,7 +71,6 @@ const SalesDashboardPage: React.FC = () => {
   type TabKey = typeof tabs[number]['key'];
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
 
-  // Período
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
     d.setFullYear(d.getFullYear() - 1);
@@ -120,7 +118,6 @@ const SalesDashboardPage: React.FC = () => {
         setSelectedBrokerId('');
       }
 
-      // Enriquecimento com profiles (se permitido)
       const ids = list.map(b => b.broker_id).filter(Boolean);
       if (ids.length > 0) {
         const { data: profs } = await supabase
@@ -168,19 +165,25 @@ const SalesDashboardPage: React.FC = () => {
     </div>
   );
 
-  // Barra de abas (sticky)
+  // Barra de abas (reduzindo o offset para encostar no header; sem espaçador extra)
   const TabsBar = (
-    <nav className="sticky top-[88px] z-10 bg-white border-b shadow-sm">
+    <nav className="sticky top-[64px] z-10 bg-white border-b shadow-sm">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex space-x-4 overflow-x-auto">
-          {tabs.map((t) => (
+          {[
+            { key: 'dashboard', label: 'Dashboard', icon: <Home className="w-4 h-4" /> },
+            { key: 'imoveis', label: 'Imóveis', icon: <Building className="w-4 h-4" /> },
+            { key: 'leads', label: 'Leads', icon: <Users className="w-4 h-4" /> },
+            { key: 'corretores', label: 'Corretores', icon: <User className="w-4 h-4" /> },
+            { key: 'relatorios', label: 'Relatórios', icon: <FileText className="w-4 h-4" /> },
+          ].map((t) => (
             <button
               key={t.key}
               className={`flex items-center gap-2 py-4 px-3 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === t.key ? 'border-blue-600 text-blue-800' : 'border-transparent text-slate-500 hover:text-blue-700'
+                activeTab === (t.key as TabKey) ? 'border-blue-600 text-blue-800' : 'border-transparent text-slate-500 hover:text-blue-700'
               }`}
-              onClick={() => setActiveTab(t.key)}
-              aria-current={activeTab === t.key ? 'page' : undefined}
+              onClick={() => setActiveTab(t.key as TabKey)}
+              aria-current={activeTab === (t.key as TabKey) ? 'page' : undefined}
             >
               {t.icon}
               {t.label}
@@ -242,7 +245,7 @@ const SalesDashboardPage: React.FC = () => {
             alt={profile?.full_name || b.broker_name || 'Corretor'}
             className="w-10 h-10 rounded-full object-cover"
           />
-        <div>
+          <div>
             <p className="font-semibold text-dark-text">{profile?.full_name || b.broker_name || 'Corretor'}</p>
             <p className="text-xs text-gray-500">{profile?.email || '—'}</p>
           </div>
@@ -256,10 +259,7 @@ const SalesDashboardPage: React.FC = () => {
     <div className="p-0">
       {TabsBar}
 
-      {/* Espaço extra após barra sticky para evitar qualquer sobreposição visual */}
-      <div className="h-2"></div>
-
-      {/* Conteúdo com remount por aba para garantir limpeza de gráficos/DOM */}
+      {/* Conteúdo (sem espaçador extra) */}
       <div key={activeTab} className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
         {/* Header + Filtros */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
