@@ -4,7 +4,6 @@ import { Button } from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
 import KpiCard from '../components/KpiCard';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../integrations/supabase/client';
 import LeadSourcePieChart from '../components/charts/LeadSourcePieChart';
 import OpportunityStatusPieChart from '../components/charts/OpportunityStatusPieChart';
 import BrokerComparisonBarChart from '../components/charts/BrokerComparisonBarChart';
@@ -64,7 +63,8 @@ const isValidIsoDate = (s: string | null | undefined) => {
 };
 
 const SalesDashboardPage: React.FC = () => {
-  const { session } = useAuth();
+  // agora pegamos supabase do contexto também
+  const { session, supabase } = useAuth();
 
   const tabs = [
     { key: 'dashboard', label: 'Dashboard', icon: <Home className="w-4 h-4" /> },
@@ -92,7 +92,7 @@ const SalesDashboardPage: React.FC = () => {
   const [selectedBrokerId, setSelectedBrokerId] = useState<string>('');
 
   const fetchDashboardData = useCallback(async () => {
-    if (!session) {
+    if (!session || !supabase) {
       setError('Você precisa estar logado para ver o painel de vendas.');
       setIsLoading(false);
       return;
@@ -122,32 +122,28 @@ const SalesDashboardPage: React.FC = () => {
       const list = (brokerData || []) as BrokerPerformance[];
       setBrokerPerformance(list);
 
-      if (selectedBrokerId && !list.some(b => b.broker_id === selectedBrokerId)) {
-        setSelectedBrokerId('');
-      }
+      // FETCH ALL PROFILES (mostrar todos os usuários)
+      const { data: profs, error: profError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, avatar_url')
+        .order('full_name', { ascending: true });
 
-      const ids = list.map(b => b.broker_id).filter(Boolean);
-      if (ids.length > 0) {
-        const { data: profs } = await supabase
-          .from('profiles')
-          .select('id, full_name, email, avatar_url')
-          .in('id', ids);
-        if (profs) {
-          const map: Record<string, BrokerProfile> = {};
-          for (const p of profs as BrokerProfile[]) map[p.id] = p;
-          setBrokerProfiles(map);
-        } else {
-          setBrokerProfiles({});
-        }
-      } else {
+      if (profError) {
+        console.warn('Falha ao buscar perfis completos:', profError);
         setBrokerProfiles({});
+      } else {
+        const map: Record<string, BrokerProfile> = {};
+        (profs || []).forEach((p: any) => {
+          map[p.id] = { id: p.id, full_name: p.full_name, email: p.email, avatar_url: p.avatar_url };
+        });
+        setBrokerProfiles(map);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro desconhecido ao carregar o painel.');
     } finally {
       setIsLoading(false);
     }
-  }, [session, startDate, endDate, selectedBrokerId]);
+  }, [session, startDate, endDate, supabase]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -163,6 +159,17 @@ const SalesDashboardPage: React.FC = () => {
     return [...brokerPerformance].sort((a, b) => (b.revenue_generated || 0) - (a.revenue_generated || 0))[0];
   }, [brokerPerformance]);
 
+  // Se não houver métricas, criamos um objeto com zeros para exibir
+  const zeroMetricsForProfile = (profileId: string, profileName?: string): BrokerPerformance => ({
+    broker_id: profileId,
+    broker_name: profileName || '—',
+    leads_attended: 0,
+    proposals_sent: 0,
+    sales_closed: 0,
+    individual_conversion_rate: 0,
+    revenue_generated: 0,
+  });
+
   const BrokerCards: React.FC<{ broker: BrokerPerformance }> = ({ broker }) => (
     <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
       <KpiCard title="Leads Atendidos" value={broker.leads_attended.toString()} />
@@ -173,7 +180,28 @@ const SalesDashboardPage: React.FC = () => {
     </div>
   );
 
-  // TabsBar: now sticky directly under header (top-16)
+  // Header card to show profile + metrics
+  const BrokerHeaderCard: React.FC<{ b: BrokerPerformance }> = ({ b }) => {
+    const profile = brokerProfiles[b.broker_id];
+    return (
+      <div className="p-4 bg-white rounded-lg shadow-sm border">
+        <div className="flex items-center gap-3 mb-3">
+          <img
+            src={profile?.avatar_url || '/LOGO LARANJA.png'}
+            alt={profile?.full_name || b.broker_name || 'Corretor'}
+            className="w-10 h-10 rounded-full object-cover"
+          />
+          <div>
+            <p className="font-semibold text-dark-text">{profile?.full_name || b.broker_name || 'Corretor'}</p>
+            <p className="text-xs text-gray-500">{profile?.email || '—'}</p>
+          </div>
+        </div>
+        <BrokerCards broker={b} />
+      </div>
+    );
+  };
+
+  // TabsBar: sticky
   const TabsBar = (
     <nav className="sticky top-0z-10 bg-white border-b shadow-sm">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -237,25 +265,14 @@ const SalesDashboardPage: React.FC = () => {
 
   const hasCompanyData = !!companyMetrics || brokerPerformance.length > 0;
 
-  const BrokerHeaderCard: React.FC<{ b: BrokerPerformance }> = ({ b }) => {
-    const profile = brokerProfiles[b.broker_id];
-    return (
-      <div className="p-4 bg-white rounded-lg shadow-sm border">
-        <div className="flex items-center gap-3 mb-3">
-          <img
-            src={profile?.avatar_url || '/LOGO LARANJA.png'}
-            alt={profile?.full_name || b.broker_name || 'Corretor'}
-            className="w-10 h-10 rounded-full object-cover"
-          />
-          <div>
-            <p className="font-semibold text-dark-text">{profile?.full_name || b.broker_name || 'Corretor'}</p>
-            <p className="text-xs text-gray-500">{profile?.email || '—'}</p>
-          </div>
-        </div>
-        <BrokerCards broker={b} />
-      </div>
-    );
-  };
+  // Build a list of all profiles (sorted) and produce display metrics (zero if missing)
+  const profilesList = Object.values(brokerProfiles).sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''));
+
+  const displayBrokerList: BrokerPerformance[] = profilesList.map((p) => {
+    const metrics = brokerPerformance.find(bp => bp.broker_id === p.id);
+    if (metrics) return metrics;
+    return zeroMetricsForProfile(p.id, p.full_name || p.email || '—');
+  });
 
   return (
     <div className="p-0">
@@ -292,7 +309,8 @@ const SalesDashboardPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 gap-6">
-              {brokerPerformance.map((b) => (
+              {/* Agora exibimos um card por perfil (todos os usuários) */}
+              {displayBrokerList.map((b) => (
                 <BrokerHeaderCard key={b.broker_id} b={b} />
               ))}
             </div>
@@ -372,15 +390,15 @@ const SalesDashboardPage: React.FC = () => {
         {activeTab === 'corretores' && (
           <section className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <KpiCard title="Total de Corretores" value={`${brokerPerformance.length}`} />
+              <KpiCard title="Total de Corretores" value={`${displayBrokerList.length}`} />
               <KpiCard title="Média Leads/Corretor" value={
-                brokerPerformance.length
-                  ? (brokerPerformance.reduce((a, b) => a + (b.leads_attended || 0), 0) / brokerPerformance.length).toFixed(1)
+                displayBrokerList.length
+                  ? (displayBrokerList.reduce((a, b) => a + (b.leads_attended || 0), 0) / displayBrokerList.length).toFixed(1)
                   : '0.0'
               } />
               <KpiCard title="Média Vendas/Corretor" value={
-                brokerPerformance.length
-                  ? (brokerPerformance.reduce((a, b) => a + (b.sales_closed || 0), 0) / brokerPerformance.length).toFixed(1)
+                displayBrokerList.length
+                  ? (displayBrokerList.reduce((a, b) => a + (b.sales_closed || 0), 0) / displayBrokerList.length).toFixed(1)
                   : '0.0'
               } />
               <KpiCard title="Destaque em Vendas" value={topBroker ? (brokerProfiles[topBroker.broker_id]?.full_name || topBroker.broker_name) : 'N/A'} />
@@ -394,10 +412,8 @@ const SalesDashboardPage: React.FC = () => {
                 className="p-2 border border-gray-300 rounded-md text-sm text-dark-text bg-white"
               >
                 <option value="">Todos</option>
-                {brokerPerformance.map((b) => (
-                  <option key={b.broker_id} value={b.broker_id}>
-                    {brokerProfiles[b.broker_id]?.full_name || b.broker_name}
-                  </option>
+                {profilesList.map(p => (
+                  <option key={p.id} value={p.id}>{p.full_name || p.email}</option>
                 ))}
               </select>
             </div>
@@ -406,7 +422,7 @@ const SalesDashboardPage: React.FC = () => {
               <BrokerHeaderCard b={selectedBroker} />
             ) : (
               <div className="grid grid-cols-1 gap-6">
-                {brokerPerformance.map((b) => (
+                {displayBrokerList.map((b) => (
                   <BrokerHeaderCard key={b.broker_id} b={b} />
                 ))}
               </div>
@@ -414,7 +430,7 @@ const SalesDashboardPage: React.FC = () => {
 
             <Card className="shadow-md">
               <CardContent className="p-0">
-                <BrokerPerformanceTable data={selectedBroker ? [selectedBroker] : brokerPerformance} />
+                <BrokerPerformanceTable data={selectedBroker ? [selectedBroker] : displayBrokerList} />
               </CardContent>
             </Card>
           </section>
