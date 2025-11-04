@@ -175,7 +175,7 @@ const SalesDashboardPage: React.FC = () => {
 
   // TabsBar: now sticky directly under header (top-16)
   const TabsBar = (
-    <nav className="sticky top-16 z-10 bg-white border-b shadow-sm">
+    <nav className="sticky top-0z-10 bg-white border-b shadow-sm">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex space-x-4 overflow-x-auto">
           {tabs.map((t) => (
