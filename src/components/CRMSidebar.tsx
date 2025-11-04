@@ -108,6 +108,7 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                     
                     {isOpen && <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1">Imóveis & Vendas</h3>}
                     {!isOpen && <div className="h-4"></div>}
+                    <NavItem to="/crm/sales-dashboard" icon={<DollarSign className="w-5 h-5" />} label="Painel de Vendas" isSidebarOpen={isOpen} onClick={handleNavClick} /> {/* NOVO ITEM */}
                     <NavItem to="/crm/imoveis" icon={<Building className="w-5 h-5" />} label="Imóveis" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     <NavItem to="/crm/condominios" icon={<Building2 className="w-5 h-5" />} label="Condomínios" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     <NavItem to="/crm/agenciamento" icon={<Briefcase className="w-5 h-5" />} label="Agenciamento" isSidebarOpen={isOpen} onClick={handleNavClick} />
@@ -173,6 +174,7 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                     <NavItem to="/crm/dashboard" icon={<Home className="w-5 h-5" />} label="Início" isSidebarOpen={true} onClick={handleNavClick} />
                     
                     <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1 px-3">Imóveis & Vendas</h3>
+                    <NavItem to="/crm/sales-dashboard" icon={<DollarSign className="w-5 h-5" />} label="Painel de Vendas" isSidebarOpen={true} onClick={handleNavClick} /> {/* NOVO ITEM */}
                     <NavItem to="/crm/imoveis" icon={<Building className="w-5 h-5" />} label="Imóveis" isSidebarOpen={true} onClick={handleNavClick} />
                     <NavItem to="/crm/condominios" icon={<Building2 className="w-5 h-5" />} label="Condomínios" isSidebarOpen={true} onClick={handleNavClick} />
                     <NavItem to="/crm/agenciamento" icon={<Briefcase className="w-5 h-5" />} label="Agenciamento" isSidebarOpen={true} onClick={handleNavClick} />

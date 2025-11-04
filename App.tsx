@@ -23,6 +23,7 @@ import OportunidadesPage from './src/pages/OportunidadesPage'; // NOVO: Página 
 import PropostasPage from './src/pages/PropostasPage'; // NOVO: Página de Propostas
 import AtividadesPage from './src/pages/AtividadesPage'; // NOVO: Página de Atividades
 import LeadsPage from './src/pages/LeadsPage'; // NOVO: Página de Leads
+import SalesDashboardPage from './src/pages/SalesDashboardPage'; // NOVO: Painel de Vendas
 import CRMLayout from './src/components/CRMLayout';
 import PublicHomePage from './src/pages/PublicHomePage';
 import PublicLayout from './src/layouts/PublicLayout';
@@ -91,6 +92,9 @@ const AppContent: React.FC = () => {
                 
                 {/* Rotas de Leads */}
                 <Route path="/crm/leads" element={<LeadsPage />} />
+                
+                {/* NOVO: Painel de Vendas */}
+                <Route path="/crm/sales-dashboard" element={<SalesDashboardPage />} />
                 
                 {/* Rotas de Sistema */}
                 <Route path="/crm/sistema" element={<SystemSettingsPage />} />
