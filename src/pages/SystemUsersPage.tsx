@@ -207,6 +207,75 @@ const SystemUsersPage: React.FC = () => {
     setIsRoleModalOpen(true);
   };
 
+  // NEW: helper to assign Moisez da Silva Torres as admin
+  const handleMakeMoisezAdmin = async () => {
+    if (!canManage) {
+      alert('Você precisa de permissão para gerenciar usuários.');
+      return;
+    }
+
+    if (!confirm('Deseja tornar "Moisez da Silva Torres" administrador?')) return;
+
+    try {
+      // 1) Buscar perfil pelo nome (case-insensitive)
+      const { data: profs, error: profErr } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .ilike('full_name', '%moisez%');
+
+      if (profErr) {
+        throw profErr;
+      }
+      if (!profs || profs.length === 0) {
+        alert('Perfil "Moisez" não encontrado. Verifique se existe um profile com esse nome.');
+        return;
+      }
+
+      // Tenta achar o exato "Moisez da Silva Torres" primeiro
+      let target = profs.find((p: any) => (p.full_name || '').toLowerCase().includes('moisez da silva torres'));
+      if (!target) {
+        // fallback: pega o primeiro que contenha 'moisez'
+        target = profs[0];
+      }
+
+      // 2) Buscar role 'Administrativo' ou 'Admin'
+      const { data: rolesFound, error: rolesErr } = await supabase
+        .from('roles')
+        .select('id, nome')
+        .ilike('nome', '%admin%');
+
+      if (rolesErr) throw rolesErr;
+      if (!rolesFound || rolesFound.length === 0) {
+        alert('Nenhum papel com nome contendo "admin" encontrado. Crie um papel "Administrativo" antes.');
+        return;
+      }
+
+      // Prefer 'Administrativo' if present
+      let adminRole = rolesFound.find((r: any) => (r.nome || '').toLowerCase().includes('administrat'));
+      if (!adminRole) adminRole = rolesFound[0];
+
+      // 3) Chamar RPC manage_user_role para adicionar
+      const { error: manageErr } = await supabase.rpc('manage_user_role', {
+        p_profile_id: target.id,
+        p_role_id: adminRole.id,
+        p_action: 'add',
+      });
+
+      if (manageErr) {
+        console.error('manage_user_role error:', manageErr);
+        alert(`Falha ao atribuir papel: ${manageErr.message}`);
+        return;
+      }
+
+      alert(`Usuário ${target.full_name} atualizado para o papel ${adminRole.nome}.`);
+      // Refresh UI
+      await fetchAll();
+    } catch (e: any) {
+      console.error(e);
+      alert(`Erro ao tentar atribuir admin: ${e?.message || e}`);
+    }
+  };
+
   const UsersTab = (
     <Card className="shadow-lg">
       <CardContent className="p-0">
@@ -416,6 +485,7 @@ const SystemUsersPage: React.FC = () => {
           >
             <UserPlus className="w-4 h-4 mr-2" /> Novo usuário
           </Button>
+
           <Button
             variant="outline"
             className="text-blue-600 border-blue-600 hover:bg-blue-50"
@@ -423,6 +493,16 @@ const SystemUsersPage: React.FC = () => {
             disabled={loading}
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} /> Atualizar
+          </Button>
+
+          {/* NEW: Quick action to make Moisez admin */}
+          <Button
+            className="bg-primary-orange hover:bg-secondary-orange text-white"
+            onClick={handleMakeMoisezAdmin}
+            disabled={!canManage}
+            title="Tornar Moisez Administrador"
+          >
+            <UserPlus className="w-4 h-4 mr-2" /> Tornar Moisez Admin
           </Button>
         </div>
       </div>
