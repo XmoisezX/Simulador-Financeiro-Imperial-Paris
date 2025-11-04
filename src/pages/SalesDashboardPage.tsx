@@ -102,7 +102,6 @@ const SalesDashboardPage: React.FC = () => {
     setError(null);
 
     try {
-      // Sanitize dates: if invalid/empty, pass null to RPC (avoids invalid input syntax)
       const p_start_date = isValidIsoDate(startDate) ? startDate : null;
       const p_end_date = isValidIsoDate(endDate) ? endDate : null;
 
@@ -174,9 +173,9 @@ const SalesDashboardPage: React.FC = () => {
     </div>
   );
 
-  // Tabs sticky colado ao cabeçalho (top = 88px) conforme solicitado
+  // TabsBar: agora coladas imediatamente abaixo do cabeçalho (top-16)
   const TabsBar = (
-    <nav className="sticky top-[88px] z-10 bg-white border-b shadow-sm">
+    <nav className="sticky top-16 z-10 bg-white border-b shadow-sm">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex space-x-4 overflow-x-auto">
           {tabs.map((t) => (
@@ -262,10 +261,7 @@ const SalesDashboardPage: React.FC = () => {
     <div className="p-0">
       {TabsBar}
 
-      {/* pequeno espaçamento abaixo das abas para garantir inputs visíveis */}
-      <div className="h-6" />
-
-      <div key={activeTab} className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-dark-text flex items-center">
@@ -435,7 +431,7 @@ const SalesDashboardPage: React.FC = () => {
               <KpiCard title="Taxa de Aprovação" value={formatPercent(companyMetrics?.proposals_approval_rate)} />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card className="shadow-md">
                 <CardContent className="p-6">
                   <h3 className="text-xl font-semibold text-dark-text mb-4 flex items-center"><Users className="w-5 h-5 mr-2 text-blue-600" /> Origem dos Leads</h3>
