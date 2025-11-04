@@ -1,12 +1,23 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Users, RefreshCw, Shield, Mail, User as UserIcon, Loader2, Lock, AlertTriangle, UserPlus, XCircle } from 'lucide-react';
+import {
+  Users,
+  RefreshCw,
+  Shield,
+  Mail,
+  User as UserIcon,
+  Loader2,
+  AlertTriangle,
+  UserPlus,
+  XCircle,
+  Lock,
+  Edit,
+  Plus
+} from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
 import TextInput from '../components/TextInput';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../integrations/supabase/client';
 import NewUserModal from '../components/NewUserModal';
-import { invokeEdgeFunction } from '../utils/edgeFunctions';
 import RoleModal from '../components/RoleModal';
 
 interface Profile {
@@ -26,6 +37,7 @@ interface Role {
 
 const SystemUsersPage: React.FC = () => {
   const { session, supabase } = useAuth();
+
   const [canManage, setCanManage] = useState<boolean>(false);
 
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -76,8 +88,8 @@ const SystemUsersPage: React.FC = () => {
         map[ur.user_id].push(ur.role_id);
       });
 
-      setRoles(rolesRes.data as Role[]);
-      setProfiles(profilesRes.data as Profile[]);
+      setRoles((rolesRes.data || []) as Role[]);
+      setProfiles((profilesRes.data || []) as Profile[]);
       setUserRolesMap(map);
     } catch (e: any) {
       console.error('Erro ao carregar dados:', e);
@@ -98,7 +110,7 @@ const SystemUsersPage: React.FC = () => {
   }, [session, fetchAll, fetchPermission]);
 
   const filteredProfiles = useMemo(() => {
-    return profiles.filter(p => {
+    return profiles.filter((p) => {
       const nameEmail = `${p.full_name || ''} ${p.email || ''}`.toLowerCase();
       if (q && !nameEmail.includes(q.toLowerCase())) return false;
       if (roleFilterId) {
@@ -111,9 +123,9 @@ const SystemUsersPage: React.FC = () => {
 
   const roleCounts = useMemo(() => {
     const counts: Record<number, number> = {};
-    roles.forEach(r => (counts[r.id] = 0));
-    Object.values(userRolesMap).forEach(roleIds => {
-      roleIds.forEach(rid => {
+    roles.forEach((r) => (counts[r.id] = 0));
+    Object.values(userRolesMap).forEach((roleIds) => {
+      roleIds.forEach((rid) => {
         if (counts[rid] === undefined) counts[rid] = 0;
         counts[rid] += 1;
       });
@@ -159,10 +171,7 @@ const SystemUsersPage: React.FC = () => {
           if (current.includes(roleId)) return prev;
           return { ...prev, [userId]: [...current, roleId] };
         }
-        return {
-          ...prev,
-          [userId]: current.filter((id) => id !== roleId),
-        };
+        return { ...prev, [userId]: current.filter((id) => id !== roleId) };
       });
 
       await fetchAll();
@@ -193,7 +202,169 @@ const SystemUsersPage: React.FC = () => {
     setIsRoleModalOpen(true);
   };
 
-  // ... rest of the file remains unchanged ...
+  const openNewRole = () => {
+    setEditingRole(null);
+    setIsRoleModalOpen(true);
+  };
+
+  const UsersTab = (
+    <Card className="shadow-lg">
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuário</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">E-mail</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[300px]">Grupos</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {loading ? (
+                <tr>
+                  <td colSpan={4} className="text-center py-10 text-gray-500">
+                    <Loader2 className="w-6 h-6 animate-spin text-blue-600 mx-auto mb-2" />
+                    Carregando usuários...
+                  </td>
+                </tr>
+              ) : filteredProfiles.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="text-center py-10 text-gray-500">
+                    Nenhum usuário encontrado.
+                  </td>
+                </tr>
+              ) : (
+                filteredProfiles.map((p) => {
+                  const assignedRoles = userRolesMap[p.id] || [];
+                  const isBusy = busyId === p.id;
+
+                  return (
+                    <tr key={p.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-dark-text">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                            {p.avatar_url ? (
+                              <img src={p.avatar_url} alt={p.full_name || 'Usuário'} className="w-full h-full object-cover" />
+                            ) : (
+                              <UserIcon className="w-5 h-5 text-gray-500" />
+                            )}
+                          </div>
+                          <span>{p.full_name || '—'}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-light-text">
+                        <div className="flex items-center">
+                          <Mail className="w-4 h-4 mr-2 text-gray-400" />
+                          {p.email || '—'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-dark-text">
+                        <div className="flex flex-wrap gap-3">
+                          {roles.map((r) => {
+                            const checked = assignedRoles.includes(r.id);
+                            return (
+                              <label key={`${p.id}-${r.id}`} className="flex items-center gap-2 text-xs border px-2 py-1 rounded-md">
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  disabled={isBusy || !canManage}
+                                  onChange={(e) => handleRolesChange(p.id, r.id, e.target.checked)}
+                                />
+                                {r.nome}
+                              </label>
+                            );
+                          })}
+                          {roles.length === 0 && <span className="text-xs text-gray-500">Nenhum grupo cadastrado.</span>}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-blue-600 hover:bg-blue-50"
+                            onClick={() => handleResetPassword(p)}
+                            disabled={!p.email}
+                            title="Redefinir senha"
+                          >
+                            <Lock className="w-4 h-4 mr-1" /> Resetar senha
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const GroupsTab = (
+    <Card className="shadow-lg">
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grupo</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descrição</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuários</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {loading ? (
+                <tr>
+                  <td colSpan={4} className="text-center py-10 text-gray-500">
+                    <Loader2 className="w-6 h-6 animate-spin text-blue-600 mx-auto mb-2" />
+                    Carregando grupos...
+                  </td>
+                </tr>
+              ) : roles.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="text-center py-10 text-gray-500">
+                    Nenhum grupo cadastrado.
+                  </td>
+                </tr>
+              ) : (
+                roles.map((r) => {
+                  const count = roleCounts[r.id] || 0;
+                  return (
+                    <tr key={r.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-dark-text">
+                        {r.nome}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-light-text">
+                        {r.descricao || '—'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-dark-text">
+                        {count}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-blue-600 hover:bg-blue-50"
+                          onClick={() => openEditRole(r)}
+                          disabled={!canManage}
+                        >
+                          <Edit className="w-4 h-4 mr-1" /> Editar
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-full">
@@ -206,6 +377,7 @@ const SystemUsersPage: React.FC = () => {
           </p>
         </div>
       )}
+
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold text-dark-text flex items-center gap-3">
@@ -244,17 +416,75 @@ const SystemUsersPage: React.FC = () => {
           >
             <UserPlus className="w-4 h-4 mr-2" /> Novo usuário
           </Button>
-          <Button variant="outline" className="text-blue-600 border-blue-600 hover:bg-blue-50" onClick={fetchAll} disabled={loading}>
+          <Button
+            variant="outline"
+            className="text-blue-600 border-blue-600 hover:bg-blue-50"
+            onClick={fetchAll}
+            disabled={loading}
+          >
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} /> Atualizar
           </Button>
         </div>
       </div>
 
-      {/* ... rest of JSX stays the same, except for checkbox disabled flag ... */}
+      <div className="mb-4">
+        <div className="flex items-center gap-2 border-b">
+          <button
+            className={`py-2 px-3 text-sm font-semibold ${
+              tab === 'users' ? 'border-b-2 border-blue-600 text-blue-800' : 'text-slate-600'
+            }`}
+            onClick={() => setTab('users')}
+          >
+            Usuários
+          </button>
+          <button
+            className={`py-2 px-3 text-sm font-semibold ${
+              tab === 'groups' ? 'border-b-2 border-blue-600 text-blue-800' : 'text-slate-600'
+            }`}
+            onClick={() => setTab('groups')}
+          >
+            Grupos
+          </button>
+        </div>
+      </div>
 
-                                    <input
-                                      type="checkbox"
-                                      checked={checked}
-                                      disabled={disabled || !canManage}
-                                      onChange={(e) => handleRolesChange(p.id, r.id, e.target.checked)}
-                                    />
+      {error && (
+        <div className="p-4 bg-red-100 border border-red-400 text-red-700 rounded-md mb-6 flex items-center">
+          <AlertTriangle className="w-5 h-5 mr-2" /> {error}
+        </div>
+      )}
+
+      <div className="space-y-6">
+        {tab === 'users' ? UsersTab : GroupsTab}
+
+        {tab === 'groups' && (
+          <div className="flex justify-end">
+            <Button
+              className="bg-green-600 hover:bg-green-700 text-white"
+              onClick={openNewRole}
+              disabled={!canManage}
+            >
+              <Plus className="w-4 h-4 mr-2" /> Novo Grupo
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <NewUserModal
+        isOpen={isNewOpen}
+        onClose={() => setIsNewOpen(false)}
+        roles={roles}
+        onCreated={fetchAll}
+      />
+
+      <RoleModal
+        isOpen={isRoleModalOpen}
+        role={editingRole}
+        onClose={() => setIsRoleModalOpen(false)}
+        onSaved={fetchAll}
+      />
+    </div>
+  );
+};
+
+export default SystemUsersPage;
