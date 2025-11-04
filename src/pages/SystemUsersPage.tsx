@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../integrations/supabase/client';
 import NewUserModal from '../components/NewUserModal';
 import { invokeEdgeFunction } from '../utils/edgeFunctions';
+import RoleModal from '../components/RoleModal';
 
 interface Profile {
   id: string;
@@ -39,6 +40,10 @@ const SystemUsersPage: React.FC = () => {
   const [roleFilterId, setRoleFilterId] = useState<number | ''>('');
   const [tab, setTab] = useState<'users' | 'groups'>('users');
   const [isNewOpen, setIsNewOpen] = useState(false);
+
+  // Role modal state
+  const [editingRole, setEditingRole] = useState<Role | null>(null);
+  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
 
   const fetchPermission = useCallback(async () => {
     const { data, error } = await supabase.rpc('has_permission', { p_permission: 'gerenciar_usuarios' });
@@ -186,21 +191,10 @@ const SystemUsersPage: React.FC = () => {
     }
   };
 
-  if (!canManage) {
-    return (
-      <div className="p-6">
-        <div className="p-6 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3">
-          <Lock className="w-6 h-6 text-yellow-700 mt-1" />
-          <div>
-            <h2 className="text-lg font-semibold text-yellow-800">Acesso restrito</h2>
-            <p className="text-sm text-yellow-700">
-              Você não possui permissão para gerenciar usuários e papéis. Contate um administrador.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const openEditRole = (r: Role) => {
+    setEditingRole(r);
+    setIsRoleModalOpen(true);
+  };
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-full">
@@ -393,7 +387,7 @@ const SystemUsersPage: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-light-text">Personalizado</td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                           <div className="flex justify-end gap-2">
-                            <Button variant="outline" size="sm" className="text-blue-600 hover:bg-blue-50" onClick={() => alert('Editar grupo (mock)')}>
+                            <Button variant="outline" size="sm" className="text-blue-600 hover:bg-blue-50" onClick={() => openEditRole(r)}>
                               Editar
                             </Button>
                           </div>
@@ -409,6 +403,13 @@ const SystemUsersPage: React.FC = () => {
       )}
 
       <NewUserModal isOpen={isNewOpen} onClose={() => setIsNewOpen(false)} roles={roles} onCreated={fetchAll} />
+
+      <RoleModal
+        isOpen={isRoleModalOpen}
+        role={editingRole}
+        onClose={() => { setIsRoleModalOpen(false); setEditingRole(null); }}
+        onSaved={() => { setIsRoleModalOpen(false); setEditingRole(null); fetchAll(); }}
+      />
     </div>
   );
 };
