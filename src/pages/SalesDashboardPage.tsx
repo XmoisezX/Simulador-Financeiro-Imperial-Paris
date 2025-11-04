@@ -38,7 +38,7 @@ interface CompanyMetrics {
 
 interface BrokerPerformance {
   broker_id: string;
-  broker_name: text;
+  broker_name: string;
   leads_attended: number;
   proposals_sent: number;
   sales_closed: number;
@@ -61,7 +61,7 @@ const formatPercent = (value: number | null) =>
 const SalesDashboardPage: React.FC = () => {
   const { session } = useAuth();
 
-  // Abas do módulo
+  // Abas
   const tabs = [
     { key: 'dashboard', label: 'Dashboard', icon: <Home className="w-4 h-4" /> },
     { key: 'imoveis', label: 'Imóveis', icon: <Building className="w-4 h-4" /> },
@@ -72,7 +72,7 @@ const SalesDashboardPage: React.FC = () => {
   type TabKey = typeof tabs[number]['key'];
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
 
-  // Período (padrão: últimos 12 meses)
+  // Período
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
     d.setFullYear(d.getFullYear() - 1);
@@ -86,10 +86,8 @@ const SalesDashboardPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Broker selecionado
   const [selectedBrokerId, setSelectedBrokerId] = useState<string>('');
 
-  // Busca os dados do dashboard (empresa e corretores)
   const fetchDashboardData = useCallback(async () => {
     if (!session) {
       setError('Você precisa estar logado para ver o painel de vendas.');
@@ -101,7 +99,6 @@ const SalesDashboardPage: React.FC = () => {
     setError(null);
 
     try {
-      // Métricas gerais
       const { data: companyData, error: companyError } = await supabase.rpc('get_company_sales_metrics', {
         p_user_id: session.user.id,
         p_start_date: startDate,
@@ -110,7 +107,6 @@ const SalesDashboardPage: React.FC = () => {
       if (companyError) throw new Error(`Falha ao carregar métricas da empresa: ${companyError.message}`);
       setCompanyMetrics(companyData && companyData.length > 0 ? (companyData[0] as CompanyMetrics) : null);
 
-      // Desempenho por corretor
       const { data: brokerData, error: brokerError } = await supabase.rpc('get_broker_sales_performance', {
         p_user_id: session.user.id,
         p_start_date: startDate,
@@ -120,27 +116,22 @@ const SalesDashboardPage: React.FC = () => {
       const list = (brokerData || []) as BrokerPerformance[];
       setBrokerPerformance(list);
 
-      // Ajusta seleção de corretor se necessário
-      if (selectedBrokerId && !list.some((b) => b.broker_id === selectedBrokerId)) {
+      if (selectedBrokerId && !list.some(b => b.broker_id === selectedBrokerId)) {
         setSelectedBrokerId('');
       }
 
-      // Tentar enriquecer com profiles (avatar/email) — se RLS bloquear, apenas ignora
-      const ids = list.map((b) => b.broker_id).filter(Boolean);
+      // Enriquecimento com profiles (se permitido)
+      const ids = list.map(b => b.broker_id).filter(Boolean);
       if (ids.length > 0) {
-        const { data: profs, error: profsError } = await supabase
+        const { data: profs } = await supabase
           .from('profiles')
           .select('id, full_name, email, avatar_url')
           .in('id', ids);
-
-        if (!profsError && profs) {
+        if (profs) {
           const map: Record<string, BrokerProfile> = {};
-          for (const p of profs as BrokerProfile[]) {
-            map[p.id] = p;
-          }
+          for (const p of profs as BrokerProfile[]) map[p.id] = p;
           setBrokerProfiles(map);
         } else {
-          // Sem permissão para ler todos os perfis: segue com dados do RPC
           setBrokerProfiles({});
         }
       } else {
@@ -157,19 +148,16 @@ const SalesDashboardPage: React.FC = () => {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  // Selecionado
   const selectedBroker = useMemo(
-    () => brokerPerformance.find((b) => b.broker_id === selectedBrokerId) || null,
+    () => brokerPerformance.find(b => b.broker_id === selectedBrokerId) || null,
     [brokerPerformance, selectedBrokerId]
   );
 
-  // Broker destaque (por receita)
   const topBroker = useMemo(() => {
     if (brokerPerformance.length === 0) return null;
     return [...brokerPerformance].sort((a, b) => (b.revenue_generated || 0) - (a.revenue_generated || 0))[0];
   }, [brokerPerformance]);
 
-  // Component: Cards de performance por corretor
   const BrokerCards: React.FC<{ broker: BrokerPerformance }> = ({ broker }) => (
     <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
       <KpiCard title="Leads Atendidos" value={broker.leads_attended.toString()} />
@@ -180,7 +168,7 @@ const SalesDashboardPage: React.FC = () => {
     </div>
   );
 
-  // Barra de abas
+  // Barra de abas (sticky)
   const TabsBar = (
     <nav className="sticky top-[88px] z-10 bg-white border-b shadow-sm">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -203,7 +191,6 @@ const SalesDashboardPage: React.FC = () => {
     </nav>
   );
 
-  // Filtros de período
   const PeriodFilters = (
     <div className="flex items-end gap-2 flex-wrap">
       <div className="flex flex-col">
@@ -245,7 +232,6 @@ const SalesDashboardPage: React.FC = () => {
 
   const hasCompanyData = !!companyMetrics || brokerPerformance.length > 0;
 
-  // Helpers de UI
   const BrokerHeaderCard: React.FC<{ b: BrokerPerformance }> = ({ b }) => {
     const profile = brokerProfiles[b.broker_id];
     return (
@@ -256,7 +242,7 @@ const SalesDashboardPage: React.FC = () => {
             alt={profile?.full_name || b.broker_name || 'Corretor'}
             className="w-10 h-10 rounded-full object-cover"
           />
-          <div>
+        <div>
             <p className="font-semibold text-dark-text">{profile?.full_name || b.broker_name || 'Corretor'}</p>
             <p className="text-xs text-gray-500">{profile?.email || '—'}</p>
           </div>
@@ -270,8 +256,12 @@ const SalesDashboardPage: React.FC = () => {
     <div className="p-0">
       {TabsBar}
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
-        {/* Header e Filtros */}
+      {/* Espaço extra após barra sticky para evitar qualquer sobreposição visual */}
+      <div className="h-2"></div>
+
+      {/* Conteúdo com remount por aba para garantir limpeza de gráficos/DOM */}
+      <div key={activeTab} className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+        {/* Header + Filtros */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-dark-text flex items-center">
@@ -290,10 +280,8 @@ const SalesDashboardPage: React.FC = () => {
           </div>
         )}
 
-        {/* Conteúdo por aba */}
         {activeTab === 'dashboard' && (
           <section className="space-y-8">
-            {/* Resumo Geral */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
               <KpiCard title="Receita (Período)" value={formatCurrency(companyMetrics?.sales_total_revenue)} status={companyMetrics && companyMetrics.sales_total_revenue > 0 ? 'positive' : 'neutral'} />
               <KpiCard title="Leads Recebidos" value={companyMetrics?.total_leads?.toString() || 'N/A'} />
@@ -303,7 +291,6 @@ const SalesDashboardPage: React.FC = () => {
               <KpiCard title="Crescimento Mensal" value={formatPercent(companyMetrics?.company_monthly_growth_percent)} status={companyMetrics && companyMetrics.company_monthly_growth_percent > 0 ? 'positive' : 'neutral'} />
             </div>
 
-            {/* Destaque Individual por Corretor */}
             <div className="grid grid-cols-1 gap-6">
               {brokerPerformance.map((b) => (
                 <BrokerHeaderCard key={b.broker_id} b={b} />
@@ -399,7 +386,6 @@ const SalesDashboardPage: React.FC = () => {
               <KpiCard title="Destaque em Vendas" value={topBroker ? (brokerProfiles[topBroker.broker_id]?.full_name || topBroker.broker_name) : 'N/A'} />
             </div>
 
-            {/* Seletor de corretor */}
             <div className="flex items-center gap-2">
               <label className="text-sm text-gray-600">Corretor:</label>
               <select
@@ -416,7 +402,6 @@ const SalesDashboardPage: React.FC = () => {
               </select>
             </div>
 
-            {/* Cards do selecionado ou todos */}
             {selectedBroker ? (
               <BrokerHeaderCard b={selectedBroker} />
             ) : (
@@ -427,7 +412,6 @@ const SalesDashboardPage: React.FC = () => {
               </div>
             )}
 
-            {/* Tabela detalhada */}
             <Card className="shadow-md">
               <CardContent className="p-0">
                 <BrokerPerformanceTable data={selectedBroker ? [selectedBroker] : brokerPerformance} />
@@ -438,7 +422,6 @@ const SalesDashboardPage: React.FC = () => {
 
         {activeTab === 'relatorios' && (
           <section className="space-y-8">
-            {/* KPIs macros */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
               <KpiCard title="Receita (Período)" value={formatCurrency(companyMetrics?.sales_total_revenue)} status={companyMetrics && companyMetrics.sales_total_revenue > 0 ? 'positive' : 'neutral'} />
               <KpiCard title="Leads Recebidos" value={companyMetrics?.total_leads?.toString() || 'N/A'} />
@@ -448,7 +431,6 @@ const SalesDashboardPage: React.FC = () => {
               <KpiCard title="Taxa de Aprovação" value={formatPercent(companyMetrics?.proposals_approval_rate)} />
             </div>
 
-            {/* Gráficos e Tabela */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card className="shadow-md">
                 <CardContent className="p-6">
