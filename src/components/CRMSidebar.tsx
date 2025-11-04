@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Building, Key, FileText, Users, Briefcase, CalendarCheck, Zap, DollarSign, Target, Map, Menu, X, Settings, Globe, Building2, TrendingUp } from 'lucide-react';
+import { Home, Building, Key, FileText, Users, Briefcase, CalendarCheck, Zap, DollarSign, Target, Map, Menu, X, Settings, Globe, Building2, TrendingUp, Shield } from 'lucide-react';
 
 interface NavItemProps {
     to: string;
@@ -72,7 +72,6 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                 ></div>
             )}
 
-            {/* Ajuste principal: encostar ao header (top reduzido) */}
             <aside className={`
                 ${sidebarWidth} 
                 bg-white border-r border-gray-200 
@@ -136,6 +135,7 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                         {isSystemOpen && (
                             <div className="pl-4 pt-1 space-y-1">
                                 <NavItem to="/crm/sistema/site" icon={<Globe className="w-5 h-5" />} label="Site" isSidebarOpen={true} onClick={handleNavClick} />
+                                <NavItem to="/crm/sistema/usuarios" icon={<Shield className="w-5 h-5" />} label="Usuários e Permissões" isSidebarOpen={true} onClick={handleNavClick} />
                                 <NavItem to="/crm/sistema/geral" icon={<Settings className="w-5 h-5" />} label="Geral (Mock)" isSidebarOpen={true} onClick={handleNavClick} />
                             </div>
                         )}
@@ -143,7 +143,6 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                 </div>
             </aside>
             
-            {/* Mobile overlay (inalterado) */}
             <aside className={`
                 ${mobileClasses} 
                 bg-white border-r border-gray-200 flex-shrink-0 overflow-y-auto h-full 
@@ -181,27 +180,9 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                     <NavItem to="/mapa-teste" icon={<Map className="w-5 h-5" />} label="Teste de Mapa" isSidebarOpen={true} onClick={handleNavClick} />
                     
                     <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1 px-3">Administração</h3>
-                    <div className="relative">
-                        <button
-                            onClick={handleSystemClick}
-                            className={`flex items-center p-3 rounded-lg transition-colors duration-150 w-full ${
-                                isSystemOpen 
-                                ? 'bg-blue-100 text-blue-800 font-semibold' 
-                                : 'text-slate-600 hover:bg-gray-100'
-                            } justify-start`}
-                            title="Sistema"
-                        >
-                            <Settings className="w-5 h-5" />
-                            <span className="ml-3 text-sm whitespace-nowrap">Sistema</span>
-                        </button>
-                        
-                        {isSystemOpen && (
-                            <div className="pl-4 pt-1 space-y-1">
-                                <NavItem to="/crm/sistema/site" icon={<Globe className="w-5 h-5" />} label="Site" isSidebarOpen={true} onClick={handleNavClick} />
-                                <NavItem to="/crm/sistema/geral" icon={<Settings className="w-5 h-5" />} label="Geral (Mock)" isSidebarOpen={true} onClick={handleNavClick} />
-                            </div>
-                        )}
-                    </div>
+                    <NavItem to="/crm/sistema/site" icon={<Globe className="w-5 h-5" />} label="Site" isSidebarOpen={true} onClick={handleNavClick} />
+                    <NavItem to="/crm/sistema/usuarios" icon={<Shield className="w-5 h-5" />} label="Usuários e Permissões" isSidebarOpen={true} onClick={handleNavClick} />
+                    <NavItem to="/crm/sistema/geral" icon={<Settings className="w-5 h-5" />} label="Geral (Mock)" isSidebarOpen={true} onClick={handleNavClick} />
                 </div>
             </aside>
         </>
