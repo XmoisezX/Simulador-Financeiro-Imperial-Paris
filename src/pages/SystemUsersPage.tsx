@@ -91,7 +91,7 @@ const SystemUsersPage: React.FC = () => {
     }
   }, [session, fetchAll, fetchPermission]);
 
-  const filteredProfiles = useMemo(() => {
+  const filteredProfiles = React.useMemo(() => {
     return profiles.filter(p => {
       const nameEmail = `${p.full_name || ''} ${p.email || ''}`.toLowerCase();
       if (q && !nameEmail.includes(q.toLowerCase())) return false;
@@ -103,7 +103,7 @@ const SystemUsersPage: React.FC = () => {
     });
   }, [profiles, q, roleFilterId, userRolesMap]);
 
-  const roleCounts = useMemo(() => {
+  const roleCounts = React.useMemo(() => {
     const counts: Record<number, number> = {};
     roles.forEach(r => counts[r.id] = 0);
     Object.values(userRolesMap).forEach(roleIds => {
@@ -115,21 +115,53 @@ const SystemUsersPage: React.FC = () => {
     return counts;
   }, [roles, userRolesMap]);
 
+  // UPDATED: call Edge Function assign-role to add/remove role safely
   const handleRolesChange = async (userId: string, roleId: number, checked: boolean) => {
     setBusyId(userId);
     try {
-      if (checked) {
-        const { error } = await supabase.from('user_roles').insert({ user_id: userId, role_id: roleId });
-        if (error) throw error;
-        setUserRolesMap(prev => ({ ...prev, [userId]: [...(prev[userId] || []), roleId] }));
-      } else {
-        const { error } = await supabase.from('user_roles').delete().match({ user_id: userId, role_id: roleId });
-        if (error) throw error;
-        setUserRolesMap(prev => ({ ...prev, [userId]: (prev[userId] || []).filter(id => id !== roleId) }));
+      // If profile has no email, avoid attempting creation
+      const profile = profiles.find(p => p.id === userId);
+      if (!profile) throw new Error('Perfil não encontrado.');
+      if (!profile.email && checked) {
+        alert('Este perfil não possui e-mail registrado. Adicione um e-mail antes de convidar/criar a conta.');
+        setBusyId(null);
+        return;
       }
+
+      const action = checked ? 'add' : 'remove';
+
+      const { data, error } = await supabase.functions.invoke('assign-role', {
+        body: {
+          profile_id: userId,
+          role_id: roleId,
+          action,
+        }
+      });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+
+      // If success, update local map to reflect immediate state
+      setUserRolesMap(prev => {
+        const current = prev[userId] || [];
+        if (action === 'add') {
+          if (!current.includes(roleId)) {
+            return { ...prev, [userId]: [...current, roleId] };
+          }
+          return prev;
+        } else {
+          return { ...prev, [userId]: current.filter(id => id !== roleId) };
+        }
+      });
+
+      // Refresh counts/list to reflect authoritative state (optional)
+      await fetchAll();
+      alert(data?.message || (action === 'add' ? 'Papel atribuído com sucesso.' : 'Papel removido com sucesso.'));
     } catch (e: any) {
+      console.error('Error assigning role:', e);
       alert(`Erro ao atualizar papel: ${e.message || e}`);
-      console.error(e);
     } finally {
       setBusyId(null);
     }
@@ -239,7 +271,6 @@ const SystemUsersPage: React.FC = () => {
                   ) : (
                     filteredProfiles.map(p => {
                       const assigned = userRolesMap[p.id] || [];
-                      const rolesLabels = assigned.map(rid => roles.find(r => r.id === rid)?.nome).filter(Boolean).join(', ');
                       return (
                         <tr key={p.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap text-sm flex items-center gap-3">
@@ -253,12 +284,13 @@ const SystemUsersPage: React.FC = () => {
                             <div className="flex flex-wrap gap-2">
                               {roles.map(r => {
                                 const checked = assigned.includes(r.id);
+                                const disabled = busyId === p.id;
                                 return (
-                                  <label key={r.id} className="flex items-center gap-1 text-xs border px-2 py-1 rounded-md">
+                                  <label key={r.id} className={`flex items-center gap-1 text-xs border px-2 py-1 rounded-md ${checked ? 'bg-blue-50 border-blue-300' : 'bg-white border-gray-300'}`}>
                                     <input
                                       type="checkbox"
                                       checked={checked}
-                                      disabled={busyId === p.id}
+                                      disabled={disabled}
                                       onChange={(e) => handleRolesChange(p.id, r.id, e.target.checked)}
                                     />
                                     <span>{r.nome}</span>
