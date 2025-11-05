@@ -32,6 +32,7 @@ import ImoveisPublicPage from './src/pages/ImoveisPublicPage';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import SystemUsersPage from './src/pages/SystemUsersPage';
 import DocumentosPage from './src/pages/DocumentosPage';
+import { Toaster } from 'react-hot-toast';
 
 const AppContent: React.FC = () => {
     const { session } = useAuth();
@@ -91,6 +92,7 @@ const App: React.FC = () => {
             <AuthProvider>
                 <ErrorBoundary>
                     <AppContent />
+                    <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
                 </ErrorBoundary>
             </AuthProvider>
         </BrowserRouter>
