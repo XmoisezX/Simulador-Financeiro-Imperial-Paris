@@ -92,6 +92,14 @@ const DocumentosPage: React.FC = () => {
     []
   );
 
+  useEffect(() => {
+    const editor = quillRef.current?.getEditor();
+    if (editor) {
+      editor.root.style.minHeight = '30em'; // ~20 linhas (line-height 1.5)
+      editor.root.style.lineHeight = '1.5';
+    }
+  }, [content]);
+
   const fetchTemplates = async () => {
     if (!session) return;
     setIsLoading(true);
