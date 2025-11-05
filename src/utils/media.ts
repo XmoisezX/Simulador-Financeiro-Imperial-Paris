@@ -290,3 +290,62 @@ export const uploadCondominioLogo = async (file: File, condominioId: string) => 
         return { url: null, error: e as any };
     }
 };
+
+/**
+ * Persiste metadados das imagens de imóvel na tabela imagens_imovel.
+ */
+export const saveMediaMetadata = async (
+    imovelId: string,
+    userId: string,
+    media: { id: string; url: string; legend?: string; is_visible?: boolean; rotation?: number; ordem?: number }[]
+) => {
+    if (media.length === 0) {
+        return { data: [], error: null };
+    }
+
+    const payload = media.map(item => ({
+        id: item.id,
+        imovel_id: imovelId,
+        user_id: userId,
+        url: item.url,
+        legend: item.legend ?? null,
+        is_visible: item.is_visible ?? true,
+        rotation: item.rotation ?? 0,
+        ordem: item.ordem ?? 0,
+    }));
+
+    const { data, error } = await supabase
+        .from('imagens_imovel')
+        .upsert(payload, { onConflict: 'id' })
+        .select('id');
+
+    return { data, error };
+};
+
+/**
+ * Persiste metadados das mídias de condomínio na tabela condominio_midias.
+ */
+export const saveCondominioMediaMetadata = async (
+    condominioId: string,
+    media: { id: string; url: string; tipo: 'imagem' | 'video'; destaque?: boolean; ordem?: number }[]
+) => {
+    if (media.length === 0) {
+        return { data: [], error: null };
+    }
+
+    const payload = media.map(item => ({
+        id: item.id,
+        condominio_id: condominioId,
+        tipo: item.tipo,
+        arquivo_url: item.url,
+        destaque: item.destaque ?? false,
+        ordem: item.ordem ?? 0,
+    }));
+
+    const { data, error } = await supabase
+        .from('condominio_midias')
+        .upsert(payload, { onConflict: 'id' })
+        .select('id');
+
+    return { data, error };
+};
