@@ -10,6 +10,7 @@ interface Profile {
     company_name: string | null;
     avatar_url: string | null;
     phone: string | null; // Campo adicionado
+    theme?: string | null; // novo campo
 }
 
 interface UpdateProfileData {
@@ -18,6 +19,7 @@ interface UpdateProfileData {
     company_name?: string;
     avatar_url?: string;
     phone?: string; // Campo adicionado
+    theme?: string | null; // novo campo para preferência de tema
 }
 
 export const useProfile = () => {
@@ -38,7 +40,7 @@ export const useProfile = () => {
 
         const { data, error } = await supabase
             .from('profiles')
-            .select('id, full_name, email, role, company_name, avatar_url, phone') // Selecionando o novo campo
+            .select('id, full_name, email, role, company_name, avatar_url, phone, theme') // Selecionando o novo campo
             .eq('id', session.user.id)
             .single();
 

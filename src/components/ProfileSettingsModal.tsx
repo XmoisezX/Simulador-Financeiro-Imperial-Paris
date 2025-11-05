@@ -11,6 +11,14 @@ interface ProfileSettingsModalProps {
     onClose: () => void;
 }
 
+const applyThemeClass = (theme: string | null | undefined) => {
+    const el = document.documentElement;
+    if (!el) return;
+    el.classList.remove('theme-dark', 'theme-light');
+    if (theme === 'dark') el.classList.add('theme-dark');
+    else el.classList.add('theme-light');
+};
+
 const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onClose }) => {
     const { profile, updateProfile, fetchProfile } = useProfile();
     const { session } = useAuth();
@@ -19,6 +27,7 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
     const [role, setRole] = useState('');
     const [companyName, setCompanyName] = useState('');
     const [phone, setPhone] = useState('');
+    const [theme, setTheme] = useState<'light' | 'dark'>('light');
     const [isUpdating, setIsUpdating] = useState(false);
     const [updateError, setUpdateError] = useState<string | null>(null);
     const [updateSuccess, setUpdateSuccess] = useState(false);
@@ -29,11 +38,16 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
             setRole(profile.role || '');
             setCompanyName(profile.company_name || 'IMPERIAL PARIS');
             setPhone(profile.phone || '');
+            setTheme((profile.theme as 'light' | 'dark') || 'light');
+            // apply on mount
+            applyThemeClass(profile.theme);
         } else if (session) {
             setFullName('');
             setRole('');
             setCompanyName('IMPERIAL PARIS');
             setPhone('');
+            setTheme('light');
+            applyThemeClass('light');
         }
     }, [profile, session]);
 
@@ -52,16 +66,19 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
             role: role.trim(),
             company_name: companyName.trim(),
             phone: phone.trim(),
+            theme: theme,
         });
 
         setIsUpdating(false);
         if (success) {
             setUpdateSuccess(true);
+            // Apply theme immediately in the page
+            applyThemeClass(theme);
             setTimeout(() => setUpdateSuccess(false), 3000);
         } else {
             setUpdateError('Falha ao salvar as informações.');
         }
-    }, [fullName, role, companyName, phone, updateProfile]);
+    }, [fullName, role, companyName, phone, updateProfile, theme]);
     
     const handleAvatarUpdate = useCallback(async (newUrl: string) => {
         const success = await updateProfile({ avatar_url: newUrl });
@@ -135,13 +152,20 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
                             onChange={(e) => setPhone(e.target.value)}
                             placeholder="(53) 99999-9999"
                         />
-                        <TextInput 
-                            label={<span>Idioma</span>} 
-                            id="language" 
-                            value="Português (Brasil)" 
-                            placeholder="Idioma"
-                            disabled
-                        />
+                        <div>
+                            <label className="block text-sm font-medium text-light-text mb-1">Tema</label>
+                            <div className="flex items-center space-x-4">
+                                <label className={`px-3 py-2 rounded-md cursor-pointer ${theme === 'light' ? 'bg-blue-50 border border-blue-200' : 'bg-white border border-gray-200'}`}>
+                                    <input type="radio" name="theme" value="light" checked={theme === 'light'} onChange={() => setTheme('light')} />
+                                    <span className="ml-2">Claro</span>
+                                </label>
+                                <label className={`px-3 py-2 rounded-md cursor-pointer ${theme === 'dark' ? 'bg-slate-800 text-white' : 'bg-white border border-gray-200'}`}>
+                                    <input type="radio" name="theme" value="dark" checked={theme === 'dark'} onChange={() => setTheme('dark')} />
+                                    <span className="ml-2">Escuro</span>
+                                </label>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-2">Escolha entre o modo Claro ou Escuro para sua conta (aplicado imediatamente).</p>
+                        </div>
                     </div>
                     <Button variant="outline" className="w-full text-red-600 border-red-300 hover:bg-red-50">
                         <Lock className="w-4 h-4 mr-2" /> Alterar Senha (Mock)
