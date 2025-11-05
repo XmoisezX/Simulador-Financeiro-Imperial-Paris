@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../integrations/supabase/client';
 import { Button } from '../components/ui/Button';
@@ -6,6 +6,8 @@ import { Card, CardContent } from '../components/ui/Card';
 import TextInput from '../components/TextInput';
 import { Loader2, Save, Plus, Trash2, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 type DocType =
   | 'Contrato de Locação'
@@ -49,6 +51,47 @@ const DocumentosPage: React.FC = () => {
   const [content, setContent] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
+  const quillRef = useRef<ReactQuill | null>(null);
+
+  const quillModules = useMemo(() => ({
+    toolbar: [
+      [{ header: [1, 2, 3, 4, 5, 6, false] }],
+      ['bold', 'italic', 'underline', 'strike', 'blockquote', 'code-block'],
+      [{ color: [] }, { background: [] }],
+      [{ script: 'sub' }, { script: 'super' }],
+      [{ list: 'ordered' }, { list: 'bullet' }, { list: 'check' }],
+      [{ indent: '-1' }, { indent: '+1' }],
+      [{ align: [] }],
+      ['link', 'image'],
+      ['clean'],
+    ],
+    clipboard: { matchVisual: false },
+    history: { delay: 2000, maxStack: 500, userOnly: true },
+  }), []);
+
+  const quillFormats = useMemo(
+    () => [
+      'header',
+      'bold',
+      'italic',
+      'underline',
+      'strike',
+      'blockquote',
+      'code-block',
+      'color',
+      'background',
+      'script',
+      'list',
+      'indent',
+      'align',
+      'link',
+      'image',
+      'clean',
+      'check',
+    ],
+    []
+  );
+
   const fetchTemplates = async () => {
     if (!session) return;
     setIsLoading(true);
@@ -84,28 +127,19 @@ const DocumentosPage: React.FC = () => {
     setContent(t.content || '');
   };
 
-  const handleInsertPlaceholder = (token: string) => {
-    // insere token na posição do caret dentro do editor
-    const editor = document.getElementById('doc-editor');
+  const handleInsertPlaceholder = useCallback((token: string) => {
+    const editor = quillRef.current?.getEditor();
     if (!editor) return;
-    editor.focus();
-    const sel = window.getSelection();
-    if (!sel || sel.rangeCount === 0) {
-      editor.appendChild(document.createTextNode(token));
-      setContent((prev) => prev + token);
-      return;
-    }
-    const range = sel.getRangeAt(0);
-    range.deleteContents();
-    const node = document.createTextNode(token);
-    range.insertNode(node);
-    // move cursor after inserted token
-    range.setStartAfter(node);
-    range.collapse(true);
-    sel.removeAllRanges();
-    sel.addRange(range);
-    // update state
-    setContent(editor.innerHTML);
+
+    const range = editor.getSelection(true);
+    const position = range ? range.index : editor.getLength();
+    editor.insertText(position, token, 'user');
+    editor.setSelection(position + token.length, 0);
+    setContent(editor.root.innerHTML);
+  }, []);
+
+  const handleEditorChange = (value: string) => {
+    setContent(value);
   };
 
   const handleSave = async () => {
@@ -121,7 +155,7 @@ const DocumentosPage: React.FC = () => {
       user_id: session.user.id,
       title: title.trim(),
       type: selectedType,
-      content: content,
+      content,
       updated_at: new Date().toISOString(),
     };
 
@@ -140,7 +174,6 @@ const DocumentosPage: React.FC = () => {
         if (error) throw error;
       }
       await fetchTemplates();
-      // reload the template if it existed
       setSelectedTemplateId(null);
       setTitle('');
       setContent('');
@@ -160,7 +193,6 @@ const DocumentosPage: React.FC = () => {
       alert('Erro ao excluir: ' + error.message);
     } else {
       await fetchTemplates();
-      // clear editor if was the same
       if (selectedTemplateId === id) loadTemplate(null);
     }
     setIsSaving(false);
@@ -237,64 +269,67 @@ const DocumentosPage: React.FC = () => {
         <div className="lg:col-span-3 space-y-4">
           <Card>
             <CardContent>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                   <TextInput id="templateTitle" label="Título do Modelo" value={title} onChange={(e) => setTitle(e.target.value)} />
                   <select value={selectedType} onChange={(e) => setSelectedType(e.target.value as DocType)} className="p-2 border rounded">
                     {DOC_TYPES.map(dt => <option key={dt} value={dt}>{dt}</option>)}
                   </select>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button onClick={handleSave} className="bg-primary-orange hover:bg-secondary-orange text-white">
-                    {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />} Salvar Modelo
-                  </Button>
-                </div>
+                <Button onClick={handleSave} className="bg-primary-orange hover:bg-secondary-orange text-white">
+                  {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />} Salvar Modelo
+                </Button>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div className="lg:col-span-2">
-                  <div className="border rounded">
-                    <div className="p-2 border-b bg-gray-50 text-sm">Editor (formatação básica)</div>
-                    <div
-                      id="doc-editor"
-                      contentEditable
-                      suppressContentEditableWarning
-                      onInput={(e) => setContent((e.target as HTMLElement).innerHTML)}
-                      className="min-h-[400px] p-4 text-sm"
-                      dangerouslySetInnerHTML={{ __html: content }}
-                      style={{ outline: 'none', background: 'white' }}
-                    />
-                  </div>
+                <div className="lg:col-span-2 border rounded">
+                  <div className="p-2 border-b bg-gray-50 text-sm font-medium">Editor de Documento</div>
+                  <ReactQuill
+                    ref={quillRef}
+                    theme="snow"
+                    value={content}
+                    onChange={handleEditorChange}
+                    modules={quillModules}
+                    formats={quillFormats}
+                    placeholder="Escreva ou cole o conteúdo completo do documento aqui..."
+                    className="bg-white rounded-b"
+                  />
                 </div>
 
-                <div>
+                <div className="space-y-4">
                   <div className="p-3 border rounded bg-gray-50">
-                    <h4 className="font-semibold mb-2">Ações Rápidas</h4>
+                    <h4 className="font-semibold mb-2 text-sm">Ações Rápidas</h4>
                     <div className="space-y-2">
-                      <button onClick={() => {
-                        // limpar
-                        setContent('');
-                        const editor = document.getElementById('doc-editor');
-                        if (editor) editor.innerHTML = '';
-                      }} className="w-full text-left px-3 py-2 rounded hover:bg-gray-100">Limpar Editor</button>
-                      <button onClick={() => {
-                        const editor = document.getElementById('doc-editor');
-                        if (editor) {
-                          navigator.clipboard.writeText(editor.innerText || '');
-                          alert('Texto copiado para a área de transferência (apenas texto).');
-                        }
-                      }} className="w-full text-left px-3 py-2 rounded hover:bg-gray-100">Copiar Texto</button>
+                      <button
+                        onClick={() => {
+                          setContent('');
+                          quillRef.current?.getEditor().setText('');
+                        }}
+                        className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 text-sm"
+                      >
+                        Limpar Editor
+                      </button>
+                      <button
+                        onClick={() => {
+                          const text = quillRef.current?.getEditor().getText() || '';
+                          navigator.clipboard.writeText(text);
+                          alert('Conteúdo copiado (texto plano).');
+                        }}
+                        className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 text-sm"
+                      >
+                        Copiar Texto
+                      </button>
                     </div>
                   </div>
 
-                  <div className="mt-4 p-3 border rounded bg-gray-50">
-                    <h4 className="font-semibold mb-2">Pré-visualização (limpa)</h4>
-                    <div className="min-h-[120px] p-2 bg-white text-sm" dangerouslySetInnerHTML={{ __html: content }} />
+                  <div className="p-3 border rounded bg-gray-50">
+                    <h4 className="font-semibold mb-2 text-sm">Pré-visualização</h4>
+                    <div className="min-h-[150px] max-h-[300px] overflow-auto p-2 bg-white text-sm border rounded" dangerouslySetInnerHTML={{ __html: content }} />
                   </div>
                 </div>
               </div>
 
-              {error && <div className="text-red-600 mt-3">{error}</div>}
+              {error && <div className="text-red-600 mt-3 text-sm">{error}</div>}
             </CardContent>
           </Card>
         </div>
