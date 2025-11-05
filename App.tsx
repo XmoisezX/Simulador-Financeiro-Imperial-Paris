@@ -2,10 +2,10 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import LoginPage from './src/pages/Login';
-import HomePage from './src/pages/HomePage'; 
+import HomePage from './src/pages/HomePage';
 import MarketAnalysisPage from './src/pages/MarketAnalysisPage';
 import ListingGoalsPage from './src/pages/ListingGoalsPage';
-import DashboardPage from './src/pages/DashboardPage'; 
+import DashboardPage from './src/pages/DashboardPage';
 import ImoveisPage from './src/pages/ImoveisPage';
 import NewImovelPage from './src/pages/NewImovelPage';
 import ViewImovelPage from './src/pages/ViewImovelPage';
@@ -31,6 +31,7 @@ import PublicImovelDetailsPage from './src/pages/PublicImovelDetailsPage';
 import ImoveisPublicPage from './src/pages/ImoveisPublicPage';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import SystemUsersPage from './src/pages/SystemUsersPage';
+import DocumentosPage from './src/pages/DocumentosPage';
 
 const AppContent: React.FC = () => {
     const { session } = useAuth();
@@ -73,6 +74,7 @@ const AppContent: React.FC = () => {
                 <Route path="/crm/sistema/site" element={<SiteSettingsPage />} />
                 <Route path="/crm/sistema/usuarios" element={<SystemUsersPage />} />
                 <Route path="/crm/sistema/geral" element={<div className="p-4 text-xl">Configurações Gerais (Em construção)</div>} />
+                <Route path="/crm/documentos" element={<DocumentosPage />} />
                 <Route path="/simulador" element={<HomePage />} />
                 <Route path="/analise-de-mercado" element={<MarketAnalysisPage />} />
                 <Route path="/metas-agenciamento" element={<ListingGoalsPage />} />
