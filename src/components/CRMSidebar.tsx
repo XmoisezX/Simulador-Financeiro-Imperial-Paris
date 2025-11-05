@@ -1,4 +1,3 @@
-(import React and rest unchanged — full file updated)
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Building, Key, FileText, Users, Briefcase, CalendarCheck, Zap, DollarSign, Target, Map, Menu, X, Settings, Globe, Building2, TrendingUp, Shield, FileText as DocumentsIcon } from 'lucide-react';
@@ -42,13 +41,8 @@ interface CRMSidebarProps {
 }
 
 const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
-    // Começa aberto em desktop, fechado em mobile
     const [isSystemOpen, setIsSystemOpen] = useState(false);
 
-    const mobileClasses = isOpen 
-        ? 'fixed inset-0 z-40 transform translate-x-0 transition-transform duration-300 w-64'
-        : 'fixed inset-0 z-40 transform -translate-x-full transition-transform duration-300 w-64';
-        
     const handleSystemClick = () => {
         if (isOpen) {
             setIsSystemOpen(prev => !prev);
@@ -116,9 +110,8 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                     <NavItem to="/metas-agenciamento" icon={<Target className="w-5 h-5" />} label="Metas Agenciamento" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     <NavItem to="/mapa-teste" icon={<Map className="w-5 h-5" />} label="Teste de Mapa" isSidebarOpen={isOpen} onClick={handleNavClick} />
 
-                    {/* NOVO: Documentos */}
                     <div className="pt-3">
-                      <NavItem to="/crm/documentos" icon={<DocumentsIcon className="w-5 h-5" />} label="Documentos" isSidebarOpen={isOpen} onClick={handleNavClick} />
+                        <NavItem to="/crm/documentos" icon={<DocumentsIcon className="w-5 h-5" />} label="Documentos" isSidebarOpen={isOpen} onClick={handleNavClick} />
                     </div>
                     
                     {isOpen && <h3 className="text-xs font-semibold uppercase text-gray-400 pt-4 pb-1">Administração</h3>}
@@ -147,8 +140,6 @@ const CRMSidebar: React.FC<CRMSidebarProps> = ({ isOpen, toggleSidebar }) => {
                     </div>
                 </div>
             </aside>
-            
-            {/* mobile aside omitted for brevity (unchanged) */}
         </>
     );
 };
