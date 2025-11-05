@@ -22,8 +22,15 @@ export interface Proposal {
     status: ProposalStatus;
     arquivo_url: string | null;
     // Campos adicionais para display (vindos do join)
-    clientes?: { nome: string, telefone: string, email: string } | null;
-    imoveis?: { codigo: string, logradouro: string, numero: string, bairro: string, dados_valores: { valor_venda: number, valor_locacao: number } } | null;
+    clientes?: { nome: string, telefone: string | null, email: string | null } | null;
+    imoveis?: { codigo: string, logradouro: string, numero: string, bairro: string, dados_valores: { valor_venda: number | null, valor_locacao: number | null } } | null;
+}
+
+interface Template {
+    id: string;
+    title: string;
+    type: string;
+    content: string | null;
 }
 
 interface ProposalGeneratorModalProps {
@@ -44,6 +51,18 @@ const initialFormData: Proposal = {
     arquivo_url: null,
 };
 
+const formatCurrency = (value: number | null | undefined) =>
+  value ? value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'N/A';
+
+const stripHtml = (html: string) =>
+  html
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
 const ProposalGeneratorModal: React.FC<ProposalGeneratorModalProps> = ({ isOpen, onClose, opportunity, onSaveSuccess }) => {
     const { session } = useAuth();
     const [formData, setFormData] = useState<Proposal>(initialFormData);
@@ -51,6 +70,53 @@ const ProposalGeneratorModal: React.FC<ProposalGeneratorModalProps> = ({ isOpen,
     const [error, setError] = useState<string | null>(null);
     const [isLoadingDetails, setIsLoadingDetails] = useState(true);
     const [existingProposals, setExistingProposals] = useState<Proposal[]>([]);
+    const [templates, setTemplates] = useState<Template[]>([]);
+    const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+    const [previewHtml, setPreviewHtml] = useState<string>('');
+
+    const applyTemplate = useCallback((templateContent: string) => {
+        if (!templateContent) return '';
+        const clienteNome = formData.clientes?.nome || '';
+        const clienteEmail = formData.clientes?.email || '';
+        const clienteTelefone = formData.clientes?.telefone || '';
+        const imovelCodigo = formData.imoveis?.codigo || '';
+        const imovelEndereco = formData.imoveis
+            ? `${formData.imoveis.logradouro || ''}, ${formData.imoveis.numero || ''} - ${formData.imoveis.bairro || ''}`
+            : '';
+        const imovelValorVenda = formatCurrency(formData.imoveis?.dados_valores?.valor_venda);
+        const imovelValorLocacao = formatCurrency(formData.imoveis?.dados_valores?.valor_locacao);
+        const valorProposto = formatCurrency(formData.valor_proposto);
+        const condicoes = formData.condicoes_pagamento || '';
+        const validade = formData.data_validade ? new Date(formData.data_validade).toLocaleDateString('pt-BR') : '';
+        const hoje = new Date().toLocaleDateString('pt-BR');
+
+        const replacements: Record<string, string> = {
+            '{{CLIENTE_NOME}}': clienteNome,
+            '{{CLIENTE_EMAIL}}': clienteEmail,
+            '{{CLIENTE_TELEFONE}}': clienteTelefone,
+            '{{IMOBILIARIA_NOME}}': 'Imperial Paris Imóveis',
+            '{{IMOVEL_CODIGO}}': imovelCodigo,
+            '{{IMOVEL_ENDERECO}}': imovelEndereco,
+            '{{IMOVEL_BAIRRO}}': formData.imoveis?.bairro || '',
+            '{{IMOVEL_VALOR_VENDA}}': imovelValorVenda,
+            '{{IMOVEL_VALOR_LOCACAO}}': imovelValorLocacao,
+            '{{VALOR_PROPOSTO}}': valorProposto,
+            '{{CONDICOES_PAGAMENTO}}': condicoes,
+            '{{DATA_VALIDADE}}': validade,
+            '{{DATA_ATUAL}}': hoje,
+            '{{LOCADOR_NOME}}': clienteNome,
+            '{{LOCATARIO_NOME}}': clienteNome,
+            '{{PROPOSTA_VALOR}}': valorProposto,
+            '{{PROPOSTA_CONDICOES}}': condicoes,
+        };
+
+        let result = templateContent;
+        Object.entries(replacements).forEach(([token, value]) => {
+            result = result.split(token).join(value);
+        });
+
+        return result;
+    }, [formData]);
 
     const fetchOpportunityDetails = useCallback(async () => {
         if (!session || !opportunity.cliente_id || !opportunity.imovel_id) {
@@ -76,12 +142,11 @@ const ProposalGeneratorModal: React.FC<ProposalGeneratorModalProps> = ({ isOpen,
 
         if (clientError || imovelError || !clientData || !imovelData) {
             console.error('Erro ao buscar detalhes para proposta:', clientError, imovelError);
-            setError('Não foi possível carregar os detalhes do cliente ou imóvel.');
+            setError('Não foi possível carregar as informações do cliente ou imóvel.');
             setIsLoadingDetails(false);
             return;
         }
         
-        // Buscar propostas existentes para esta oportunidade
         const { data: proposalsData, error: proposalsError } = await supabase
             .from('propostas')
             .select('*')
@@ -92,7 +157,28 @@ const ProposalGeneratorModal: React.FC<ProposalGeneratorModalProps> = ({ isOpen,
             console.error('Erro ao buscar propostas existentes:', proposalsError);
             setError('Não foi possível carregar propostas anteriores.');
         } else {
-            setExistingProposals(proposalsData as Proposal[]);
+            setExistingProposals((proposalsData || []) as Proposal[]);
+        }
+
+        const { data: templatesData, error: templatesError } = await supabase
+            .from('document_templates')
+            .select('id, title, type, content')
+            .eq('user_id', session.user.id)
+            .eq('type', 'Proposta de Compra')
+            .order('updated_at', { ascending: false });
+
+        if (templatesError) {
+            console.warn('Não foi possível carregar modelos de documento:', templatesError);
+            setTemplates([]);
+            setSelectedTemplateId('');
+        } else {
+            const list = (templatesData || []) as Template[];
+            setTemplates(list);
+            if (list.length > 0) {
+                setSelectedTemplateId(prev => prev || list[0].id);
+            } else {
+                setSelectedTemplateId('');
+            }
         }
 
         setFormData(prev => ({
@@ -100,12 +186,12 @@ const ProposalGeneratorModal: React.FC<ProposalGeneratorModalProps> = ({ isOpen,
             oportunidade_id: opportunity.id!,
             cliente_id: opportunity.cliente_id!,
             imovel_id: opportunity.imovel_id!,
-            valor_proposto: opportunity.valor_estimado || imovelData.dados_valores.valor_venda || imovelData.dados_valores.valor_locacao || 0,
+            valor_proposto: opportunity.valor_estimado || imovelData.dados_valores?.valor_venda || imovelData.dados_valores?.valor_locacao || 0,
             clientes: clientData,
             imoveis: imovelData,
         }));
         setIsLoadingDetails(false);
-    }, [session, opportunity]);
+    }, [session, opportunity, applyTemplate]);
 
     useEffect(() => {
         if (isOpen) {
@@ -113,15 +199,31 @@ const ProposalGeneratorModal: React.FC<ProposalGeneratorModalProps> = ({ isOpen,
         }
     }, [isOpen, fetchOpportunityDetails]);
 
+    useEffect(() => {
+        if (!selectedTemplateId) {
+            setPreviewHtml('');
+            return;
+        }
+        const template = templates.find(t => t.id === selectedTemplateId);
+        if (!template || !template.content) {
+            setPreviewHtml('');
+            return;
+        }
+        setPreviewHtml(applyTemplate(template.content));
+    }, [
+        selectedTemplateId,
+        templates,
+        applyTemplate,
+        formData.valor_proposto,
+        formData.condicoes_pagamento,
+        formData.data_validade,
+        formData.clientes,
+        formData.imoveis
+    ]);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { id, value, type } = e.target;
-        setFormData(prev => {
-            let newValue: any = value;
-            if (type === 'number' || id === 'valor_proposto') {
-                newValue = value === '' ? 0 : parseFloat(value);
-            }
-            return { ...prev, [id]: newValue };
-        });
+        const { id, value } = e.target;
+        setFormData(prev => ({ ...prev, [id]: value }));
         setError(null);
     };
     
@@ -157,7 +259,7 @@ const ProposalGeneratorModal: React.FC<ProposalGeneratorModalProps> = ({ isOpen,
             condicoes_pagamento: formData.condicoes_pagamento?.trim() || null,
             data_validade: formData.data_validade,
             status: formData.status,
-            arquivo_url: formData.arquivo_url, // Pode ser atualizado após a geração do PDF
+            arquivo_url: formData.arquivo_url,
         };
 
         let result;
@@ -184,47 +286,47 @@ const ProposalGeneratorModal: React.FC<ProposalGeneratorModalProps> = ({ isOpen,
         } else {
             alert('Proposta salva com sucesso!');
             onSaveSuccess();
-            fetchOpportunityDetails(); // Recarrega a lista de propostas
+            fetchOpportunityDetails();
         }
     }, [session, formData, onSaveSuccess, validate, fetchOpportunityDetails]);
 
     const handleGeneratePDF = useCallback(() => {
         if (!formData.clientes || !formData.imoveis) {
-            alert('Não foi possível gerar o PDF: dados do cliente ou imóvel ausentes.');
+            alert('Informações do cliente ou imóvel incompletas.');
             return;
         }
 
         const doc = new jsPDF();
+        const headerLines = [
+            `Cliente: ${formData.clientes.nome}`,
+            `Imóvel: ${formData.imoveis.codigo} - ${formData.imoveis.logradouro}, ${formData.imoveis.numero} (${formData.imoveis.bairro})`,
+            `Valor Proposto: ${formatCurrency(formData.valor_proposto)}`,
+            `Validade: ${formData.data_validade ? new Date(formData.data_validade).toLocaleDateString('pt-BR') : 'N/A'}`
+        ];
+        const baseContent = previewHtml ? stripHtml(previewHtml) : headerLines.join('\n');
+
         doc.setFontSize(18);
         doc.text("Proposta de Imóvel - Imperial Paris", 14, 22);
         doc.setFontSize(12);
-        doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 14, 30);
-        doc.text(`Validade: ${new Date(formData.data_validade).toLocaleDateString('pt-BR')}`, 14, 36);
+        const wrappedLines = doc.splitTextToSize(baseContent, 180);
+        doc.text(wrappedLines, 14, 32);
 
-        doc.setFontSize(14);
-        doc.text("Dados do Cliente:", 14, 48);
-        doc.setFontSize(12);
-        doc.text(`Nome: ${formData.clientes.nome}`, 14, 56);
-        doc.text(`Telefone: ${formData.clientes.telefone}`, 14, 62);
-        doc.text(`Email: ${formData.clientes.email}`, 14, 68);
-
-        doc.setFontSize(14);
-        doc.text("Dados do Imóvel:", 14, 80);
-        doc.setFontSize(12);
-        doc.text(`Código: ${formData.imoveis.codigo}`, 14, 88);
-        doc.text(`Endereço: ${formData.imoveis.logradouro}, ${formData.imoveis.numero} - ${formData.imoveis.bairro}`, 14, 94);
-        doc.text(`Valor de Venda (Base): ${formData.imoveis.dados_valores.valor_venda.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, 14, 100);
-        doc.text(`Valor de Locação (Base): ${formData.imoveis.dados_valores.valor_locacao.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, 14, 106);
-
-        doc.setFontSize(14);
-        doc.text("Detalhes da Proposta:", 14, 118);
-        doc.setFontSize(12);
-        doc.text(`Valor Proposto: ${formData.valor_proposto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, 14, 126);
-        doc.text(`Condições de Pagamento: ${formData.condicoes_pagamento || 'A combinar'}`, 14, 132);
+        autoTable(doc, {
+            head: [['Campo', 'Valor']],
+            body: [
+                ['Cliente', formData.clientes.nome],
+                ['Imóvel', `${formData.imoveis.codigo} - ${formData.imoveis.logradouro}, ${formData.imoveis.numero} (${formData.imoveis.bairro})`],
+                ['Valor Proposto', formatCurrency(formData.valor_proposto)],
+                ['Condições de Pagamento', formData.condicoes_pagamento || 'A combinar'],
+                ['Validade', formData.data_validade ? new Date(formData.data_validade).toLocaleDateString('pt-BR') : 'N/A'],
+            ],
+            startY: doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 60,
+            theme: 'grid',
+        });
 
         doc.save(`proposta_${formData.imoveis.codigo}_${formData.clientes.nome}.pdf`);
-        alert('PDF da proposta gerado com sucesso! (Simulação)');
-    }, [formData]);
+        alert('PDF da proposta gerado! Lembre-se de anexar manualmente se necessário.');
+    }, [formData, previewHtml]);
 
     if (!isOpen) return null;
 
@@ -253,6 +355,31 @@ const ProposalGeneratorModal: React.FC<ProposalGeneratorModalProps> = ({ isOpen,
                             <p className="text-sm font-semibold text-blue-800">Cliente: {formData.clientes?.nome || 'N/A'}</p>
                             <p className="text-xs text-blue-700">Imóvel: {formData.imoveis?.codigo || 'N/A'}</p>
                         </div>
+
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-light-text">Modelo de Documento</label>
+                            {templates.length > 0 ? (
+                                <select
+                                    value={selectedTemplateId}
+                                    onChange={(e) => setSelectedTemplateId(e.target.value)}
+                                    className="w-full p-2 border border-gray-300 rounded-md text-sm text-dark-text"
+                                >
+                                    <option value="">Selecione um modelo (opcional)</option>
+                                    {templates.map(template => (
+                                        <option key={template.id} value={template.id}>{template.title}</option>
+                                    ))}
+                                </select>
+                            ) : (
+                                <div className="text-xs text-gray-500">Nenhum modelo salvo para “Proposta de Compra”. Crie um em Documentos.</div>
+                            )}
+                        </div>
+
+                        {previewHtml && (
+                            <div className="space-y-2">
+                                <h3 className="text-sm font-semibold text-dark-text">Pré-visualização do Modelo</h3>
+                                <div className="border rounded-md p-3 bg-gray-50 text-sm leading-relaxed max-h-64 overflow-auto" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-2 gap-4">
                             <NumberInput 
@@ -314,7 +441,6 @@ const ProposalGeneratorModal: React.FC<ProposalGeneratorModalProps> = ({ isOpen,
                             </Button>
                         </div>
 
-                        {/* Histórico de Propostas */}
                         <div className="space-y-3 mt-6">
                             <h3 className="text-lg font-semibold text-dark-text">Propostas Anteriores ({existingProposals.length})</h3>
                             {existingProposals.length === 0 ? (
@@ -326,13 +452,13 @@ const ProposalGeneratorModal: React.FC<ProposalGeneratorModalProps> = ({ isOpen,
                                             <div>
                                                 <p className="font-semibold text-dark-text flex items-center">
                                                     <FileText className="w-4 h-4 mr-2 text-gray-500" />
-                                                    Proposta de {proposal.valor_proposto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                                    Proposta de {formatCurrency(proposal.valor_proposto)}
                                                 </p>
                                                 <p className="text-sm text-light-text mt-1">
                                                     Status: {proposal.status} | Validade: {new Date(proposal.data_validade).toLocaleDateString('pt-BR')}
                                                 </p>
                                             </div>
-                                            <Button variant="ghost" size="sm" title="Ver Detalhes (Mock)">
+                                            <Button variant="ghost" size="sm" title="Visualizar (Mock)">
                                                 <Eye className="w-4 h-4" />
                                             </Button>
                                         </div>
