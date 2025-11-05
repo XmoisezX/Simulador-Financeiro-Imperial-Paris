@@ -1,0 +1,170 @@
+:root {
+  --body-bg: #f8fafc;
+  --surface-bg: #ffffff;
+  --muted-bg: #f1f5f9;
+  --border-color: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --input-bg: #ffffff;
+  --input-border: #d1d5db;
+  --link-color: #2563eb;
+}
+
+html.theme-dark {
+  --body-bg: #0b1120;
+  --surface-bg: #111827;
+  --muted-bg: #1f2937;
+  --border-color: #1f2a37;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --input-bg: #111827;
+  --input-border: #293548;
+  --link-color: #60a5fa;
+}
+
+body {
+  background-color: var(--body-bg);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Superfícies principais */
+.bg-white,
+.bg-gray-50,
+.bg-gray-100,
+.bg-gray-200,
+.bg-light-orange-bg {
+  background-color: var(--surface-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+html.theme-dark .bg-gray-50,
+html.theme-dark .bg-gray-100,
+html.theme-dark .bg-gray-200 {
+  background-color: var(--muted-bg) !important;
+}
+
+/* Cartões, tabelas e contornos */
+.card,
+table,
+thead,
+tbody,
+tr,
+th,
+td,
+.border,
+.border-b,
+.border-t,
+.border-gray-100,
+.border-gray-200,
+.border-gray-300 {
+  border-color: var(--border-color) !important;
+}
+
+.shadow-md,
+.shadow-lg,
+.shadow-inner {
+  box-shadow: none;
+}
+
+label,
+p,
+span,
+small,
+.text-light-text {
+  color: var(--text-secondary) !important;
+}
+
+.text-dark-text {
+  color: var(--text-primary) !important;
+}
+
+/* Inputs, selects e textareas */
+input,
+select,
+textarea {
+  background-color: var(--input-bg);
+  color: var(--text-primary);
+  border-color: var(--input-border);
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-secondary);
+}
+
+a {
+  color: var(--link-color);
+  transition: color 0.3s ease;
+}
+
+/* Ajustes específicos */
+html.theme-dark .bg-blue-50,
+html.theme-dark .bg-green-50,
+html.theme-dark .bg-yellow-50,
+html.theme-dark .bg-orange-50,
+html.theme-dark .bg-red-50,
+html.theme-dark .bg-purple-50 {
+  background-color: rgba(59, 130, 246, 0.12) !important;
+  color: var(--text-primary) !important;
+}
+
+html.theme-dark .border-l-4 {
+  border-color: var(--border-color) !important;
+}
+
+html.theme-dark .text-gray-500,
+html.theme-dark .text-gray-600,
+html.theme-dark .text-gray-700,
+html.theme-dark .text-slate-500,
+html.theme-dark .text-slate-600,
+html.theme-dark .text-slate-700 {
+  color: var(--text-secondary) !important;
+}
+
+/* Componentes ReactQuill */
+.ql-toolbar {
+  background-color: var(--muted-bg);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.ql-container {
+  background-color: var(--surface-bg);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.ql-editor {
+  min-height: 30em;
+  line-height: 1.5;
+}
+
+/* Tabelas */
+table {
+  background-color: var(--surface-bg);
+  color: var(--text-primary);
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+thead {
+  background-color: var(--muted-bg);
+}
+
+tbody tr:hover {
+  background-color: rgba(148, 163, 184, 0.12);
+}
+
+/* Botões outline precisam respeitar borda */
+button.border,
+button[data-variant="outline"] {
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+html.theme-dark button[data-variant="outline"]:hover {
+  background-color: rgba(148, 163, 184, 0.12);
+}
