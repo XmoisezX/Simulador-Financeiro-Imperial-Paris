@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bed, Bath, Car, Maximize2, ChevronRight, Image, RefreshCw, Info, Square as CheckboxIcon } from 'lucide-react';
+import { Bed, Bath, Car, Maximize2, ChevronRight, Image, RefreshCw, Info } from 'lucide-react';
 import ImageCarousel from './ImageCarousel'; // Importando o carrossel
 import { Link } from 'react-router-dom'; // Importando Link
 import { Checkbox } from './ui/Checkbox'; // Importando Checkbox shadcn/ui
@@ -59,8 +59,6 @@ const ImovelCard: React.FC<ImovelCardProps> = ({ imovel, onViewDetails, isSelect
     const isLocacao = imovel.dados_contrato.locacao_ativo;
     
     const statusText = isVenda ? 'Venda' : (isLocacao ? 'Locação' : 'Indefinido');
-    const statusColor = isVenda ? 'text-red-600' : 'text-blue-600';
-    
     const isAvailable = (isVenda && imovel.dados_contrato.venda_disponibilidade === 'Disponível') || 
                         (isLocacao && imovel.dados_contrato.locacao_disponibilidade === 'Disponível');
     
@@ -73,7 +71,7 @@ const ImovelCard: React.FC<ImovelCardProps> = ({ imovel, onViewDetails, isSelect
     const mediaForCarousel = imovel.imagens_imovel
         .filter(m => m.url) // Garante que a URL existe
         .map(m => ({ url: m.url, rotation: m.rotation }));
-
+    
     // Dados de características
     const { dormitorios, suites, banheiros, vagas_garagem, area_privativa_m2 } = imovel.dados_caracteristicas;
     
@@ -82,98 +80,84 @@ const ImovelCard: React.FC<ImovelCardProps> = ({ imovel, onViewDetails, isSelect
     const iptuPeriodo = imovel.dados_valores.iptu_periodo === 'Anual' ? '(anual)' : '(mensal)';
 
     return (
-        <div className={`relative border rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 mb-4 group ${isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'}`}>
-            
-            {/* Top Bar: Checkbox e Ações */}
-            <div className="flex justify-between items-center p-3 border-b border-gray-100">
-                <div className="flex items-center space-x-3">
-                    <Checkbox 
-                        id={`select-${imovel.id}`}
-                        checked={isSelected}
-                        onCheckedChange={(checked) => onSelect(imovel.id, checked as boolean)}
-                        className="w-5 h-5 text-blue-600 border-gray-400"
-                    />
-                    <div className={`w-2 h-full rounded-full ${isAvailable ? 'bg-green-500' : 'bg-red-500'}`}></div> {/* Status Bar */}
-                </div>
-                <div className="flex space-x-4 text-gray-500 text-sm font-medium">
-                    <button title="Mídias" className="flex items-center hover:text-blue-600 transition-colors"><Image className="w-4 h-4 mr-1" /> Mídias</button>
-                    <button title="Atualizar" className="flex items-center hover:text-blue-600 transition-colors"><RefreshCw className="w-4 h-4 mr-1" /> Atualizar</button>
-                    <button title="Informações" className="flex items-center hover:text-blue-600 transition-colors"><Info className="w-4 h-4 mr-1" /> Info</button>
-                </div>
-            </div>
+        <div className={`relative overflow-hidden rounded-xl transition-transform duration-200 ${isSelected ? 'ring-2 ring-blue-300' : ''}`}>
+            <div className={`flex items-stretch border ${isSelected ? 'border-blue-100' : 'border-gray-200'} bg-white shadow-sm hover:shadow-lg transform hover:-translate-y-0.5`}>
+                {/* Borda lateral acentuada */}
+                <div className={`w-1 ${isAvailable ? 'bg-green-500' : 'bg-gray-200'}`} />
 
-            {/* Conteúdo Principal do Card */}
-            <div className="flex p-3">
-                
-                {/* 1. Imagem e Código */}
-                <div className="flex-shrink-0 w-56 h-36 relative mr-4 rounded-md overflow-hidden">
-                    <ImageCarousel 
-                        media={mediaForCarousel}
-                        defaultImageUrl={defaultImage}
-                        altText={`Imóvel ${imovel.codigo}`}
-                    />
-                    <div className="absolute bottom-0 left-0 bg-black bg-opacity-70 text-white text-xs px-2 py-0.5 font-semibold z-10">
-                        {imovel.codigo}
-                    </div>
-                    {!isAvailable && (
-                        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
-                            <p className="text-white font-bold text-sm rotate-[-15deg]">Indisponível</p>
-                        </div>
-                    )}
-                </div>
-                
-                {/* 2. Detalhes e Características */}
-                <div className="flex-1 grid grid-cols-3 gap-x-6">
-                    
-                    {/* Coluna 1: Endereço */}
-                    <div className="col-span-1 flex flex-col justify-center">
-                        <p className="text-sm text-dark-text leading-tight">{imovel.logradouro},</p>
-                        <p className="text-sm font-semibold text-dark-text leading-tight">{imovel.numero}</p>
-                        <p className="text-sm font-semibold text-dark-text leading-tight mt-1">{type}</p>
-                        <p className="text-sm font-semibold text-dark-text leading-tight">{imovel.bairro}</p>
-                        <p className="text-xs text-light-text leading-tight">{imovel.dados_localizacao.cidade} - {imovel.dados_localizacao.estado}</p>
-                    </div>
-                    
-                    {/* Coluna 2: Características com Ícones (Mais espaço) */}
-                    <div className="col-span-1 grid grid-cols-2 gap-y-1 text-sm text-dark-text">
-                        <div className="flex items-center space-x-2">
-                            <Bed className="w-4 h-4 text-gray-500" />
-                            <span className="font-medium">{dormitorios} ({suites})</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <Bath className="w-4 h-4 text-gray-500" />
-                            <span className="font-medium">{banheiros}</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <Car className="w-4 h-4 text-gray-500" />
-                            <span className="font-medium">{vagas_garagem}</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <Maximize2 className="w-4 h-4 text-gray-500" />
-                            <span className="font-medium">{area_privativa_m2} m²</span>
+                {/* Conteúdo do card */}
+                <div className="flex w-full">
+                    {/* 1. Imagem / Carrossel */}
+                    <div className="flex-shrink-0 w-56 h-36 relative bg-gray-100 m-4 rounded-md overflow-hidden">
+                        <ImageCarousel 
+                            media={mediaForCarousel}
+                            defaultImageUrl={defaultImage}
+                            altText={`Imóvel ${imovel.codigo}`}
+                        />
+                        {/* código pequeno no canto */}
+                        <div className="absolute left-2 bottom-2 bg-black bg-opacity-70 text-white text-[11px] px-2 py-0.5 rounded-md">
+                            {imovel.codigo}
                         </div>
                     </div>
-                    
-                    {/* Coluna 3: Valores e Ação */}
-                    <div className="col-span-1 flex flex-col items-end justify-center text-right relative pr-8">
-                        <p className="text-xs text-light-text">{statusText}</p>
-                        <p className="text-lg font-bold text-dark-text">{formatCurrency(price)}</p>
-                        
-                        {iptuValue > 0 && (
-                            <>
-                                <p className="text-xs text-light-text">IPTU {iptuPeriodo}</p>
-                                <p className="text-sm font-semibold text-dark-text">{formatCurrency(iptuValue)}</p>
-                            </>
-                        )}
-                        
-                        {/* Botão de Detalhes (seta) - Agora com borda vertical laranja no hover */}
-                        <button 
-                            onClick={() => onViewDetails(imovel.id)}
-                            className="absolute right-0 top-0 bottom-0 w-8 flex items-center justify-center text-blue-600 hover:text-primary-orange transition-all duration-200 hover:border-r-4 hover:border-primary-orange"
-                            title="Ver Detalhes"
-                        >
-                            <ChevronRight className="w-6 h-6" />
-                        </button>
+
+                    {/* 2. Conteúdo (Endereço, características) */}
+                    <div className="flex-1 py-4 pr-6 flex flex-col justify-between">
+                        <div>
+                            <p className="text-sm text-slate-500">{type}</p>
+                            <h3 className="text-lg font-semibold text-dark-text leading-tight">{imovel.logradouro}, <span className="font-bold">{imovel.numero}</span></h3>
+                            <p className="text-sm text-slate-500 mt-1">{imovel.bairro}</p>
+
+                            <div className="flex items-center gap-6 mt-4 text-sm text-slate-600">
+                                <div className="flex items-center gap-2">
+                                    <Bed className="w-4 h-4 text-gray-400" />
+                                    <span>{dormitorios} qts{ suites ? ` • ${suites} suítes` : '' }</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Bath className="w-4 h-4 text-gray-400" />
+                                    <span>{banheiros} banh.</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Car className="w-4 h-4 text-gray-400" />
+                                    <span>{vagas_garagem} vagas</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Maximize2 className="w-4 h-4 text-gray-400" />
+                                    <span>{area_privativa_m2} m²</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 3. Ações, preço e status */}
+                        <div className="flex items-center justify-between mt-4">
+                            <div className="flex items-center gap-3">
+                                <Checkbox 
+                                    id={`select-${imovel.id}`}
+                                    checked={isSelected}
+                                    onCheckedChange={(checked) => onSelect(imovel.id, checked as boolean)}
+                                    className="w-5 h-5 text-blue-600 border-gray-400"
+                                />
+                                <div className="text-xs text-slate-500 flex items-center gap-3">
+                                    <button title="Mídias" className="flex items-center gap-1 text-slate-500 hover:text-blue-600"><Image className="w-4 h-4" /> <span className="hidden md:inline">Mídias</span></button>
+                                    <button title="Atualizar" className="flex items-center gap-1 text-slate-500 hover:text-blue-600"><RefreshCw className="w-4 h-4" /> <span className="hidden md:inline">Atualizar</span></button>
+                                    <button title="Info" className="flex items-center gap-1 text-slate-500 hover:text-blue-600"><Info className="w-4 h-4" /> <span className="hidden md:inline">Info</span></button>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-6">
+                                <div className="text-right">
+                                    <p className="text-xs text-slate-500"> {statusText} </p>
+                                    <p className="text-xl font-bold text-primary-orange">{formatCurrency(price)}</p>
+                                </div>
+
+                                <button 
+                                    onClick={() => onViewDetails(imovel.id)}
+                                    className="ml-2 inline-flex items-center justify-center h-10 w-10 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition"
+                                    title="Ver detalhes"
+                                >
+                                    <ChevronRight className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
