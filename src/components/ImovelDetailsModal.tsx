@@ -1,11 +1,11 @@
-import React from 'react';
-import { X, Bed, Bath, Home, Maximize2, DollarSign, MapPin, Lock, Eye, FileText, Image, Edit } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Bed, Bath, Home, Maximize2, DollarSign, MapPin, Lock, Eye, FileText, Image as ImageIcon, Edit } from 'lucide-react';
 import { ImovelInput } from '../../types';
 import { supabase } from '../integrations/supabase/client';
 import { Button } from './ui/Button';
 import { useNavigate } from 'react-router-dom';
+import ImageLightbox, { LightboxImage } from './ImageLightbox';
 
-// Interface para o Imóvel (dados completos + mídias)
 interface ImovelDetails extends ImovelInput {
     id: string;
     created_at: string;
@@ -44,16 +44,23 @@ const DetailItem: React.FC<{ label: string, value: string | number | boolean | n
 
 const ImovelDetailsModal: React.FC<ImovelDetailsModalProps> = ({ isOpen, onClose, imovel }) => {
     const navigate = useNavigate();
-    
+    const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
     if (!isOpen || !imovel) return null;
 
     const { dados_contrato, dados_localizacao, dados_valores, dados_caracteristicas, dados_internos } = imovel;
-    
+
     const handleEdit = () => {
         onClose();
-        // Redireciona para a página de edição do imóvel, usando o ID como parâmetro de rota
         navigate(`/crm/imoveis/${imovel.id}`);
     };
+
+    // Prepara imagens para o lightbox
+    const lightboxImages: LightboxImage[] = (imovel.imagens_imovel || []).map(m => ({
+        url: m.url,
+        rotation: m.rotation,
+        legend: m.legend,
+    }));
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 animate-fade-in">
@@ -76,11 +83,15 @@ const ImovelDetailsModal: React.FC<ImovelDetailsModalProps> = ({ isOpen, onClose
                 <div className="p-6 space-y-6">
                     {/* Seção de Mídias */}
                     <div className="border p-4 rounded-lg bg-gray-50">
-                        <h3 className="text-lg font-semibold text-primary-orange mb-3 flex items-center"><Image className="w-5 h-5 mr-2" /> Mídias ({imovel.imagens_imovel.length})</h3>
+                        <h3 className="text-lg font-semibold text-primary-orange mb-3 flex items-center"><ImageIcon className="w-5 h-5 mr-2" /> Mídias ({imovel.imagens_imovel.length})</h3>
                         <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 max-h-64 overflow-y-auto p-2">
-                            {imovel.imagens_imovel
-                                .map((media, index) => (
-                                <div key={media.id} className="relative h-24 w-full rounded-md overflow-hidden shadow-md border border-gray-200">
+                            {imovel.imagens_imovel.map((media, index) => (
+                                <button
+                                    key={media.id}
+                                    className="relative h-24 w-full rounded-md overflow-hidden shadow-md border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    onClick={() => setLightboxIndex(index)}
+                                    title={media.legend || `Imagem ${index + 1}`}
+                                >
                                     <img 
                                         src={media.url} 
                                         alt={media.legend || `Imagem ${index + 1}`} 
@@ -92,14 +103,16 @@ const ImovelDetailsModal: React.FC<ImovelDetailsModalProps> = ({ isOpen, onClose
                                             <Eye className="w-6 h-6 text-white" />
                                         </div>
                                     )}
-                                    <p className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white text-[10px] p-1 truncate">{media.legend || 'Sem legenda'}</p>
-                                </div>
+                                    <p className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white text-[10px] p-1 truncate">
+                                        {media.legend || 'Sem legenda'}
+                                    </p>
+                                </button>
                             ))}
                             {imovel.imagens_imovel.length === 0 && <p className="text-sm text-light-text col-span-full">Nenhuma mídia cadastrada.</p>}
                         </div>
                     </div>
 
-                    {/* Seção 1: Dados Principais */}
+                    {/* Seções de detalhes (mantidas) */}
                     <DetailSection title="Dados Principais">
                         <DetailItem label="Tipo" value={imovel.tipo_imovel} />
                         <DetailItem label="Código" value={imovel.codigo} />
@@ -107,7 +120,6 @@ const ImovelDetailsModal: React.FC<ImovelDetailsModalProps> = ({ isOpen, onClose
                         <DetailItem label="Data Cadastro" value={new Date(imovel.created_at).toLocaleDateString('pt-BR')} />
                     </DetailSection>
 
-                    {/* Seção 2: Finalidades e Contrato */}
                     <DetailSection title="Finalidades e Contrato">
                         <DetailItem label="Venda Ativa" value={dados_contrato.venda_ativo} />
                         <DetailItem label="Disponibilidade Venda" value={dados_contrato.venda_disponibilidade} />
@@ -117,7 +129,6 @@ const ImovelDetailsModal: React.FC<ImovelDetailsModalProps> = ({ isOpen, onClose
                         <DetailItem label="Disponibilidade Temporada" value={dados_contrato.temporada_disponibilidade} />
                     </DetailSection>
 
-                    {/* Seção 3: Localização */}
                     <DetailSection title="Localização">
                         <DetailItem label="CEP" value={dados_localizacao.cep} />
                         <DetailItem label="Endereço" value={`${imovel.logradouro}, ${imovel.numero} - ${imovel.bairro}`} />
@@ -127,7 +138,6 @@ const ImovelDetailsModal: React.FC<ImovelDetailsModalProps> = ({ isOpen, onClose
                         <DetailItem label="Visibilidade Mapa" value={dados_localizacao.mapa_visibilidade} />
                     </DetailSection>
 
-                    {/* Seção 4: Valores */}
                     <DetailSection title="Valores">
                         <DetailItem label="Valor Venda" value={formatCurrency(dados_valores.valor_venda)} />
                         <DetailItem label="Valor Locação" value={formatCurrency(dados_valores.valor_locacao)} />
@@ -137,7 +147,6 @@ const ImovelDetailsModal: React.FC<ImovelDetailsModalProps> = ({ isOpen, onClose
                         <DetailItem label="Índice Reajuste" value={dados_valores.indice_reajuste} />
                     </DetailSection>
                     
-                    {/* Seção 5: Características */}
                     <DetailSection title="Características">
                         <DetailItem label="Dormitórios" value={dados_caracteristicas.dormitorios} />
                         <DetailItem label="Suítes" value={dados_caracteristicas.suites} />
@@ -155,7 +164,6 @@ const ImovelDetailsModal: React.FC<ImovelDetailsModalProps> = ({ isOpen, onClose
                         </div>
                     </DetailSection>
                     
-                    {/* Seção 6: Dados Internos */}
                     <DetailSection title="Dados Internos">
                         <DetailItem label="Proprietário ID" value={dados_internos.proprietario_id} />
                         <DetailItem label="Agenciador ID" value={dados_internos.agenciador_id} />
@@ -168,6 +176,15 @@ const ImovelDetailsModal: React.FC<ImovelDetailsModalProps> = ({ isOpen, onClose
                     </DetailSection>
                 </div>
             </div>
+
+            {/* Lightbox de imagens */}
+            {lightboxIndex !== null && lightboxImages.length > 0 && (
+                <ImageLightbox
+                    images={lightboxImages}
+                    initialIndex={lightboxIndex}
+                    onClose={() => setLightboxIndex(null)}
+                />
+            )}
         </div>
     );
 };
