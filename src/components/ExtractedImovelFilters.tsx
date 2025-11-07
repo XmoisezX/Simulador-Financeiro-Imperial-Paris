@@ -1,324 +1,186 @@
-import React, { useMemo, useState } from 'react';
-import { Search, Save } from 'lucide-react';
-import TextInput from './TextInput';
+import React from 'react';
+import { Search, DollarSign, Bed, Car, Building, ChevronDown, MapPin } from 'lucide-react';
 import { Button } from './ui/Button';
-import CollapsibleCard from './CollapsibleCard';
+import TextInput from './TextInput';
 import NumberInput from './NumberInput';
 
-// Mock data para dropdowns
-const propertyTypes = ['Apartamento', 'Casa', 'Terreno', 'Comercial', 'Rural'];
-const neighborhoods = ['Centro', 'Laranjal', 'Areal', 'Porto', 'Fragata', 'Três Vendas'];
-const numberOptions = [0, 1, 2, 3, 4, '5 ou +'] as const;
+// Mock Data baseado nas colunas da tabela imoveis_importados
+const CATEGORY_OPTIONS = [
+    'Apartamento', 
+    'Casa', 
+    'Terreno', 
+    'Chácara',
+    'Cobertura',
+    'Depósito',
+    'Empreendimento',
+    'Galpão',
+    'Kitnet',
+    'Loft',
+    'Loja',
+    'Pavilhão',
+    'Ponto Comercial',
+    'Prédio Comercial',
+    'Salas/Conjuntos',
+    'Sítio',
+    'Sobrado',
+    'Terreno Comercial',
+    'Terreno Industrial'
+];
+const NEIGHBORHOOD_OPTIONS = ['Centro', 'Laranjal', 'Areal', 'Porto', 'Fragata', 'Três Vendas', 'Outro'];
+const ROOM_OPTIONS = [1, 2, 3, 4, 5];
+const FLOOR_OPTIONS = [1, 2, 3, 4, 5]; // Opções de andar (1º, 2º, 3º, 4º, 5º+)
 
 export interface ExtractedFilters {
-  minVenda: number | null;
-  maxVenda: number | null;
-  minAluguel: number | null;
-  maxAluguel: number | null;
-  minDorms: number | null;
-  maxDorms: number | null;
-  minSuites?: number | null;
-  maxSuites?: number | null;
-  minVagas?: number | null;
-  maxVagas?: number | null;
-  bairro: string;
-  categoria: string;
-  andar: number | null;
-  enderecoSearch: string;
-  referenciaSearch: string;
+    minVenda: number | null;
+    maxVenda: number | null;
+    minAluguel: number | null;
+    maxAluguel: number | null;
+    minDorms: number | null;
+    maxDorms: number | null;
+    minSuites: number | null;
+    maxSuites: number | null;
+    minVagas: number | null;
+    maxVagas: number | null;
+    bairro: string;
+    categoria: string;
+    andar: number | null;
+    enderecoSearch: string;
+    referenciaSearch: string; // NOVO CAMPO
 }
 
 interface ExtractedImovelFiltersProps {
-  filters: ExtractedFilters;
-  onFilterChange: (key: keyof ExtractedFilters, value: string | number | null) => void;
-  onApply: () => void;
-  onClear: () => void;
+    filters: ExtractedFilters;
+    onFilterChange: (key: keyof ExtractedFilters, value: string | number | null) => void;
+    onApply: () => void;
+    onClear: () => void;
 }
 
-const ExtractedImovelFilters: React.FC<ExtractedImovelFiltersProps> = ({
-  filters,
-  onFilterChange,
-  onApply,
-  onClear
-}) => {
+const ExtractedImovelFilters: React.FC<ExtractedImovelFiltersProps> = ({ filters, onFilterChange, onApply, onClear }) => {
+    
+    const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { id, value } = e.target;
+        // Para valores de moeda, usamos a lógica de limpeza
+        if (id.includes('Venda') || id.includes('Aluguel')) {
+            const numericValue = value === '' ? null : parseFloat(value.replace(/[^\d,]/g, '').replace(',', '.'));
+            onFilterChange(id as keyof ExtractedFilters, numericValue);
+        } else {
+            // Para Dorms, Suites, Vagas (inteiros)
+            const numericValue = value === '' ? null : parseInt(value);
+            onFilterChange(id as keyof ExtractedFilters, numericValue);
+        }
+    };
+    
+    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const { id, value } = e.target;
+        
+        if (id === 'andar') {
+            const numericValue = value === '' ? null : parseInt(value);
+            onFilterChange(id as keyof ExtractedFilters, numericValue);
+        } else {
+            onFilterChange(id as keyof ExtractedFilters, value);
+        }
+    };
+    
+    const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { id, value } = e.target;
+        onFilterChange(id as keyof ExtractedFilters, value);
+    };
 
-  // Estados locais para as categorias (evita includes em undefined)
-  const [selectedDorms, setSelectedDorms] = useState<(number | '5 ou +')[]>([]);
-  const [selectedSuites, setSelectedSuites] = useState<(number | '5 ou +')[]>([]);
-  const [selectedVagas, setSelectedVagas] = useState<(number | '5 ou +')[]>([]);
+    return (
+        <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200 space-y-3">
+            <h2 className="text-lg font-semibold text-dark-text flex items-center border-b pb-2">
+                <Search className="w-5 h-5 mr-2 text-blue-600" /> Filtro Inteligente
+            </h2>
 
-  const handleTextChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { id, value } = e.target;
-    onFilterChange(id as keyof ExtractedFilters, value);
-  };
-
-  const handleNumericChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    if (value === '' || value === null) {
-      onFilterChange(id as keyof ExtractedFilters, null);
-      return;
-    }
-    const parsed = Number(value);
-    onFilterChange(id as keyof ExtractedFilters, isNaN(parsed) ? null : parsed);
-  };
-
-  // Utilitário: traduz seleção (ex.: [2,3,'5 ou +']) para min e max
-  const translateSelectionToRange = (arr: (number | '5 ou +')[]) => {
-    if (!arr || arr.length === 0) return { min: null as number | null, max: null as number | null };
-    const has5Plus = arr.includes('5 ou +');
-    const nums = arr.filter((x): x is number => typeof x === 'number');
-    const min = nums.length > 0 ? Math.min(...nums) : (has5Plus ? 5 : null);
-    // se tiver '5 ou +' consideramos max = null (sem teto)
-    const max = has5Plus ? null : (nums.length > 0 ? Math.max(...nums) : null);
-    // se só tiver '5 ou +' e nada mais, min = 5, max = null
-    return { min: min, max: max };
-  };
-
-  const toggleSelection = (
-    option: number | '5 ou +',
-    selected: (number | '5 ou +')[],
-    setter: React.Dispatch<React.SetStateAction<(number | '5 ou +')[]>>
-  ) => {
-    const exists = selected.some((v) => v === option);
-    if (exists) {
-      setter(selected.filter((v) => v !== option));
-    } else {
-      // Regras simples: se marcar '5 ou +' pode coexistir com outros (vamos permitir)
-      setter([...selected, option]);
-    }
-  };
-
-  // Ao aplicar filtros, traduz as categorias em ranges e dispara onFilterChange
-  const handleApply = () => {
-    const d = translateSelectionToRange(selectedDorms);
-    onFilterChange('minDorms', d.min);
-    onFilterChange('maxDorms', d.max);
-
-    const s = translateSelectionToRange(selectedSuites);
-    onFilterChange('minSuites', s.min);
-    onFilterChange('maxSuites', s.max);
-
-    const v = translateSelectionToRange(selectedVagas);
-    onFilterChange('minVagas', v.min);
-    onFilterChange('maxVagas', v.max);
-
-    onApply();
-  };
-
-  const resetAll = () => {
-    setSelectedDorms([]);
-    setSelectedSuites([]);
-    setSelectedVagas([]);
-    onClear();
-  };
-
-  // Exibição resumida das escolhas (UI)
-  const renderNumberChoices = (
-    selected: (number | '5 ou +')[],
-    setter: React.Dispatch<React.SetStateAction<(number | '5 ou +')[]>>
-  ) => (
-    <div className="flex flex-wrap gap-3">
-      {numberOptions.map((opt) => {
-        const checked = selected.some((v) => v === opt);
-        return (
-          <label key={`${String(opt)}`} className="flex items-center space-x-1 text-sm">
-            <input
-              type="checkbox"
-              checked={checked}
-              onChange={() => toggleSelection(opt, selected, setter)}
-              className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-            />
-            <span>{typeof opt === 'number' ? opt : opt}</span>
-          </label>
-        );
-      })}
-    </div>
-  );
-
-  const dormsSummary = useMemo(() => {
-    const { min, max } = translateSelectionToRange(selectedDorms);
-    if (min === null && max === null) return '—';
-    if (max === null && min !== null) return `${min}+`;
-    return `${min ?? 0} - ${max ?? 0}`;
-  }, [selectedDorms]);
-
-  const suitesSummary = useMemo(() => {
-    const { min, max } = translateSelectionToRange(selectedSuites);
-    if (min === null && max === null) return '—';
-    if (max === null && min !== null) return `${min}+`;
-    return `${min ?? 0} - ${max ?? 0}`;
-  }, [selectedSuites]);
-
-  const vagasSummary = useMemo(() => {
-    const { min, max } = translateSelectionToRange(selectedVagas);
-    if (min === null && max === null) return '—';
-    if (max === null && min !== null) return `${min}+`;
-    return `${min ?? 0} - ${max ?? 0}`;
-  }, [selectedVagas]);
-
-  return (
-    <div className="w-full lg:w-80 bg-white border-r border-gray-200 flex-shrink-0 overflow-y-auto p-4 space-y-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-bold text-dark-text flex items-center">
-          <Search className="w-5 h-5 mr-2" /> Filtros
-        </h2>
-        <button className="text-sm text-blue-600 hover:text-blue-800 flex items-center">
-          <Save className="w-4 h-4 mr-1" /> Salvar filtro
-        </button>
-      </div>
-
-      {/* Busca Avançada */}
-      <CollapsibleCard title="Busca Avançada" isOpenDefault>
-        <div className="grid grid-cols-1 gap-3">
-          <TextInput
-            label="Buscar por Endereço/Proprietário"
-            id="enderecoSearch"
-            value={filters.enderecoSearch}
-            onChange={handleTextChange}
-            placeholder="Ex: 'Rua Suzana Cortez' ou 'Maria Silva'"
-          />
-          <TextInput
-            label="Buscar por Referência"
-            id="referenciaSearch"
-            value={filters.referenciaSearch}
-            onChange={handleTextChange}
-            placeholder="Ex: REF1234"
-          />
-        </div>
-      </CollapsibleCard>
-
-      {/* Localização e Categoria */}
-      <CollapsibleCard title="Localização e Categoria" isOpenDefault>
-        <div className="space-y-3">
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-light-text">Bairro</label>
-            <select
-              id="bairro"
-              value={filters.bairro}
-              onChange={handleTextChange}
-              className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text"
-            >
-              <option value="">Todos os bairros</option>
-              {neighborhoods.map((b) => (
-                <option key={b} value={b}>{b}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-light-text">Categoria</label>
-            <select
-              id="categoria"
-              value={filters.categoria}
-              onChange={handleTextChange}
-              className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text"
-            >
-              <option value="">Todas as categorias</option>
-              {propertyTypes.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
-          </div>
-
-          <NumberInput
-            label="Andar (1-9)"
-            id="andar"
-            value={filters.andar ?? ''}
-            onChange={handleNumericChange}
-            min={1}
-            max={9}
-            placeholder="Ex: 5"
-          />
-        </div>
-      </CollapsibleCard>
-
-      {/* Valores e Áreas */}
-      <CollapsibleCard title="Valores e Áreas">
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-sm font-medium text-light-text mb-2">Venda (R$)</h3>
-            <div className="grid grid-cols-2 gap-2">
-              <NumberInput
-                label="Mínimo"
-                id="minVenda"
-                value={filters.minVenda ?? ''}
-                onChange={handleNumericChange}
-                isCurrency
-                placeholder="0"
-              />
-              <NumberInput
-                label="Máximo"
-                id="maxVenda"
-                value={filters.maxVenda ?? ''}
-                onChange={handleNumericChange}
-                isCurrency
-                placeholder="0"
-              />
+            {/* Linha 1: Busca de Endereço e Referência */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <TextInput 
+                    label="Buscar Endereço Específico" 
+                    id="enderecoSearch" 
+                    value={filters.enderecoSearch} 
+                    onChange={handleTextChange} 
+                    placeholder="Ex: Rua Suzana Cortez Balreira 391"
+                />
+                <TextInput 
+                    label="Buscar Referência" 
+                    id="referenciaSearch" 
+                    value={filters.referenciaSearch} 
+                    onChange={handleTextChange} 
+                    placeholder="Ex: REF12345"
+                />
             </div>
-          </div>
 
-          <div>
-            <h3 className="text-sm font-medium text-light-text mb-2">Aluguel (R$)</h3>
-            <div className="grid grid-cols-2 gap-2">
-              <NumberInput
-                label="Mínimo"
-                id="minAluguel"
-                value={filters.minAluguel ?? ''}
-                onChange={handleNumericChange}
-                isCurrency
-                placeholder="0"
-              />
-              <NumberInput
-                label="Máximo"
-                id="maxAluguel"
-                value={filters.maxAluguel ?? ''}
-                onChange={handleNumericChange}
-                isCurrency
-                placeholder="0"
-              />
+            {/* Linha 2: Valores e Categorias (4 colunas em telas grandes) */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 pt-3 border-t border-gray-100">
+                
+                {/* Valor Venda Mín */}
+                <NumberInput label="Venda Mín" id="minVenda" value={filters.minVenda || ''} onChange={handleNumberChange} isCurrency placeholder="0" />
+                {/* Valor Venda Máx */}
+                <NumberInput label="Venda Máx" id="maxVenda" value={filters.maxVenda || ''} onChange={handleNumberChange} isCurrency placeholder="Máx" />
+                
+                {/* Valor Aluguel Mín */}
+                <NumberInput label="Aluguel Mín" id="minAluguel" value={filters.minAluguel || ''} onChange={handleNumberChange} isCurrency placeholder="0" />
+                {/* Valor Aluguel Máx */}
+                <NumberInput label="Aluguel Máx" id="maxAluguel" value={filters.maxAluguel || ''} onChange={handleNumberChange} isCurrency placeholder="Máx" />
+                
+                {/* Categoria */}
+                <div className="space-y-1">
+                    <label htmlFor="categoria" className="block text-xs font-medium text-light-text">Categoria</label>
+                    <select id="categoria" value={filters.categoria} onChange={handleSelectChange} className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100">
+                        <option value="">Todas</option>
+                        {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                </div>
+                
+                {/* Bairro */}
+                <div className="space-y-1">
+                    <label htmlFor="bairro" className="block text-xs font-medium text-light-text">Bairro</label>
+                    <select id="bairro" value={filters.bairro} onChange={handleSelectChange} className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100">
+                        <option value="">Todos</option>
+                        {NEIGHBORHOOD_OPTIONS.map(b => <option key={b} value={b}>{b}</option>)}
+                    </select>
+                </div>
+                
+                {/* Andar */}
+                <div className="space-y-1">
+                    <label htmlFor="andar" className="block text-xs font-medium text-light-text">Andar</label>
+                    <select id="andar" value={filters.andar || ''} onChange={handleSelectChange} className="w-full p-2 border border-gray-300 rounded-md text-sm text-light-text disabled:bg-gray-100">
+                        <option value="">Todos</option>
+                        {FLOOR_OPTIONS.map(f => <option key={f} value={f}>{f}º</option>)}
+                    </select>
+                </div>
             </div>
-          </div>
+
+            {/* Linha 3: Características (4 colunas em telas grandes) */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 pt-3 border-t border-gray-100">
+                
+                {/* Dormitórios Mín */}
+                <NumberInput label="Dorms Mín" id="minDorms" value={filters.minDorms || ''} onChange={handleNumberChange} placeholder="0" />
+                {/* Dormitórios Máx */}
+                <NumberInput label="Dorms Máx" id="maxDorms" value={filters.maxDorms || ''} onChange={handleNumberChange} placeholder="Máx" />
+                
+                {/* Suítes Mín (Mock) */}
+                <NumberInput label="Suítes Mín" id="minSuites" value={filters.minSuites || ''} onChange={handleNumberChange} placeholder="0" />
+                {/* Suítes Máx (Mock) */}
+                <NumberInput label="Suítes Máx" id="maxSuites" value={filters.maxSuites || ''} onChange={handleNumberChange} placeholder="Máx" />
+                
+                {/* Vagas Mín (Mock) */}
+                <NumberInput label="Vagas Mín" id="minVagas" value={filters.minVagas || ''} onChange={handleNumberChange} placeholder="0" />
+                {/* Vagas Máx (Mock) */}
+                <NumberInput label="Vagas Máx" id="maxVagas" value={filters.maxVagas || ''} onChange={handleNumberChange} placeholder="Máx" />
+                
+                {/* Espaço para botões de ação */}
+                <div className="col-span-2 flex space-x-2 pt-6">
+                    <Button onClick={onClear} variant="outline" className="w-full text-gray-700 border-gray-300 hover:bg-gray-100">
+                        Limpar
+                    </Button>
+                    <Button onClick={onApply} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                        Aplicar
+                    </Button>
+                </div>
+            </div>
         </div>
-      </CollapsibleCard>
-
-      {/* Características */}
-      <CollapsibleCard title="Características">
-        <div className="space-y-3">
-          <div>
-            <h4 className="text-sm font-medium text-light-text">Dormitórios <span className="text-xs text-gray-400 ml-1">({dormsSummary})</span></h4>
-            {renderNumberChoices(selectedDorms, setSelectedDorms)}
-          </div>
-
-          <div>
-            <h4 className="text-sm font-medium text-light-text">Suítes <span className="text-xs text-gray-400 ml-1">({suitesSummary})</span></h4>
-            {renderNumberChoices(selectedSuites, setSelectedSuites)}
-          </div>
-
-          <div>
-            <h4 className="text-sm font-medium text-light-text">Vagas de Garagem <span className="text-xs text-gray-400 ml-1">({vagasSummary})</span></h4>
-            {renderNumberChoices(selectedVagas, setSelectedVagas)}
-          </div>
-        </div>
-      </CollapsibleCard>
-
-      {/* Ações de Filtro (Sticky Footer) */}
-      <div className="pt-4 border-t border-gray-200 space-y-2 sticky bottom-0 bg-white z-10">
-        <Button
-          onClick={resetAll}
-          variant="outline"
-          className="w-full text-primary-orange border-primary-orange hover:bg-orange-50"
-        >
-          Limpar
-        </Button>
-        <Button
-          onClick={handleApply}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-        >
-          Filtrar
-        </Button>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default ExtractedImovelFilters;
